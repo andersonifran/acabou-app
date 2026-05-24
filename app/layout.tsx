@@ -9,6 +9,15 @@ export const metadata: Metadata = {
   description:
     "Marque o que acabou em segundos, compartilhe com sua família e vá ao mercado com a lista certa.",
   manifest: "/manifest.json",
+  icons: {
+    icon: [
+      { url: "/logo-acabou.png", type: "image/png" },
+    ],
+    apple: [
+      { url: "/logo-acabou.png", type: "image/png" },
+    ],
+    shortcut: "/logo-acabou.png",
+  },
   appleWebApp: { capable: true, statusBarStyle: "default", title: "Acabou?" },
   formatDetection: { telephone: false },
   openGraph: {
