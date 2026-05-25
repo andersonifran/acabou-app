@@ -164,18 +164,18 @@ export function InstallPWA() {
           </button>
         </div>
 
-        {/* Benefícios rápidos */}
-        <div className="px-4 pt-3 pb-0 flex gap-3 text-xs text-green-100">
+        {/* Benefícios rápidos — só no desktop */}
+        <div className="hidden sm:flex px-4 pt-3 pb-0 gap-3 text-xs text-green-100">
           <span>📲 Como app nativo</span>
           <span>📴 Offline</span>
           <span>💬 Compartilha pelo Zap</span>
         </div>
 
         {/* Botão CTA */}
-        <div className="p-4">
+        <div className="p-4 pt-3">
           <button
             onClick={handleInstall}
-            className="w-full bg-white text-green-700 font-bold py-3 rounded-xl text-sm hover:bg-green-50 transition-colors flex items-center justify-center gap-2 shadow-sm"
+            className="w-full bg-white text-green-700 font-bold py-2.5 sm:py-3 rounded-xl text-sm hover:bg-green-50 transition-colors flex items-center justify-center gap-2 shadow-sm"
           >
             <Download size={16} />
             {isIOS ? "Ver como instalar no iPhone →" : "Instalar agora — é grátis"}

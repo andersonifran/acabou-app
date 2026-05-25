@@ -25,7 +25,7 @@ export default function LandingPage() {
             <BrandName className="text-2xl" />
           </div>
           <div className="flex items-center gap-3">
-            <Link href="/login" className="text-gray-600 hover:text-gray-900 text-sm font-medium hidden sm:block">
+            <Link href="/login" className="text-gray-600 hover:text-gray-900 text-sm font-medium">
               Entrar
             </Link>
             <Link href="/cadastro" className="bg-green-600 text-white text-sm font-bold px-5 py-2.5 rounded-xl hover:bg-green-700 transition-colors">
