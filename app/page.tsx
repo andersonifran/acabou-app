@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Check } from "lucide-react";
 import { LogoIcon } from "@/components/shared/Logo";
 import { ScenarioShowcase } from "@/components/landing/ScenarioShowcase";
+import { InstallButton, InstallPWA } from "@/components/shared/InstallPWA";
 
 function BrandName({ className = "" }: { className?: string }) {
   return (
@@ -14,6 +15,7 @@ function BrandName({ className = "" }: { className?: string }) {
 export default function LandingPage() {
   return (
     <div className="min-h-screen bg-white">
+      <InstallPWA />
 
       {/* ── NAV ── */}
       <nav className="sticky top-0 z-40 bg-white/95 backdrop-blur border-b border-gray-100 px-6 py-3">
@@ -40,7 +42,7 @@ export default function LandingPage() {
             🇧🇷 Feito para famílias brasileiras
           </div>
           <h1 className="text-4xl md:text-6xl font-black leading-tight mb-6 tracking-tight">
-            <span className="text-gray-900">Acabou o arroz?</span><br />
+            <span className="text-gray-900">Acabou o leite?</span><br />
             <span className="text-green-600">Quem viu, marca.</span><br />
             <span className="text-gray-900">Quem compra, vê.</span>
           </h1>
@@ -282,10 +284,14 @@ export default function LandingPage() {
           <Link href="/cadastro" className="inline-block bg-white text-green-700 font-black px-12 py-4 rounded-2xl hover:bg-green-50 transition-all hover:scale-105 text-lg shadow-2xl">
             Criar minha conta grátis →
           </Link>
-          <div className="flex justify-center gap-6 mt-8 text-green-200 text-sm">
+          <div className="flex justify-center mt-5">
+            <InstallButton />
+          </div>
+          <div className="flex justify-center gap-6 mt-6 text-green-200 text-sm flex-wrap">
             <span>✅ Grátis para sempre</span>
             <span>✅ Sem cartão</span>
             <span>✅ 2 minutos</span>
+            <span>✅ Funciona offline</span>
           </div>
         </div>
       </section>
