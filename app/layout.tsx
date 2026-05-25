@@ -11,12 +11,10 @@ export const metadata: Metadata = {
   manifest: "/manifest.json",
   icons: {
     icon: [
-      { url: "/logo-acabou.png", type: "image/png" },
+      { url: "/web-app-manifest-192x192.png", type: "image/png" },
     ],
-    apple: [
-      { url: "/logo-acabou.png", type: "image/png" },
-    ],
-    shortcut: "/logo-acabou.png",
+    apple: "/apple-touch-icon.png",
+    shortcut: "/web-app-manifest-192x192.png",
   },
   appleWebApp: { capable: true, statusBarStyle: "default", title: "Acabou?" },
   formatDetection: { telephone: false },
