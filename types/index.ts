@@ -145,7 +145,7 @@ export const PLAN_LIMITS = {
 
 // --- Categorias padrão ---
 export const DEFAULT_CATEGORIES: Omit<Category, "id">[] = [
-  { name: "Mercado", icon: "🛒", sort_order: 1, is_default: true },
+  { name: "Alimentos", icon: "🍚", sort_order: 1, is_default: true },
   { name: "Limpeza", icon: "🧹", sort_order: 2, is_default: true },
   { name: "Higiene", icon: "🚿", sort_order: 3, is_default: true },
   { name: "Pet", icon: "🐾", sort_order: 4, is_default: true },
