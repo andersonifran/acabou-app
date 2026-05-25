@@ -1,12 +1,11 @@
 {
-  "id": "/",
   "name": "Acabou?",
   "short_name": "Acabou?",
   "description": "Sua casa sempre sabe o que precisa comprar.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
-  "display_override": ["standalone", "minimal-ui"],
+  "prefer_related_applications": false,
   "background_color": "#ffffff",
   "theme_color": "#16a34a",
   "orientation": "portrait-primary",
