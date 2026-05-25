@@ -225,8 +225,12 @@ export function NotificationShowcase() {
                     <p className="text-sm text-gray-500 mt-0.5 leading-relaxed">
                       {item.desc}
                     </p>
-                    <p className="text-[11px] text-gray-400 mt-1 italic">
-                      {item.pain}
+                    <p className="text-[11px] mt-1.5 font-semibold">
+                      {item.pain.includes("Exclusivo") ? (
+                        <span className="text-green-600 bg-green-50 px-2 py-0.5 rounded-full">{item.pain}</span>
+                      ) : (
+                        <span className="text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">{item.pain}</span>
+                      )}
                     </p>
                   </div>
                 </div>
