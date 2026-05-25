@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 // Itens por tipo de imóvel
 const ITEMS_BY_TYPE: Record<string, { category: string; items: string[] }[]> = {
   casa: [
-    { category: "🍚 Alimentos", items: ["Arroz", "Feijão", "Café", "Açúcar", "Sal", "Óleo", "Leite", "Ovos", "Pão", "Manteiga", "Macarrão", "Molho de tomate", "Farinha", "Carne", "Frango", "Queijo", "Presunto", "Frutas", "Verduras", "Legumes"] },
+    { category: "🛒 Alimentos", items: ["Arroz", "Feijão", "Café", "Açúcar", "Sal", "Óleo", "Leite", "Ovos", "Pão", "Manteiga", "Macarrão", "Molho de tomate", "Farinha", "Carne", "Frango", "Queijo", "Presunto", "Frutas", "Verduras", "Legumes"] },
     { category: "🧹 Limpeza", items: ["Detergente", "Sabão em pó", "Amaciante", "Água sanitária", "Desinfetante", "Esponja", "Saco de lixo", "Papel toalha", "Multiuso"] },
     { category: "🚿 Higiene", items: ["Papel higiênico", "Sabonete", "Shampoo", "Condicionador", "Creme dental", "Escova de dente", "Desodorante", "Absorvente"] },
     { category: "🐾 Pet", items: ["Ração", "Areia do gato", "Tapete higiênico", "Petisco"] },
@@ -17,7 +17,7 @@ const ITEMS_BY_TYPE: Record<string, { category: string; items: string[] }[]> = {
     { category: "💊 Farmácia", items: ["Curativo", "Álcool", "Algodão", "Termômetro"] },
   ],
   apartamento: [
-    { category: "🍚 Alimentos", items: ["Arroz", "Feijão", "Café", "Açúcar", "Sal", "Óleo", "Leite", "Ovos", "Pão", "Manteiga", "Macarrão", "Molho de tomate", "Frango", "Queijo"] },
+    { category: "🛒 Alimentos", items: ["Arroz", "Feijão", "Café", "Açúcar", "Sal", "Óleo", "Leite", "Ovos", "Pão", "Manteiga", "Macarrão", "Molho de tomate", "Frango", "Queijo"] },
     { category: "🧹 Limpeza", items: ["Detergente", "Sabão em pó", "Amaciante", "Água sanitária", "Multiuso", "Esponja", "Saco de lixo", "Papel toalha"] },
     { category: "🚿 Higiene", items: ["Papel higiênico", "Sabonete", "Shampoo", "Condicionador", "Creme dental", "Desodorante"] },
   ],
@@ -26,13 +26,13 @@ const ITEMS_BY_TYPE: Record<string, { category: string; items: string[] }[]> = {
     { category: "🍺 Bebidas", items: ["Cerveja", "Água mineral", "Refrigerante", "Suco", "Água de coco", "Gelo"] },
     { category: "🍖 Churrasqueira", items: ["Carvão", "Carne", "Frango", "Linguiça", "Costelinha", "Farofa", "Vinagrete", "Pão de alho", "Sal grosso"] },
     { category: "🍽️ Descartáveis", items: ["Copo descartável", "Prato descartável", "Garfo descartável", "Guardanapo", "Palito", "Toalha umedecida"] },
-    { category: "🍚 Alimentos", items: ["Arroz", "Feijão", "Óleo", "Sal", "Ovos", "Pão", "Manteiga", "Frutas"] },
+    { category: "🛒 Alimentos", items: ["Arroz", "Feijão", "Óleo", "Sal", "Ovos", "Pão", "Manteiga", "Frutas"] },
     { category: "🧹 Limpeza", items: ["Detergente", "Esponja", "Papel toalha", "Saco de lixo"] },
   ],
   veraneio: [
     { category: "🌲 Sítio / Campo", items: ["Carvão", "Sal grosso", "Farofa", "Carne", "Frango", "Linguiça", "Costelinha", "Milho", "Mandioca", "Pão de alho"] },
     { category: "🍺 Bebidas", items: ["Cerveja", "Refrigerante", "Água mineral", "Gelo", "Suco"] },
-    { category: "🍚 Alimentos", items: ["Arroz", "Feijão", "Óleo", "Sal", "Ovos", "Pão", "Manteiga", "Batata", "Cebola", "Alho"] },
+    { category: "🛒 Alimentos", items: ["Arroz", "Feijão", "Óleo", "Sal", "Ovos", "Pão", "Manteiga", "Batata", "Cebola", "Alho"] },
     { category: "🍽️ Descartáveis", items: ["Copo descartável", "Prato descartável", "Guardanapo", "Papel toalha"] },
     { category: "🧹 Limpeza", items: ["Detergente", "Água sanitária", "Saco de lixo", "Esponja", "Desinfetante"] },
     { category: "🔦 Utilidades", items: ["Pilha", "Vela", "Isqueiro", "Repelente"] },
@@ -45,7 +45,7 @@ const ITEMS_BY_TYPE: Record<string, { category: string; items: string[] }[]> = {
     { category: "📎 Escritório", items: ["Caneta", "Folha A4", "Post-it", "Grampo", "Clipe", "Fita adesiva", "Pilha AA", "Pilha AAA", "Toner impressora", "Envelope", "Etiqueta adesiva", "Pincel atômico"] },
   ],
   outro: [
-    { category: "🍚 Alimentos", items: ["Arroz", "Feijão", "Café", "Açúcar", "Sal", "Óleo", "Leite", "Ovos", "Pão", "Manteiga"] },
+    { category: "🛒 Alimentos", items: ["Arroz", "Feijão", "Café", "Açúcar", "Sal", "Óleo", "Leite", "Ovos", "Pão", "Manteiga"] },
     { category: "🧹 Limpeza", items: ["Detergente", "Sabão em pó", "Água sanitária", "Esponja", "Saco de lixo"] },
     { category: "🚿 Higiene", items: ["Papel higiênico", "Sabonete", "Shampoo", "Creme dental"] },
   ],

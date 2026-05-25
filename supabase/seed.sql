@@ -5,7 +5,7 @@
 
 -- Categorias padrão
 INSERT INTO categories (name, icon, sort_order, is_default) VALUES
-  ('Alimentos', '🍚', 1, TRUE),
+  ('Alimentos', '🛒', 1, TRUE),
   ('Limpeza',  '🧹', 2, TRUE),
   ('Higiene',  '🚿', 3, TRUE),
   ('Pet',      '🐾', 4, TRUE),
