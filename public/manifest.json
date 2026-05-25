@@ -9,17 +9,17 @@
   "orientation": "portrait",
   "icons": [
     {
-      "src": "/pwa-icon-192",
+      "src": "/web-app-manifest-192x192.png",
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "/pwa-icon-512",
+      "src": "/web-app-manifest-512x512.png",
       "sizes": "512x512",
       "type": "image/png"
     },
     {
-      "src": "/pwa-icon-512",
+      "src": "/web-app-manifest-512x512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"

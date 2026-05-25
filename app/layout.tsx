@@ -9,6 +9,11 @@ export const metadata: Metadata = {
   description:
     "Marque o que acabou em segundos, compartilhe com sua família e vá ao mercado com a lista certa.",
   manifest: "/manifest.json",
+  icons: {
+    icon: "/favicon.png",
+    shortcut: "/favicon.png",
+    apple: "/apple-touch-icon.png",
+  },
   appleWebApp: { capable: true, statusBarStyle: "default", title: "Acabou?" },
   formatDetection: { telephone: false },
   openGraph: {
