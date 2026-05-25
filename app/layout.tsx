@@ -11,10 +11,8 @@ export const metadata: Metadata = {
   manifest: "/manifest.json",
   icons: {
     icon: [
-      { url: "/favicon.ico" },
-      { url: "/favicon.png", type: "image/png" },
+      { url: "/favicon.svg", type: "image/svg+xml" },
     ],
-    shortcut: "/favicon.ico",
     apple: "/apple-touch-icon.png",
   },
   appleWebApp: { capable: true, statusBarStyle: "default", title: "Acabou?" },
