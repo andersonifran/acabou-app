@@ -16,8 +16,10 @@ export function InstallPWA() {
   const [prompt, setPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [visible, setVisible] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
+  const [isAndroid, setIsAndroid] = useState(false);
   const [isInstalled, setIsInstalled] = useState(false);
   const [showIOSSteps, setShowIOSSteps] = useState(false);
+  const [showAndroidSteps, setShowAndroidSteps] = useState(false);
 
   useEffect(() => {
     // Já instalado como PWA — nunca mostra
@@ -37,10 +39,12 @@ export function InstallPWA() {
       }
     } catch {}
 
-    // Detecta iOS
+    // Detecta dispositivo
     const ua = navigator.userAgent;
     const ios = /iphone|ipad|ipod/i.test(ua) && !(window as any).MSStream;
+    const android = /android/i.test(ua);
     setIsIOS(ios);
+    setIsAndroid(android);
 
     // Captura evento nativo do Chrome/Android
     const handler = (e: Event) => {
@@ -72,6 +76,7 @@ export function InstallPWA() {
   function dismiss() {
     setVisible(false);
     setShowIOSSteps(false);
+    setShowAndroidSteps(false);
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
       const { count = 0 } = stored ? JSON.parse(stored) : {};
@@ -92,10 +97,62 @@ export function InstallPWA() {
       }
     } else if (isIOS) {
       setShowIOSSteps(true);
+    } else {
+      // Android sem prompt nativo ou Desktop — mostra instruções manuais
+      setShowAndroidSteps(true);
     }
   }
 
   if (isInstalled || !visible) return null;
+
+  // ── Android/Desktop: instruções manuais ───────────────────
+  if (showAndroidSteps) {
+    const steps = isAndroid ? [
+      { n: 1, text: 'Toque no menu ⋮ (três pontinhos) no canto superior direito do Chrome' },
+      { n: 2, text: 'Selecione "Adicionar à tela inicial" ou "Instalar app"' },
+      { n: 3, text: 'Toque em "Instalar" — pronto! 🎉' },
+    ] : [
+      { n: 1, text: 'Clique no ícone ⊕ ou 💻 na barra de endereço do Chrome' },
+      { n: 2, text: 'Clique em "Instalar Acabou?"' },
+      { n: 3, text: 'Confirme clicando em "Instalar" — pronto! 🎉' },
+    ];
+
+    return (
+      <div className="fixed bottom-4 left-4 right-4 z-50 max-w-sm mx-auto animate-in fade-in slide-in-from-bottom-4 duration-300">
+        <div className="bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden">
+          <div className="bg-green-600 px-4 py-3 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Smartphone size={16} className="text-white" />
+              <p className="font-bold text-white text-sm">
+                {isAndroid ? "Como instalar no Android" : "Como instalar no PC/Mac"}
+              </p>
+            </div>
+            <button onClick={dismiss} className="text-white/70 hover:text-white p-1">
+              <X size={18} />
+            </button>
+          </div>
+          <div className="p-4 space-y-3">
+            {steps.map((step) => (
+              <div key={step.n} className="flex items-start gap-3">
+                <div className="w-7 h-7 rounded-full bg-green-600 text-white text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">
+                  {step.n}
+                </div>
+                <p className="text-sm text-gray-700 leading-snug">{step.text}</p>
+              </div>
+            ))}
+          </div>
+          <div className="px-4 pb-4">
+            <button
+              onClick={dismiss}
+              className="w-full bg-green-600 text-white font-bold py-2.5 rounded-xl text-sm hover:bg-green-700 transition-colors"
+            >
+              ✅ Entendido!
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // ── iOS: passo a passo ─────────────────────────────────────
   if (showIOSSteps) {
