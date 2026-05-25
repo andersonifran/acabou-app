@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PWA Debug — Acabou?</title>
+  <style>
+    body { background: #111; color: #ccc; font-family: monospace; font-size: 13px; padding: 16px; margin: 0; }
+    h1 { color: #fff; font-size: 18px; margin-bottom: 16px; }
+    .card { background: #1e1e1e; border-radius: 12px; padding: 16px; margin-bottom: 12px; }
+    .ok { color: #4ade80; font-weight: bold; }
+    .err { color: #f87171; font-weight: bold; }
+    .warn { color: #fbbf24; font-weight: bold; }
+    .row { margin: 6px 0; }
+    .label { color: #6b7280; }
+    #log { white-space: pre-wrap; line-height: 1.6; }
+    button { background: #16a34a; color: #fff; border: none; padding: 10px 20px; border-radius: 8px; font-size: 14px; cursor: pointer; margin-top: 8px; width: 100%; }
+  </style>
+</head>
+<body>
+  <h1>🔍 PWA Debug — Acabou?</h1>
+
+  <div class="card">
+    <div class="row"><span class="label">SW Suportado: </span><span id="hasSW">...</span></div>
+    <div class="row"><span class="label">SWs Registrados: </span><span id="swCount">...</span></div>
+    <div class="row"><span class="label">Scopes: </span><span id="swScopes">...</span></div>
+    <div class="row"><span class="label">/sw.js HTTP: </span><span id="swFile">...</span></div>
+    <div class="row"><span class="label">/manifest.json HTTP: </span><span id="manifest">...</span></div>
+    <div class="row"><span class="label">É standalone (já instalado): </span><span id="standalone">...</span></div>
+    <div class="row"><span class="label">beforeinstallprompt disparou: </span><span id="prompt" class="warn">aguardando...</span></div>
+  </div>
+
+  <div class="card">
+    <div style="color:#fff;font-weight:bold;margin-bottom:8px">Log:</div>
+    <div id="log"></div>
+  </div>
+
+  <div class="card" style="font-size:11px;color:#555;word-break:break-all">
+    <span id="ua"></span>
+  </div>
+
+  <button onclick="location.reload()">🔄 Recarregar diagnóstico</button>
+
+  <script>
+    var logEl = document.getElementById('log');
+    function log(msg, cls) {
+      var t = new Date().toISOString().slice(11,23);
+      var line = document.createElement('div');
+      line.textContent = t + ' — ' + msg;
+      if (cls) line.style.color = cls === 'ok' ? '#4ade80' : cls === 'err' ? '#f87171' : '#fbbf24';
+      logEl.appendChild(line);
+    }
+
+    function set(id, val, cls) {
+      var el = document.getElementById(id);
+      el.textContent = val;
+      if (cls) el.className = cls;
+    }
+
+    // UA
+    document.getElementById('ua').textContent = navigator.userAgent;
+
+    // Standalone
+    var standalone = window.matchMedia('(display-mode: standalone)').matches;
+    set('standalone', standalone, standalone ? 'ok' : 'warn');
+    log('Standalone: ' + standalone);
+
+    // SW suporte
+    var hasSW = 'serviceWorker' in navigator;
+    set('hasSW', hasSW, hasSW ? 'ok' : 'err');
+    log('SW suportado: ' + hasSW);
+    if (!hasSW) log('❌ PROBLEMA: Browser não suporta Service Worker', 'err');
+
+    // beforeinstallprompt
+    window.addEventListener('beforeinstallprompt', function(e) {
+      e.preventDefault();
+      set('prompt', '✅ SIM — DISPAROU!', 'ok');
+      log('✅ beforeinstallprompt DISPAROU! O botão de instalar VAI funcionar.', 'ok');
+    });
+
+    // Checa arquivo sw.js
+    fetch('/sw.js', { cache: 'no-store' })
+      .then(function(r) {
+        var ct = r.headers.get('content-type') || '?';
+        set('swFile', 'HTTP ' + r.status + ' | ' + ct, r.status === 200 ? 'ok' : 'err');
+        log('/sw.js: HTTP ' + r.status + ' | ' + ct, r.status === 200 ? 'ok' : 'err');
+        if (r.status !== 200) log('❌ PROBLEMA: /sw.js não está sendo servido!', 'err');
+      })
+      .catch(function(e) {
+        set('swFile', 'ERRO: ' + e, 'err');
+        log('❌ /sw.js ERRO: ' + e, 'err');
+      });
+
+    // Checa manifest.json
+    fetch('/manifest.json', { cache: 'no-store' })
+      .then(function(r) {
+        set('manifest', 'HTTP ' + r.status, r.status === 200 ? 'ok' : 'err');
+        log('/manifest.json: HTTP ' + r.status, r.status === 200 ? 'ok' : 'err');
+        return r.json();
+      })
+      .then(function(json) {
+        log('Manifest OK: name=' + json.name + ' | icons=' + (json.icons||[]).length, 'ok');
+      })
+      .catch(function(e) {
+        log('❌ manifest.json ERRO: ' + e, 'err');
+      });
+
+    // Registrações SW existentes
+    if (hasSW) {
+      navigator.serviceWorker.getRegistrations().then(function(regs) {
+        set('swCount', regs.length, regs.length > 0 ? 'ok' : 'err');
+        var scopes = regs.map(function(r) { return r.scope + '(' + (r.active ? r.active.state : 'sem-ativo') + ')'; }).join(', ');
+        set('swScopes', scopes || 'nenhum', regs.length > 0 ? 'ok' : 'err');
+        log('SWs registrados: ' + regs.length + ' | ' + (scopes || 'nenhum'), regs.length > 0 ? 'ok' : 'err');
+        if (regs.length === 0) log('❌ PROBLEMA CRÍTICO: Nenhum SW registrado! Chrome não vai disparar beforeinstallprompt sem SW ativo.', 'err');
+      });
+
+      // Tenta registrar SW manualmente desta página
+      navigator.serviceWorker.register('/sw.js', { scope: '/' })
+        .then(function(reg) {
+          log('SW.register() chamado: scope=' + reg.scope + ' | active=' + (reg.active ? reg.active.state : 'null'), 'ok');
+          if (reg.waiting) {
+            log('SW em espera — enviando SKIP_WAITING', 'warn');
+            reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+          }
+        })
+        .catch(function(err) {
+          log('❌ SW.register() FALHOU: ' + err, 'err');
+        });
+    }
+
+    log('Diagnóstico iniciado. Aguardando 5s pelo beforeinstallprompt...', 'warn');
+    setTimeout(function() {
+      var el = document.getElementById('prompt');
+      if (el.textContent === 'aguardando...') {
+        el.textContent = '❌ NÃO disparou em 5s';
+        el.className = 'err';
+        log('❌ beforeinstallprompt NÃO disparou em 5 segundos.', 'err');
+        log('Possíveis causas: SW inativo, manifest inválido, ou Chrome suprimindo o prompt.', 'warn');
+      }
+    }, 5000);
+  </script>
+</body>
+</html>
