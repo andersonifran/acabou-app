@@ -156,21 +156,11 @@ export function InstallPWA() {
   }
 
   // ── Banner principal ────────────────────────────────────────
-  // Texto do botão e dica variam por dispositivo/disponibilidade do prompt
-  const hasNativePrompt = !!prompt;
-  const buttonLabel = hasNativePrompt
-    ? "Instalar agora — 1 toque"
+  const buttonLabel = prompt
+    ? "Instalar agora — é grátis"
     : isIOS
     ? "Ver como instalar no iPhone →"
-    : isAndroid
-    ? "Como instalar — 2 toques →"
-    : "Como instalar →";
-
-  const hint = !hasNativePrompt && isAndroid
-    ? <p className="text-green-200 text-xs mt-1 leading-tight">Toque em <strong>⋮</strong> no Chrome → <strong>"Instalar app"</strong></p>
-    : !hasNativePrompt && isIOS
-    ? <p className="text-green-200 text-xs mt-1 leading-tight">No Safari: <strong>⎙ Compartilhar</strong> → <strong>"Adicionar à Tela de Início"</strong></p>
-    : null;
+    : "Instalar agora — é grátis";
 
   return (
     <div className="fixed bottom-4 left-4 right-4 z-50 max-w-sm mx-auto animate-in fade-in slide-in-from-bottom-4 duration-300">
@@ -186,7 +176,6 @@ export function InstallPWA() {
               <p className="text-green-100 text-xs mt-0.5 leading-tight">
                 Acesso rápido · Funciona offline
               </p>
-              {hint}
             </div>
           </div>
           <button
@@ -225,8 +214,6 @@ export function InstallButton({ className = "" }: { className?: string }) {
   const [prompt, setPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [isInstalled, setIsInstalled] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
-  const [isAndroid, setIsAndroid] = useState(false);
-  const [showHint, setShowHint] = useState(false);
 
   useEffect(() => {
     if (window.matchMedia("(display-mode: standalone)").matches) {
@@ -234,10 +221,7 @@ export function InstallButton({ className = "" }: { className?: string }) {
       return;
     }
     const ua = navigator.userAgent;
-    const ios = /iphone|ipad|ipod/i.test(ua) && !(window as any).MSStream;
-    const android = /android/i.test(ua);
-    setIsIOS(ios);
-    setIsAndroid(android);
+    setIsIOS(/iphone|ipad|ipod/i.test(ua) && !(window as any).MSStream);
 
     // Lê o prompt capturado globalmente antes do React montar
     if ((window as any).__pwaPrompt) {
@@ -248,7 +232,6 @@ export function InstallButton({ className = "" }: { className?: string }) {
       return;
     }
 
-    // Escuta caso o evento chegue depois
     const handler = () => {
       if ((window as any).__pwaPrompt) setPrompt((window as any).__pwaPrompt);
     };
@@ -274,17 +257,11 @@ export function InstallButton({ className = "" }: { className?: string }) {
       await prompt.prompt();
       const { outcome } = await prompt.userChoice;
       if (outcome === "accepted") setIsInstalled(true);
-    } else {
-      // Sem prompt nativo — mostra instrução rápida de 1 linha
-      setShowHint(true);
+    } else if (isIOS) {
+      // iOS: abre modal de instrução via banner principal
+      window.scrollTo({ top: 0, behavior: "smooth" });
     }
   }
-
-  const hintText = isIOS
-    ? 'Safari → ⎙ Compartilhar → "Adicionar à Tela de Início"'
-    : isAndroid
-    ? 'Chrome → ⋮ menu → "Instalar app"'
-    : 'No Chrome: menu ⋮ → "Instalar app"';
 
   return (
     <div className={className}>
@@ -295,11 +272,6 @@ export function InstallButton({ className = "" }: { className?: string }) {
         <Download size={16} />
         Instalar no celular / PC
       </button>
-      {showHint && (
-        <p className="text-green-200 text-xs mt-2 text-center leading-relaxed animate-in fade-in duration-200">
-          👆 {hintText}
-        </p>
-      )}
     </div>
   );
 }
