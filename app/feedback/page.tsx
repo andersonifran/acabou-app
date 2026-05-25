@@ -21,19 +21,26 @@ export default function FeedbackPage() {
     try {
       const { data: { user } } = await supabase.auth.getUser();
 
-      // Salva o feedback no banco
-      await supabase.from("feedbacks" as any).insert({
-        content: feedback.trim(),
-        user_id: user?.id ?? null,
+      // Chama API que salva no banco + envia e-mail para suporteacabou@gmail.com
+      const res = await fetch("/api/feedback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          content: feedback.trim(),
+          userName: user?.user_metadata?.full_name ?? null,
+          userEmail: user?.email ?? null,
+        }),
       });
+
+      if (!res.ok) throw new Error("Erro ao enviar");
 
       setSent(true);
       setFeedback("");
     } catch {
-      // Se a tabela não existe ainda, abre o email como fallback
+      // Fallback: abre cliente de e-mail
       const subject = encodeURIComponent("Feedback - Acabou?");
       const body = encodeURIComponent(feedback.trim());
-      window.open(`mailto:andersonfrans@gmail.com?subject=${subject}&body=${body}`);
+      window.open(`mailto:suporteacabou@gmail.com?subject=${subject}&body=${body}`);
       setSent(true);
     } finally {
       setSending(false);
