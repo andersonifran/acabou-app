@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Geist } from "next/font/google";
+import Script from "next/script";
 import "./globals.css";
 
 const geist = Geist({ subsets: ["latin"], variable: "--font-geist-sans" });
@@ -37,52 +38,56 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="pt-BR" className={geist.variable}>
       <body className="min-h-screen bg-gray-50 antialiased">
         {children}
-        {/* Captura beforeinstallprompt ANTES do React montar — nunca perde o evento */}
-        <script
+
+        {/* Registra SW e captura beforeinstallprompt via next/script (execução confiável) */}
+        <Script
+          id="pwa-init"
+          strategy="afterInteractive"
           dangerouslySetInnerHTML={{
             __html: `
               (function() {
-                // Captura beforeinstallprompt IMEDIATAMENTE — antes de qualquer coisa
-                window.__pwaPrompt = null;
-                window.__pwaInstalled = false;
+                window.__pwaPrompt = window.__pwaPrompt || null;
+                window.__pwaInstalled = window.__pwaInstalled || false;
 
+                // Escuta beforeinstallprompt (pode chegar a qualquer momento)
                 window.addEventListener('beforeinstallprompt', function(e) {
                   e.preventDefault();
                   window.__pwaPrompt = e;
-                  console.log('[PWA] beforeinstallprompt capturado!');
+                  console.log('[PWA] ✅ beforeinstallprompt capturado!');
                   window.dispatchEvent(new Event('pwa-prompt-ready'));
                 });
 
                 window.addEventListener('appinstalled', function() {
                   window.__pwaPrompt = null;
                   window.__pwaInstalled = true;
+                  console.log('[PWA] App instalado!');
                   window.dispatchEvent(new Event('pwa-installed'));
                 });
 
-                // Registra SW — compatível com qualquer estado do documento
+                // Registra o Service Worker
                 if ('serviceWorker' in navigator) {
-                  function registerSW() {
-                    navigator.serviceWorker.register('/sw.js', { scope: '/' })
-                      .then(function(reg) {
-                        console.log('[SW] Registrado. Scope:', reg.scope, '| Estado:', reg.active ? reg.active.state : 'sem worker ativo');
-                        // Força ativação imediata se há um SW aguardando
-                        if (reg.waiting) {
-                          reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+                  navigator.serviceWorker.register('/sw.js', { scope: '/' })
+                    .then(function(reg) {
+                      console.log('[SW] ✅ Registrado. Scope:', reg.scope);
+                      console.log('[SW] Estado:', reg.installing ? 'installing' : reg.waiting ? 'waiting' : reg.active ? reg.active.state : 'unknown');
+                      if (reg.waiting) {
+                        reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+                      }
+                      // Escuta mudanças de estado do SW
+                      reg.addEventListener('updatefound', function() {
+                        var newSW = reg.installing;
+                        if (newSW) {
+                          newSW.addEventListener('statechange', function() {
+                            console.log('[SW] Estado mudou:', newSW.state);
+                          });
                         }
-                      })
-                      .catch(function(err) {
-                        console.error('[SW] ERRO ao registrar:', err);
                       });
-                  }
-
-                  // Executa imediatamente se a página já carregou, senão aguarda
-                  if (document.readyState === 'complete') {
-                    registerSW();
-                  } else {
-                    window.addEventListener('load', registerSW, { once: true });
-                  }
+                    })
+                    .catch(function(err) {
+                      console.error('[SW] ❌ Erro ao registrar:', err);
+                    });
                 } else {
-                  console.warn('[PWA] Service Worker não suportado neste navegador');
+                  console.warn('[PWA] ⚠️ Service Worker não suportado');
                 }
               })();
             `,

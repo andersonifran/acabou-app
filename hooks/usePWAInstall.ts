@@ -14,24 +14,28 @@ export function usePWAInstall() {
   const [isDismissed, setIsDismissed] = useState(false);
 
   useEffect(() => {
-    // Não mostrar se já foi dispensado
     const dismissed = localStorage.getItem("pwa-banner-dismissed");
     if (dismissed) { setIsDismissed(true); return; }
+    if (window.matchMedia("(display-mode: standalone)").matches) return;
 
-    const handler = (e: Event) => {
-      e.preventDefault();
-      setInstallPrompt(e as BeforeInstallPromptEvent);
-      setIsInstallable(true);
+    // Lê o prompt capturado globalmente antes do React montar
+    const globalPrompt = (window as any).__pwaPrompt as BeforeInstallPromptEvent | null;
+    if (globalPrompt) { setInstallPrompt(globalPrompt); setIsInstallable(true); }
+
+    // Escuta caso o evento chegue depois
+    const handler = () => {
+      const p = (window as any).__pwaPrompt as BeforeInstallPromptEvent | null;
+      if (p) { setInstallPrompt(p); setIsInstallable(true); }
     };
-
-    window.addEventListener("beforeinstallprompt", handler);
-    return () => window.removeEventListener("beforeinstallprompt", handler);
+    window.addEventListener("pwa-prompt-ready", handler);
+    return () => window.removeEventListener("pwa-prompt-ready", handler);
   }, []);
 
   const showInstallPrompt = async () => {
-    if (!installPrompt) return;
-    await installPrompt.prompt();
-    const { outcome } = await installPrompt.userChoice;
+    const prompt = installPrompt ?? ((window as any).__pwaPrompt as BeforeInstallPromptEvent | null);
+    if (!prompt) return;
+    await prompt.prompt();
+    const { outcome } = await prompt.userChoice;
     if (outcome === "accepted") {
       setInstallPrompt(null);
       setIsInstallable(false);
