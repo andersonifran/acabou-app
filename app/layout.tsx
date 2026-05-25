@@ -37,10 +37,21 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="pt-BR" className={geist.variable}>
       <body className="min-h-screen bg-gray-50 antialiased">
         {children}
-        {/* Registro do Service Worker — habilita offline + instalação */}
+        {/* Captura beforeinstallprompt ANTES do React montar — nunca perde o evento */}
         <script
           dangerouslySetInnerHTML={{
             __html: `
+              window.__pwaPrompt = null;
+              window.addEventListener('beforeinstallprompt', function(e) {
+                e.preventDefault();
+                window.__pwaPrompt = e;
+                window.dispatchEvent(new Event('pwa-prompt-ready'));
+              });
+              window.addEventListener('appinstalled', function() {
+                window.__pwaPrompt = null;
+                window.__pwaInstalled = true;
+                window.dispatchEvent(new Event('pwa-installed'));
+              });
               if ('serviceWorker' in navigator) {
                 window.addEventListener('load', function() {
                   navigator.serviceWorker.register('/sw.js')

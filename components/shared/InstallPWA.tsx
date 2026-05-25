@@ -19,7 +19,6 @@ export function InstallPWA() {
   const [isAndroid, setIsAndroid] = useState(false);
   const [isInstalled, setIsInstalled] = useState(false);
   const [showIOSSteps, setShowIOSSteps] = useState(false);
-  const [showAndroidSteps, setShowAndroidSteps] = useState(false);
 
   useEffect(() => {
     // Já instalado como PWA — nunca mostra
@@ -46,12 +45,24 @@ export function InstallPWA() {
     setIsIOS(ios);
     setIsAndroid(android);
 
-    // Captura evento nativo do Chrome/Android
-    const handler = (e: Event) => {
-      e.preventDefault();
-      setPrompt(e as BeforeInstallPromptEvent);
+    // Verifica se já capturamos o prompt globalmente (antes do React montar)
+    if ((window as any).__pwaPrompt) {
+      setPrompt((window as any).__pwaPrompt);
+    }
+    if ((window as any).__pwaInstalled) {
+      setIsInstalled(true);
+      return;
+    }
+
+    // Também escuta caso dispare depois do React montar
+    const handler = () => {
+      if ((window as any).__pwaPrompt) {
+        setPrompt((window as any).__pwaPrompt);
+      }
     };
-    window.addEventListener("beforeinstallprompt", handler);
+    const installedHandler = () => setIsInstalled(true);
+    window.addEventListener("pwa-prompt-ready", handler);
+    window.addEventListener("pwa-installed", installedHandler);
 
     // Mostra após 4s (deixa o usuário ler o headline)
     const timer = setTimeout(() => setVisible(true), 4000);
@@ -67,7 +78,8 @@ export function InstallPWA() {
     window.addEventListener("scroll", handleScroll, { passive: true });
 
     return () => {
-      window.removeEventListener("beforeinstallprompt", handler);
+      window.removeEventListener("pwa-prompt-ready", handler);
+      window.removeEventListener("pwa-installed", installedHandler);
       window.removeEventListener("scroll", handleScroll);
       clearTimeout(timer);
     };
@@ -76,7 +88,6 @@ export function InstallPWA() {
   function dismiss() {
     setVisible(false);
     setShowIOSSteps(false);
-    setShowAndroidSteps(false);
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
       const { count = 0 } = stored ? JSON.parse(stored) : {};
@@ -97,62 +108,11 @@ export function InstallPWA() {
       }
     } else if (isIOS) {
       setShowIOSSteps(true);
-    } else {
-      // Android sem prompt nativo ou Desktop — mostra instruções manuais
-      setShowAndroidSteps(true);
     }
+    // Android sem prompt nativo: a dica inline já orienta o usuário
   }
 
   if (isInstalled || !visible) return null;
-
-  // ── Android/Desktop: instruções manuais ───────────────────
-  if (showAndroidSteps) {
-    const steps = isAndroid ? [
-      { n: 1, text: 'Toque no menu ⋮ (três pontinhos) no canto superior direito do Chrome' },
-      { n: 2, text: 'Selecione "Adicionar à tela inicial" ou "Instalar app"' },
-      { n: 3, text: 'Toque em "Instalar" — pronto! 🎉' },
-    ] : [
-      { n: 1, text: 'Clique no ícone ⊕ ou 💻 na barra de endereço do Chrome' },
-      { n: 2, text: 'Clique em "Instalar Acabou?"' },
-      { n: 3, text: 'Confirme clicando em "Instalar" — pronto! 🎉' },
-    ];
-
-    return (
-      <div className="fixed bottom-4 left-4 right-4 z-50 max-w-sm mx-auto animate-in fade-in slide-in-from-bottom-4 duration-300">
-        <div className="bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden">
-          <div className="bg-green-600 px-4 py-3 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Smartphone size={16} className="text-white" />
-              <p className="font-bold text-white text-sm">
-                {isAndroid ? "Como instalar no Android" : "Como instalar no PC/Mac"}
-              </p>
-            </div>
-            <button onClick={dismiss} className="text-white/70 hover:text-white p-1">
-              <X size={18} />
-            </button>
-          </div>
-          <div className="p-4 space-y-3">
-            {steps.map((step) => (
-              <div key={step.n} className="flex items-start gap-3">
-                <div className="w-7 h-7 rounded-full bg-green-600 text-white text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">
-                  {step.n}
-                </div>
-                <p className="text-sm text-gray-700 leading-snug">{step.text}</p>
-              </div>
-            ))}
-          </div>
-          <div className="px-4 pb-4">
-            <button
-              onClick={dismiss}
-              className="w-full bg-green-600 text-white font-bold py-2.5 rounded-xl text-sm hover:bg-green-700 transition-colors"
-            >
-              ✅ Entendido!
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   // ── iOS: passo a passo ─────────────────────────────────────
   if (showIOSSteps) {
@@ -195,7 +155,23 @@ export function InstallPWA() {
     );
   }
 
-  // ── Banner principal (Android / Desktop / todos) ────────────
+  // ── Banner principal ────────────────────────────────────────
+  // Texto do botão e dica variam por dispositivo/disponibilidade do prompt
+  const hasNativePrompt = !!prompt;
+  const buttonLabel = hasNativePrompt
+    ? "Instalar agora — 1 toque"
+    : isIOS
+    ? "Ver como instalar no iPhone →"
+    : isAndroid
+    ? "Como instalar — 2 toques →"
+    : "Como instalar →";
+
+  const hint = !hasNativePrompt && isAndroid
+    ? <p className="text-green-200 text-xs mt-1 leading-tight">Toque em <strong>⋮</strong> no Chrome → <strong>"Instalar app"</strong></p>
+    : !hasNativePrompt && isIOS
+    ? <p className="text-green-200 text-xs mt-1 leading-tight">No Safari: <strong>⎙ Compartilhar</strong> → <strong>"Adicionar à Tela de Início"</strong></p>
+    : null;
+
   return (
     <div className="fixed bottom-4 left-4 right-4 z-50 max-w-sm mx-auto animate-in fade-in slide-in-from-bottom-4 duration-300">
       <div className="bg-green-600 text-white rounded-2xl shadow-2xl overflow-hidden">
@@ -210,6 +186,7 @@ export function InstallPWA() {
               <p className="text-green-100 text-xs mt-0.5 leading-tight">
                 Acesso rápido · Funciona offline
               </p>
+              {hint}
             </div>
           </div>
           <button
@@ -235,7 +212,7 @@ export function InstallPWA() {
             className="w-full bg-white text-green-700 font-bold py-2.5 sm:py-3 rounded-xl text-sm hover:bg-green-50 transition-colors flex items-center justify-center gap-2 shadow-sm"
           >
             <Download size={16} />
-            {isIOS ? "Ver como instalar no iPhone →" : "Instalar agora — é grátis"}
+            {buttonLabel}
           </button>
         </div>
       </div>
