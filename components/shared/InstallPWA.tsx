@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Download, X, Smartphone } from "lucide-react";
+import { Download, X, Smartphone, Loader2 } from "lucide-react";
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -19,6 +19,7 @@ export function InstallPWA() {
   const [isAndroid, setIsAndroid] = useState(false);
   const [isInstalled, setIsInstalled] = useState(false);
   const [showIOSSteps, setShowIOSSteps] = useState(false);
+  const [installing, setInstalling] = useState(false);
 
   useEffect(() => {
     // Já instalado como PWA — nunca mostra
@@ -99,17 +100,29 @@ export function InstallPWA() {
   }
 
   async function handleInstall() {
-    if (prompt) {
-      await prompt.prompt();
-      const { outcome } = await prompt.userChoice;
-      if (outcome === "accepted") {
-        setIsInstalled(true);
-        setVisible(false);
+    // Re-checa o prompt global a cada clique (pode ter chegado depois da montagem)
+    const currentPrompt = prompt ?? ((window as any).__pwaPrompt as BeforeInstallPromptEvent | null);
+    if (!currentPrompt) setPrompt(currentPrompt);
+
+    if (currentPrompt) {
+      setInstalling(true);
+      try {
+        await currentPrompt.prompt();
+        const { outcome } = await currentPrompt.userChoice;
+        if (outcome === "accepted") {
+          setIsInstalled(true);
+          setVisible(false);
+        }
+      } finally {
+        setInstalling(false);
       }
     } else if (isIOS) {
       setShowIOSSteps(true);
+    } else {
+      // Android: mostra spinner por 1s enquanto tenta, depois some
+      setInstalling(true);
+      setTimeout(() => setInstalling(false), 1000);
     }
-    // Android sem prompt nativo: a dica inline já orienta o usuário
   }
 
   if (isInstalled || !visible) return null;
@@ -198,10 +211,13 @@ export function InstallPWA() {
         <div className="p-4 pt-3">
           <button
             onClick={handleInstall}
-            className="w-full bg-white text-green-700 font-bold py-2.5 sm:py-3 rounded-xl text-sm hover:bg-green-50 transition-colors flex items-center justify-center gap-2 shadow-sm"
+            disabled={installing}
+            className="w-full bg-white text-green-700 font-bold py-2.5 sm:py-3 rounded-xl text-sm hover:bg-green-50 active:scale-95 transition-all flex items-center justify-center gap-2 shadow-sm disabled:opacity-80"
           >
-            <Download size={16} />
-            {buttonLabel}
+            {installing
+              ? <><Loader2 size={16} className="animate-spin" /> Instalando...</>
+              : <><Download size={16} /> {buttonLabel}</>
+            }
           </button>
         </div>
       </div>
@@ -214,6 +230,7 @@ export function InstallButton({ className = "" }: { className?: string }) {
   const [prompt, setPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [isInstalled, setIsInstalled] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
+  const [installing, setInstalling] = useState(false);
 
   useEffect(() => {
     if (window.matchMedia("(display-mode: standalone)").matches) {
@@ -253,13 +270,21 @@ export function InstallButton({ className = "" }: { className?: string }) {
   }
 
   async function handleClick() {
-    if (prompt) {
-      await prompt.prompt();
-      const { outcome } = await prompt.userChoice;
-      if (outcome === "accepted") setIsInstalled(true);
-    } else if (isIOS) {
-      // iOS: abre modal de instrução via banner principal
-      window.scrollTo({ top: 0, behavior: "smooth" });
+    const currentPrompt = prompt ?? ((window as any).__pwaPrompt as BeforeInstallPromptEvent | null);
+    if (currentPrompt && !prompt) setPrompt(currentPrompt);
+
+    if (currentPrompt) {
+      setInstalling(true);
+      try {
+        await currentPrompt.prompt();
+        const { outcome } = await currentPrompt.userChoice;
+        if (outcome === "accepted") setIsInstalled(true);
+      } finally {
+        setInstalling(false);
+      }
+    } else {
+      setInstalling(true);
+      setTimeout(() => setInstalling(false), 800);
     }
   }
 
@@ -267,10 +292,13 @@ export function InstallButton({ className = "" }: { className?: string }) {
     <div className={className}>
       <button
         onClick={handleClick}
-        className="inline-flex items-center gap-2 bg-white/10 hover:bg-white/20 border border-white/30 text-white font-semibold px-5 py-3 rounded-xl transition-all text-sm"
+        disabled={installing}
+        className="inline-flex items-center gap-2 bg-white/10 hover:bg-white/20 border border-white/30 text-white font-semibold px-5 py-3 rounded-xl transition-all text-sm active:scale-95 disabled:opacity-70"
       >
-        <Download size={16} />
-        Instalar no celular / PC
+        {installing
+          ? <><Loader2 size={16} className="animate-spin" /> Instalando...</>
+          : <><Download size={16} /> Instalar no celular / PC</>
+        }
       </button>
     </div>
   );
