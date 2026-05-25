@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Check } from "lucide-react";
 import { LogoIcon } from "@/components/shared/Logo";
 import { ScenarioShowcase } from "@/components/landing/ScenarioShowcase";
+import { NotificationShowcase } from "@/components/landing/NotificationShowcase";
 import { InstallButton, InstallPWA } from "@/components/shared/InstallPWA";
 
 function BrandName({ className = "" }: { className?: string }) {
@@ -199,8 +200,8 @@ export default function LandingPage() {
                 iconBg: "bg-amber-100",
                 iconColor: "text-amber-700",
                 icon: "🔔",
-                title: "Lembretes recorrentes",
-                desc: "Configure itens que acabam todo mês. O app avisa na hora certa de comprar de novo.",
+                title: "Notificacao no celular",
+                desc: "Alguem marcou que acabou? Voce recebe um alerta na hora. E no plano pago, receba lembrete diario para ir as compras.",
               },
               {
                 iconBg: "bg-gray-100",
@@ -224,28 +225,58 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* ── POR QUE ASSINAR — Showcase com mockup ── */}
+      <NotificationShowcase />
+
       {/* ── PLANOS ── */}
       <section id="planos" className="px-6 py-16 bg-gray-50">
         <div className="max-w-4xl mx-auto">
-          <h2 className="text-3xl md:text-4xl font-black text-gray-900 text-center mb-3">Planos simples e honestos</h2>
-          <p className="text-gray-500 text-center mb-12 text-lg">Comece grátis. Pague só quando precisar de mais.</p>
+          <h2 className="text-3xl md:text-4xl font-black text-gray-900 text-center mb-3">Comece gratis. Evolua quando quiser.</h2>
+          <p className="text-gray-500 text-center mb-12 text-lg">Sem surpresa, sem multa. Cancele quando quiser.</p>
           <div className="grid gap-5 md:grid-cols-3">
             {[
               {
-                name: "Grátis", price: "R$ 0", period: "para sempre", highlight: false, badge: null,
-                features: ["1 casa", "Até 2 pessoas", "Até 40 itens", "Lista compartilhada", "Compartilhar pelo WhatsApp"],
-                cta: "Começar grátis", href: "/cadastro", color: "bg-gray-100 text-gray-800 hover:bg-gray-200",
+                name: "Gratis", price: "R$ 0", period: "para sempre", highlight: false, badge: null,
+                features: [
+                  "1 casa",
+                  "Ate 2 pessoas",
+                  "Ate 40 itens",
+                  "Lista compartilhada",
+                  "Alerta quando item acaba",
+                  "Compartilhar pelo WhatsApp",
+                ],
+                notIncluded: [
+                  "Lembrete diario no celular",
+                  "Pessoas ilimitadas",
+                  "Casas ilimitadas",
+                ],
+                cta: "Comecar gratis", href: "/cadastro", color: "bg-gray-100 text-gray-800 hover:bg-gray-200",
               },
               {
-                name: "Família Mensal", price: "R$ 9,90", period: "/mês", highlight: false, badge: null,
-                features: ["Casas ilimitadas", "Pessoas ilimitadas", "Itens ilimitados", "Lembretes recorrentes", "Histórico completo"],
-                cta: "Assinar agora", href: "/cadastro", color: "bg-gray-100 text-gray-800 hover:bg-gray-200",
+                name: "Familia Mensal", price: "R$ 9,90", period: "/mes", highlight: false, badge: null,
+                features: [
+                  "Tudo do Gratis +",
+                  "Pessoas ilimitadas",
+                  "Itens ilimitados",
+                  "Casas ilimitadas",
+                  "Lembrete diario no celular",
+                  "Lembretes recorrentes",
+                  "Historico completo",
+                ],
+                notIncluded: [],
+                cta: "Assinar por R$ 9,90/mes", href: "/cadastro", color: "bg-gray-900 text-white hover:bg-gray-800",
               },
               {
-                name: "Família Anual", price: "R$ 79,90", period: "/ano", highlight: true,
-                badge: "⭐ Melhor escolha — R$ 6,66/mês (plano anual)",
-                features: ["Tudo do Mensal", "2 meses grátis", "Suporte prioritário", "Novidades em primeira mão"],
-                cta: "Assinar e economizar", href: "/cadastro", color: "bg-green-600 text-white hover:bg-green-700",
+                name: "Familia Anual", price: "R$ 79,90", period: "/ano", highlight: true,
+                badge: "Mais popular — R$ 6,66/mes",
+                features: [
+                  "Tudo do Mensal +",
+                  "2 meses gratis",
+                  "Prioridade em novidades",
+                  "Suporte prioritario",
+                ],
+                notIncluded: [],
+                cta: "Economizar 20% no anual", href: "/cadastro", color: "bg-green-600 text-white hover:bg-green-700",
               },
             ].map((plan) => (
               <div key={plan.name} className={`bg-white rounded-2xl border overflow-hidden shadow-sm transition-transform hover:scale-[1.01] ${plan.highlight ? "border-green-400 ring-2 ring-green-100" : "border-gray-100"}`}>
@@ -263,6 +294,12 @@ export default function LandingPage() {
                         {f}
                       </li>
                     ))}
+                    {plan.notIncluded?.map((f) => (
+                      <li key={f} className="flex items-center gap-2.5 text-sm text-gray-400">
+                        <span className="w-4 text-center shrink-0">—</span>
+                        {f}
+                      </li>
+                    ))}
                   </ul>
                   <Link href={plan.href} className={`block w-full text-center py-3.5 rounded-xl font-bold text-sm transition-all shadow-sm ${plan.color}`}>
                     {plan.cta}
@@ -272,7 +309,7 @@ export default function LandingPage() {
             ))}
           </div>
           <p className="text-center text-sm text-gray-400 mt-6">
-            Sem cartão de crédito para começar · Cancele quando quiser · Dados protegidos
+            Sem cartao de credito para comecar. Cancele quando quiser. Dados protegidos.
           </p>
         </div>
       </section>
