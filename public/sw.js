@@ -79,6 +79,64 @@ self.addEventListener("fetch", (event) => {
   );
 });
 
+// ── Push Notifications ──
+self.addEventListener("push", function(event) {
+  if (!event.data) return;
+
+  var payload;
+  try {
+    payload = event.data.json();
+  } catch (e) {
+    payload = {
+      title: "Acabou?",
+      body: event.data.text(),
+      icon: "/web-app-manifest-192x192.png",
+      url: "/home",
+    };
+  }
+
+  var options = {
+    body: payload.body || "",
+    icon: payload.icon || "/web-app-manifest-192x192.png",
+    badge: payload.badge || "/web-app-manifest-192x192.png",
+    tag: payload.tag || "acabou-default",
+    renotify: true,
+    vibrate: [200, 100, 200],
+    data: {
+      url: payload.url || "/home",
+    },
+  };
+
+  event.waitUntil(
+    self.registration.showNotification(payload.title || "Acabou?", options)
+  );
+});
+
+// ── Clique na notificação: abre o app na URL certa ──
+self.addEventListener("notificationclick", function(event) {
+  event.notification.close();
+
+  var targetUrl = event.notification.data && event.notification.data.url
+    ? event.notification.data.url
+    : "/home";
+
+  event.waitUntil(
+    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then(function(clientList) {
+      // Se já tem uma aba aberta, foca nela e navega
+      for (var i = 0; i < clientList.length; i++) {
+        var client = clientList[i];
+        if (client.url.includes(self.location.origin)) {
+          client.focus();
+          client.navigate(targetUrl);
+          return;
+        }
+      }
+      // Senão, abre nova aba
+      return self.clients.openWindow(targetUrl);
+    })
+  );
+});
+
 // Aceita SKIP_WAITING do client
 self.addEventListener("message", function(event) {
   if (event.data && event.data.type === "SKIP_WAITING") {

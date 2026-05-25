@@ -10,6 +10,7 @@ import { formatRelativeTime } from "@/lib/utils";
 import { buildShoppingListText, buildWhatsAppShareUrl } from "@/lib/utils";
 import { ShoppingCart, Bell, ChevronDown, Plus, Check, Zap } from "lucide-react";
 import { Header } from "@/components/layout/Header";
+import { NotificationBell } from "@/components/shared/NotificationBell";
 import { cn } from "@/lib/utils";
 
 const SELECTED_HOUSE_KEY = "acabou_selected_house";
@@ -275,16 +276,19 @@ export default function HomePage() {
             )}
           </div>
 
-          {/* Botão adicionar casa (quando tem só uma) */}
-          {allHouses.length <= 1 && (
-            <Link
-              href="/casa/nova"
-              className="shrink-0 flex items-center gap-1.5 bg-green-50 border border-green-100 text-green-700 text-xs font-semibold px-3 py-1.5 rounded-xl hover:bg-green-100 transition-colors"
-            >
-              <Plus size={14} />
-              Novo local
-            </Link>
-          )}
+          <div className="flex items-center gap-1.5 shrink-0">
+            <NotificationBell />
+            {/* Botão adicionar casa (quando tem só uma) */}
+            {allHouses.length <= 1 && (
+              <Link
+                href="/casa/nova"
+                className="flex items-center gap-1.5 bg-green-50 border border-green-100 text-green-700 text-xs font-semibold px-3 py-1.5 rounded-xl hover:bg-green-100 transition-colors"
+              >
+                <Plus size={14} />
+                Novo local
+              </Link>
+            )}
+          </div>
         </div>
       </header>
 

@@ -9,19 +9,24 @@ import { ItemEvent, ItemStatus, RECURRENCE_LABELS, RecurrenceType } from "@/type
 import { useItems } from "@/hooks/useItems";
 import { useSubscription } from "@/hooks/useSubscription";
 import { formatRelativeTime, getNextReminderDate } from "@/lib/utils";
-import { Bell, Trash2, Shield, FileText, ChevronRight, MessageSquareHeart } from "lucide-react";
+import { Bell, BellRing, Trash2, Shield, FileText, ChevronRight, MessageSquareHeart, Clock, Smartphone } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { usePushNotifications } from "@/hooks/usePushNotifications";
 
 export default function ConfiguracoesPage() {
   const router = useRouter();
   const supabase = createClient();
   const { currentHouse, items, reset, updateItem } = useAppStore();
   const { isPaid } = useSubscription();
-  const [activeTab, setActiveTab] = useState<"geral" | "historico" | "lembretes">("geral");
+  const [activeTab, setActiveTab] = useState<"geral" | "historico" | "lembretes" | "notificacoes">("geral");
   const [history, setHistory] = useState<(ItemEvent & { profile?: any; item?: any })[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [historyLoaded, setHistoryLoaded] = useState(false);
+  const [reminderEnabled, setReminderEnabled] = useState(currentHouse?.reminder_enabled ?? false);
+  const [reminderTime, setReminderTime] = useState(currentHouse?.reminder_time ?? "18:00");
+  const [savingReminder, setSavingReminder] = useState(false);
+  const push = usePushNotifications();
 
   async function loadHistory() {
     if (historyLoaded || !currentHouse) return;
@@ -46,6 +51,18 @@ export default function ConfiguracoesPage() {
 
     await supabase.from("items").update(updates).eq("id", itemId);
     updateItem(itemId, updates);
+  }
+
+  async function saveReminderSettings(enabled: boolean, time: string) {
+    if (!currentHouse) return;
+    setSavingReminder(true);
+    setReminderEnabled(enabled);
+    setReminderTime(time);
+    await supabase
+      .from("houses")
+      .update({ reminder_enabled: enabled, reminder_time: time })
+      .eq("id", currentHouse.id);
+    setSavingReminder(false);
   }
 
   async function handleDeleteAccount() {
@@ -84,6 +101,7 @@ export default function ConfiguracoesPage() {
         <div className="max-w-lg mx-auto flex">
           {[
             { key: "geral", label: "Geral" },
+            { key: "notificacoes", label: "Notificações" },
             { key: "historico", label: "Histórico" },
             { key: "lembretes", label: "Lembretes" },
           ].map(({ key, label }) => (
@@ -148,6 +166,132 @@ export default function ConfiguracoesPage() {
             <p className="text-xs text-gray-400 text-center">
               Ao excluir sua conta, todos os seus dados serão removidos permanentemente.
             </p>
+          </div>
+        )}
+
+        {/* Aba: Notificações (push + lembrete diário) */}
+        {activeTab === "notificacoes" && (
+          <div className="space-y-4">
+            {/* Push Notifications - GRÁTIS */}
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+              <div className="flex items-start gap-3 mb-3">
+                <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center shrink-0">
+                  <Smartphone size={20} className="text-green-600" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-gray-900 text-sm">Notificações no celular</h3>
+                  <p className="text-xs text-gray-500 mt-0.5">
+                    Receba um alerta quando alguém da família marcar um item como acabou
+                  </p>
+                </div>
+              </div>
+
+              {push.isDenied ? (
+                <div className="bg-red-50 border border-red-100 rounded-xl p-3">
+                  <p className="text-xs text-red-700">
+                    Notificações foram bloqueadas no navegador. Vá nas configurações do navegador para permitir.
+                  </p>
+                </div>
+              ) : !push.isSupported ? (
+                <div className="bg-gray-50 border border-gray-100 rounded-xl p-3">
+                  <p className="text-xs text-gray-500">
+                    Seu navegador não suporta notificações push. Tente no Chrome ou Edge.
+                  </p>
+                </div>
+              ) : push.isSubscribed ? (
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-green-500 rounded-full" />
+                    <span className="text-sm text-green-700 font-medium">Ativado</span>
+                  </div>
+                  <button
+                    onClick={push.unsubscribe}
+                    className="text-xs text-gray-500 underline hover:text-gray-700"
+                  >
+                    Desativar
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={push.subscribe}
+                  className="w-full py-2.5 bg-green-600 text-white text-sm font-semibold rounded-xl hover:bg-green-700 transition-colors"
+                >
+                  Ativar notificações
+                </button>
+              )}
+
+              {push.error && (
+                <p className="text-xs text-red-500 mt-2">{push.error}</p>
+              )}
+            </div>
+
+            {/* Lembrete diário - PAGO */}
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+              <div className="flex items-start gap-3 mb-3">
+                <div className="w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center shrink-0">
+                  <Clock size={20} className="text-amber-600" />
+                </div>
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-semibold text-gray-900 text-sm">Lembrete diário</h3>
+                    <span className="text-[10px] font-bold text-green-700 bg-green-100 px-1.5 py-0.5 rounded-full">PREMIUM</span>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-0.5">
+                    Receba um lembrete no horário que escolher para ir às compras
+                  </p>
+                </div>
+              </div>
+
+              {!isPaid ? (
+                <div className="bg-amber-50 border border-amber-100 rounded-xl p-3">
+                  <p className="text-xs text-amber-800">
+                    Disponível no <strong>Plano Família</strong>.{" "}
+                    <Link href="/planos" className="underline font-semibold">Assinar</Link>
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-700">Ativar lembrete</span>
+                    <button
+                      onClick={() => saveReminderSettings(!reminderEnabled, reminderTime)}
+                      disabled={savingReminder}
+                      className={cn(
+                        "relative inline-flex h-6 w-11 items-center rounded-full transition-colors disabled:opacity-50",
+                        reminderEnabled ? "bg-green-600" : "bg-gray-200"
+                      )}
+                    >
+                      <span
+                        className={cn(
+                          "inline-block h-4 w-4 transform rounded-full bg-white transition-transform",
+                          reminderEnabled ? "translate-x-6" : "translate-x-1"
+                        )}
+                      />
+                    </button>
+                  </div>
+
+                  {reminderEnabled && (
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-gray-700">Horário</span>
+                      <input
+                        type="time"
+                        value={reminderTime}
+                        onChange={(e) => saveReminderSettings(true, e.target.value)}
+                        className="bg-gray-50 border border-gray-200 rounded-lg px-3 py-1.5 text-sm text-gray-700"
+                      />
+                    </div>
+                  )}
+
+                  {reminderEnabled && !push.isSubscribed && (
+                    <div className="bg-amber-50 border border-amber-100 rounded-xl p-3">
+                      <p className="text-xs text-amber-800">
+                        ⚠️ Ative as notificações push acima para receber o lembrete no celular.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
         )}
 

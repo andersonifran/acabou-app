@@ -28,6 +28,8 @@ export interface House {
   owner_id: string;
   plan: PlanType;
   plan_status: PlanStatus;
+  reminder_enabled?: boolean;
+  reminder_time?: string;
   created_at: string;
   updated_at: string;
 }

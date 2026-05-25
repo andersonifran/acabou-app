@@ -51,6 +51,19 @@ export function useItems() {
           new_status: newStatus,
           source: "app",
         });
+
+        // Notifica o dono da casa se item ficou "acabou" ou "acabando"
+        if (newStatus === "acabou" || newStatus === "acabando") {
+          fetch("/api/push/notify-item", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              itemName: item.name,
+              newStatus,
+              houseId: currentHouse.id,
+            }),
+          }).catch(() => {}); // fire-and-forget
+        }
       }
     },
     [items, currentHouse, supabase, updateItem]

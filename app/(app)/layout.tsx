@@ -7,6 +7,7 @@ import { useAppStore } from "@/store/appStore";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { AddItemModal } from "@/components/items/AddItemModal";
 import { PWAInstallBanner } from "@/components/shared/PWAInstallBanner";
+import { PushPermissionBanner } from "@/components/shared/PushPermissionBanner";
 import { useItems } from "@/hooks/useItems";
 import { ItemStatus, House } from "@/types";
 
@@ -99,6 +100,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="min-h-screen bg-gray-50 pb-16">
+      <PushPermissionBanner />
       {children}
 
       <BottomNav />
