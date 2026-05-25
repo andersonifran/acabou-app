@@ -25,12 +25,20 @@ export default function LandingPage() {
             <BrandName className="text-2xl" />
           </div>
           <div className="flex items-center gap-3">
-            <Link href="/login" className="text-gray-600 hover:text-gray-900 text-sm font-medium">
+            {/* Desktop/tablet: Entrar ao lado */}
+            <Link href="/login" className="hidden sm:block text-gray-600 hover:text-gray-900 text-sm font-medium">
               Entrar
             </Link>
-            <Link href="/cadastro" className="bg-green-600 text-white text-sm font-bold px-5 py-2.5 rounded-xl hover:bg-green-700 transition-colors">
-              Começar grátis
-            </Link>
+
+            {/* Mobile: Começar grátis + Entrar empilhados */}
+            <div className="flex flex-col items-end gap-1 sm:block">
+              <Link href="/cadastro" className="bg-green-600 text-white text-sm font-bold px-5 py-2.5 rounded-xl hover:bg-green-700 transition-colors">
+                Começar grátis
+              </Link>
+              <Link href="/login" className="sm:hidden text-xs text-gray-500 font-medium border border-gray-200 px-3 py-1 rounded-lg hover:border-green-300 hover:text-green-700 transition-colors">
+                Entrar
+              </Link>
+            </div>
           </div>
         </div>
       </nav>
