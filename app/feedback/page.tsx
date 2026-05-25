@@ -50,16 +50,19 @@ export default function FeedbackPage() {
   if (sent) {
     return (
       <div className="min-h-screen bg-white flex flex-col items-center justify-center px-6 text-center">
-        <div className="text-6xl mb-4">🙏</div>
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">Obrigado!</h2>
-        <p className="text-gray-500 mb-8">
-          Seu feedback foi enviado. Lemos tudo e ficamos muito felizes com a sua opinião!
+        <div className="w-24 h-24 rounded-3xl bg-green-50 flex items-center justify-center border-2 border-green-100 mb-6">
+          <span className="text-5xl">💚</span>
+        </div>
+        <h2 className="text-2xl font-bold text-gray-900 mb-3">Recebemos!</h2>
+        <p className="text-gray-500 mb-8 max-w-xs leading-relaxed">
+          Obrigado por dedicar um tempinho pra gente. Lemos cada mensagem pessoalmente — você está ajudando a deixar o{" "}
+          <span className="font-semibold text-gray-700">Acabou?</span> ainda melhor para toda família brasileira.
         </p>
         <button
           onClick={() => router.back()}
           className="bg-green-600 text-white font-semibold px-8 py-3.5 rounded-xl hover:bg-green-700 transition-colors"
         >
-          Voltar
+          Voltar ao app
         </button>
       </div>
     );
