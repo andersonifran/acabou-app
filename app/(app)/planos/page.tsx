@@ -2,10 +2,10 @@
 
 import { useAppStore } from "@/store/appStore";
 import { Header } from "@/components/layout/Header";
-import { Check, Star, Home } from "lucide-react";
+import { Check, Star, Home, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useSearchParams } from "next/navigation";
-import { Suspense } from "react";
+import { Suspense, useState } from "react";
 
 const plans = [
   {
@@ -71,32 +71,33 @@ function PlanosContent() {
   const currentPlan = currentHouse?.plan ?? "free";
   const searchParams = useSearchParams();
   const motivo = searchParams.get("motivo");
+  const status = searchParams.get("status");
+  const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
 
   async function handleSubscribe(plan: typeof plans[0]) {
-    if (plan.ctaDisabled || !plan.priceId) return;
+    if (plan.ctaDisabled || !plan.priceId || loadingPlan) return;
 
-    // =============================================
-    // TODO: Integração com Mercado Pago
-    // =============================================
-    // 1. Chame sua API: POST /api/pagamento/criar-assinatura
-    //    Body: { house_id: currentHouse?.id, plan: plan.id }
-    //
-    // 2. A API cria uma preferência no Mercado Pago com:
-    //    - MERCADOPAGO_ACCESS_TOKEN (variável de ambiente)
-    //    - Redirect URLs para /planos?status=sucesso e /planos?status=erro
-    //
-    // 3. Redirecione o usuário para o link de pagamento retornado
-    //
-    // Exemplo de código para a API route (app/api/pagamento/route.ts):
-    // import MercadoPago from 'mercadopago';
-    // const mp = new MercadoPago({ accessToken: process.env.MERCADOPAGO_ACCESS_TOKEN! });
-    // const preference = await mp.preferences.create({ ... });
-    // return NextResponse.json({ url: preference.body.init_point });
-    // =============================================
+    setLoadingPlan(plan.id);
 
-    alert(
-      `Integração com Mercado Pago em breve!\n\nPara ativar:\n1. Configure MERCADOPAGO_ACCESS_TOKEN no .env.local\n2. Implemente /api/pagamento/route.ts\n3. Substitua este alert pelo redirecionamento`
-    );
+    try {
+      const res = await fetch("/api/pagamento", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ plan: plan.id }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok || !data.url) {
+        throw new Error(data.error ?? "Erro ao iniciar pagamento.");
+      }
+
+      // Redireciona para o checkout do Mercado Pago
+      window.location.href = data.url;
+    } catch (err: any) {
+      alert(err.message ?? "Erro ao iniciar pagamento. Tente novamente.");
+      setLoadingPlan(null);
+    }
   }
 
   return (
@@ -104,6 +105,42 @@ function PlanosContent() {
       <Header title="Planos" subtitle="Escolha o melhor para sua casa" showBack />
 
       <div className="max-w-lg mx-auto px-4 py-4 space-y-4">
+
+        {/* Banner de retorno do Mercado Pago */}
+        {status === "sucesso" && (
+          <div className="bg-green-50 border border-green-200 rounded-2xl p-4 flex items-start gap-3">
+            <span className="text-2xl">🎉</span>
+            <div>
+              <p className="font-semibold text-green-800 text-sm">Pagamento aprovado!</p>
+              <p className="text-green-700 text-xs mt-1">
+                Seu plano Família foi ativado. Aproveite todos os recursos sem limites!
+              </p>
+            </div>
+          </div>
+        )}
+        {status === "pendente" && (
+          <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-start gap-3">
+            <span className="text-2xl">⏳</span>
+            <div>
+              <p className="font-semibold text-amber-800 text-sm">Pagamento em processamento</p>
+              <p className="text-amber-700 text-xs mt-1">
+                Assim que confirmado, seu plano será ativado automaticamente.
+              </p>
+            </div>
+          </div>
+        )}
+        {status === "erro" && (
+          <div className="bg-red-50 border border-red-200 rounded-2xl p-4 flex items-start gap-3">
+            <span className="text-2xl">😕</span>
+            <div>
+              <p className="font-semibold text-red-800 text-sm">Pagamento não concluído</p>
+              <p className="text-red-700 text-xs mt-1">
+                Tente novamente ou escolha outra forma de pagamento.
+              </p>
+            </div>
+          </div>
+        )}
+
         {motivo === "multiplas-casas" && (
           <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-start gap-3">
             <Home size={20} className="text-amber-600 shrink-0 mt-0.5" />
@@ -171,17 +208,22 @@ function PlanosContent() {
 
               <button
                 onClick={() => handleSubscribe(plan)}
-                disabled={plan.ctaDisabled || currentPlan === plan.id}
+                disabled={plan.ctaDisabled || currentPlan === plan.id || loadingPlan === plan.id}
                 className={cn(
-                  "w-full py-3.5 rounded-xl font-semibold text-sm transition-all",
+                  "w-full py-3.5 rounded-xl font-semibold text-sm transition-all flex items-center justify-center gap-2",
                   plan.highlight
-                    ? "bg-green-600 text-white hover:bg-green-700"
+                    ? "bg-green-600 text-white hover:bg-green-700 disabled:opacity-70"
                     : plan.ctaDisabled || currentPlan === plan.id
                     ? "bg-gray-100 text-gray-400 cursor-default"
-                    : "bg-gray-900 text-white hover:bg-gray-800"
+                    : "bg-gray-900 text-white hover:bg-gray-800 disabled:opacity-70"
                 )}
               >
-                {currentPlan === plan.id ? "Plano atual" : plan.cta}
+                {loadingPlan === plan.id ? (
+                  <>
+                    <Loader2 size={16} className="animate-spin" />
+                    Aguarde...
+                  </>
+                ) : currentPlan === plan.id ? "Plano atual" : plan.cta}
               </button>
             </div>
           </div>

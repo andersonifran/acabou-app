@@ -1,61 +1,56 @@
-// =============================================
-// INTEGRAÇÃO MERCADO PAGO — Estrutura preparada
-// =============================================
-//
-// Para ativar:
-// 1. Configure no .env.local:
-//    MERCADOPAGO_ACCESS_TOKEN=APP_USR-...
-//    NEXT_PUBLIC_MERCADOPAGO_PUBLIC_KEY=APP_USR-...
-//
-// 2. Instale o SDK:
-//    npm install mercadopago
-//
-// 3. Descomente o código abaixo
+import MercadoPagoLib, { Preference } from "mercadopago";
 
-// import MercadoPagoLib from 'mercadopago';
-//
-// const mercadopago = new MercadoPagoLib({
-//   accessToken: process.env.MERCADOPAGO_ACCESS_TOKEN!,
-// });
-//
-// export { mercadopago };
-//
-// export async function createSubscriptionPreference(params: {
-//   houseId: string;
-//   userId: string;
-//   plan: 'monthly' | 'yearly';
-//   userEmail: string;
-//   appUrl: string;
-// }) {
-//   const prices = {
-//     monthly: { amount: 9.90, title: 'Acabou? — Plano Família Mensal' },
-//     yearly:  { amount: 79.90, title: 'Acabou? — Plano Família Anual' },
-//   };
-//
-//   const { amount, title } = prices[params.plan];
-//
-//   const preference = await mercadopago.preferences.create({
-//     body: {
-//       items: [{
-//         id: params.plan,
-//         title,
-//         quantity: 1,
-//         unit_price: amount,
-//         currency_id: 'BRL',
-//       }],
-//       payer: { email: params.userEmail },
-//       back_urls: {
-//         success: `${params.appUrl}/planos?status=sucesso`,
-//         failure: `${params.appUrl}/planos?status=erro`,
-//         pending: `${params.appUrl}/planos?status=pendente`,
-//       },
-//       auto_return: 'approved',
-//       external_reference: `${params.houseId}:${params.userId}:${params.plan}`,
-//       notification_url: `${params.appUrl}/api/webhooks/payment`,
-//     },
-//   });
-//
-//   return preference.body.init_point;
-// }
+const client = new MercadoPagoLib({
+  accessToken: process.env.MERCADOPAGO_ACCESS_TOKEN!,
+});
 
-export {};
+const preference = new Preference(client);
+
+export { preference };
+
+export const PLANS = {
+  monthly: {
+    id: "familia-mensal",
+    title: "Acabou? — Plano Família Mensal",
+    amount: 9.90,
+  },
+  yearly: {
+    id: "familia-anual",
+    title: "Acabou? — Plano Família Anual",
+    amount: 79.90,
+  },
+} as const;
+
+export async function createPaymentPreference(params: {
+  houseId: string;
+  userId: string;
+  plan: "monthly" | "yearly";
+  userEmail: string;
+}) {
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://www.acabouapp.com.br";
+  const { title, amount, id } = PLANS[params.plan];
+
+  const result = await preference.create({
+    body: {
+      items: [{
+        id,
+        title,
+        quantity: 1,
+        unit_price: amount,
+        currency_id: "BRL",
+      }],
+      payer: { email: params.userEmail },
+      back_urls: {
+        success: `${appUrl}/planos?status=sucesso`,
+        failure: `${appUrl}/planos?status=erro`,
+        pending: `${appUrl}/planos?status=pendente`,
+      },
+      auto_return: "approved",
+      external_reference: `${params.houseId}:${params.userId}:${params.plan}`,
+      notification_url: `${appUrl}/api/webhooks/payment`,
+      statement_descriptor: "ACABOU APP",
+    },
+  });
+
+  return result.init_point!;
+}
