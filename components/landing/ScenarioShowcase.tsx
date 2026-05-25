@@ -109,7 +109,7 @@ export function ScenarioShowcase() {
         {/* Título da seção */}
         <div className="text-center mb-10">
           <h2 className="text-2xl md:text-4xl font-black text-gray-900 leading-tight mb-3">
-            Tem casa, ape, praia, chacara<br className="hidden md:block" /> e ainda cuida da empresa?
+            Tem casa, apê, praia, chácara<br className="hidden md:block" /> e ainda cuida da empresa?
           </h2>
           <p className="text-gray-500 text-base md:text-lg max-w-2xl mx-auto">
             Cada lugar com sua própria lista, sua própria equipe — tudo em um app só.
