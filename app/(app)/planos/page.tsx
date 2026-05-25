@@ -20,7 +20,7 @@ const plans = [
       "Ate 2 pessoas",
       "Ate 40 itens",
       "Lista compartilhada",
-      "Alerta quando item acaba",
+      "Notificacao quando alguem marca acabou",
     ],
     notIncluded: [
       "Lembrete diario no celular",
@@ -64,7 +64,7 @@ const plans = [
     badge: "Mais popular — R$ 6,66/mes",
     features: [
       "Tudo do Mensal",
-      "2 meses gratis",
+      "Economize R$ 38,90 por ano",
       "Prioridade em novidades",
       "Suporte prioritario",
     ],
