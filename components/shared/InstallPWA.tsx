@@ -1,105 +1,192 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Download, X } from "lucide-react";
+import { Download, X, Smartphone } from "lucide-react";
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
   userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
 }
 
+const STORAGE_KEY = "pwa-install-state";
+const MAX_DISMISSALS = 3;       // Para de mostrar após 3 fechamentos
+const COOLDOWN_HOURS = 24;      // Volta após 24h se fechou menos de 3x
+
 export function InstallPWA() {
   const [prompt, setPrompt] = useState<BeforeInstallPromptEvent | null>(null);
-  const [shown, setShown] = useState(false);
-  const [dismissed, setDismissed] = useState(false);
+  const [visible, setVisible] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
   const [isInstalled, setIsInstalled] = useState(false);
+  const [showIOSSteps, setShowIOSSteps] = useState(false);
 
   useEffect(() => {
-    // Verifica se já está instalado como PWA
+    // Já instalado como PWA — nunca mostra
     if (window.matchMedia("(display-mode: standalone)").matches) {
       setIsInstalled(true);
       return;
     }
 
-    // Detecta iOS (Safari não dispara beforeinstallprompt)
+    // Checa histórico de fechamentos
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored) {
+        const { count, lastDismissed } = JSON.parse(stored);
+        if (count >= MAX_DISMISSALS) return; // Fechou 3x — respeita e para
+        const hoursSince = (Date.now() - lastDismissed) / 1000 / 3600;
+        if (hoursSince < COOLDOWN_HOURS) return; // Ainda em cooldown de 24h
+      }
+    } catch {}
+
+    // Detecta iOS
     const ua = navigator.userAgent;
     const ios = /iphone|ipad|ipod/i.test(ua) && !(window as any).MSStream;
     setIsIOS(ios);
 
-    // Captura evento de instalação (Chrome/Edge/Android)
+    // Captura evento nativo do Chrome/Android
     const handler = (e: Event) => {
       e.preventDefault();
       setPrompt(e as BeforeInstallPromptEvent);
-      setShown(true);
     };
-
     window.addEventListener("beforeinstallprompt", handler);
-    return () => window.removeEventListener("beforeinstallprompt", handler);
+
+    // Mostra após 4s (deixa o usuário ler o headline)
+    const timer = setTimeout(() => setVisible(true), 4000);
+
+    // Também mostra quando rola 60% da página (engajamento)
+    const handleScroll = () => {
+      const scrollPct = window.scrollY / Math.max(1, document.body.scrollHeight - window.innerHeight);
+      if (scrollPct > 0.6) {
+        setVisible(true);
+        window.removeEventListener("scroll", handleScroll);
+      }
+    };
+    window.addEventListener("scroll", handleScroll, { passive: true });
+
+    return () => {
+      window.removeEventListener("beforeinstallprompt", handler);
+      window.removeEventListener("scroll", handleScroll);
+      clearTimeout(timer);
+    };
   }, []);
 
-  // Mostrar dica iOS após 3s na página
-  useEffect(() => {
-    if (isIOS && !dismissed) {
-      const t = setTimeout(() => setShown(true), 3000);
-      return () => clearTimeout(t);
-    }
-  }, [isIOS, dismissed]);
-
-  if (isInstalled || dismissed || !shown) return null;
+  function dismiss() {
+    setVisible(false);
+    setShowIOSSteps(false);
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      const { count = 0 } = stored ? JSON.parse(stored) : {};
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        count: count + 1,
+        lastDismissed: Date.now(),
+      }));
+    } catch {}
+  }
 
   async function handleInstall() {
     if (prompt) {
       await prompt.prompt();
       const { outcome } = await prompt.userChoice;
-      if (outcome === "accepted") setIsInstalled(true);
-      setPrompt(null);
-      setShown(false);
+      if (outcome === "accepted") {
+        setIsInstalled(true);
+        setVisible(false);
+      }
+    } else if (isIOS) {
+      setShowIOSSteps(true);
     }
   }
 
-  // Banner iOS com instrução
-  if (isIOS) {
+  if (isInstalled || !visible) return null;
+
+  // ── iOS: passo a passo ─────────────────────────────────────
+  if (showIOSSteps) {
     return (
-      <div className="fixed bottom-4 left-4 right-4 z-50 bg-gray-900 text-white rounded-2xl p-4 shadow-2xl flex items-start gap-3">
-        <span className="text-2xl">📲</span>
-        <div className="flex-1">
-          <p className="font-bold text-sm mb-0.5">Instale o Acabou? no seu iPhone</p>
-          <p className="text-gray-300 text-xs leading-relaxed">
-            Toque em <strong>Compartilhar</strong> <span className="text-base">⎙</span> e depois em{" "}
-            <strong>"Adicionar à Tela de Início"</strong>
-          </p>
+      <div className="fixed bottom-4 left-4 right-4 z-50 max-w-sm mx-auto animate-in fade-in slide-in-from-bottom-4 duration-300">
+        <div className="bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden">
+          <div className="bg-green-600 px-4 py-3 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Smartphone size={16} className="text-white" />
+              <p className="font-bold text-white text-sm">Como instalar no iPhone</p>
+            </div>
+            <button onClick={dismiss} className="text-white/70 hover:text-white p-1">
+              <X size={18} />
+            </button>
+          </div>
+          <div className="p-4 space-y-3">
+            {[
+              { n: 1, text: 'Toque em "Compartilhar" ⎙ na barra do Safari' },
+              { n: 2, text: 'Selecione "Adicionar à Tela de Início"' },
+              { n: 3, text: 'Toque em "Adicionar" — pronto! 🎉' },
+            ].map((step) => (
+              <div key={step.n} className="flex items-center gap-3">
+                <div className="w-7 h-7 rounded-full bg-green-600 text-white text-xs font-bold flex items-center justify-center shrink-0">
+                  {step.n}
+                </div>
+                <p className="text-sm text-gray-700">{step.text}</p>
+              </div>
+            ))}
+          </div>
+          <div className="px-4 pb-4">
+            <button
+              onClick={dismiss}
+              className="w-full bg-green-600 text-white font-bold py-2.5 rounded-xl text-sm hover:bg-green-700 transition-colors"
+            >
+              ✅ Entendido, vou instalar!
+            </button>
+          </div>
         </div>
-        <button onClick={() => { setDismissed(true); setShown(false); }} className="text-gray-400 hover:text-white p-1 -mt-1">
-          <X size={18} />
-        </button>
       </div>
     );
   }
 
-  // Banner Chrome/Android/Desktop
+  // ── Banner principal (Android / Desktop / todos) ────────────
   return (
-    <div className="fixed bottom-4 left-4 right-4 z-50 bg-gray-900 text-white rounded-2xl p-4 shadow-2xl flex items-center gap-3 max-w-sm mx-auto">
-      <span className="text-2xl">📲</span>
-      <div className="flex-1">
-        <p className="font-bold text-sm mb-0.5">Instalar Acabou?</p>
-        <p className="text-gray-300 text-xs">Funciona offline · Acesso rápido</p>
+    <div className="fixed bottom-4 left-4 right-4 z-50 max-w-sm mx-auto animate-in fade-in slide-in-from-bottom-4 duration-300">
+      <div className="bg-green-600 text-white rounded-2xl shadow-2xl overflow-hidden">
+        {/* Header com X */}
+        <div className="flex items-start justify-between px-4 pt-4 pb-0">
+          <div className="flex items-center gap-3">
+            <div className="w-11 h-11 rounded-2xl bg-white/20 border border-white/30 flex items-center justify-center shrink-0">
+              <Smartphone size={22} className="text-white" />
+            </div>
+            <div>
+              <p className="font-bold text-sm leading-tight">Instale o Acabou? grátis</p>
+              <p className="text-green-100 text-xs mt-0.5 leading-tight">
+                Acesso rápido · Funciona offline
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={dismiss}
+            className="text-white/50 hover:text-white p-1 -mr-1 transition-colors"
+            aria-label="Fechar"
+          >
+            <X size={16} />
+          </button>
+        </div>
+
+        {/* Benefícios rápidos */}
+        <div className="px-4 pt-3 pb-0 flex gap-3 text-xs text-green-100">
+          <span>📲 Como app nativo</span>
+          <span>📴 Offline</span>
+          <span>💬 Compartilha pelo Zap</span>
+        </div>
+
+        {/* Botão CTA */}
+        <div className="p-4">
+          <button
+            onClick={handleInstall}
+            className="w-full bg-white text-green-700 font-bold py-3 rounded-xl text-sm hover:bg-green-50 transition-colors flex items-center justify-center gap-2 shadow-sm"
+          >
+            <Download size={16} />
+            {isIOS ? "Ver como instalar no iPhone →" : "Instalar agora — é grátis"}
+          </button>
+        </div>
       </div>
-      <button
-        onClick={handleInstall}
-        className="bg-green-500 hover:bg-green-400 text-white text-xs font-bold px-3 py-2 rounded-xl transition-colors whitespace-nowrap flex items-center gap-1.5"
-      >
-        <Download size={14} />
-        Instalar
-      </button>
-      <button onClick={() => { setDismissed(true); setShown(false); }} className="text-gray-400 hover:text-white p-1">
-        <X size={16} />
-      </button>
     </div>
   );
 }
 
-// Botão estático para a landing page
+// ── Botão estático para o CTA da landing page ──────────────────
 export function InstallButton({ className = "" }: { className?: string }) {
   const [prompt, setPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [isInstalled, setIsInstalled] = useState(false);
@@ -124,7 +211,7 @@ export function InstallButton({ className = "" }: { className?: string }) {
 
   if (isInstalled) {
     return (
-      <span className={`inline-flex items-center gap-2 text-green-600 font-semibold text-sm ${className}`}>
+      <span className={`inline-flex items-center gap-2 text-green-200 font-semibold text-sm ${className}`}>
         ✅ Aplicativo já instalado
       </span>
     );
@@ -136,7 +223,7 @@ export function InstallButton({ className = "" }: { className?: string }) {
       const { outcome } = await prompt.userChoice;
       if (outcome === "accepted") setIsInstalled(true);
     } else if (isIOS) {
-      setShowIOSHint(true);
+      setShowIOSHint(!showIOSHint);
     }
   }
 
@@ -150,7 +237,7 @@ export function InstallButton({ className = "" }: { className?: string }) {
         Instalar no celular / PC
       </button>
       {showIOSHint && (
-        <p className="text-green-200 text-xs mt-2 text-center">
+        <p className="text-green-200 text-xs mt-2 text-center leading-relaxed">
           No Safari: toque em <strong>⎙ Compartilhar</strong> → <strong>"Adicionar à Tela de Início"</strong>
         </p>
       )}
