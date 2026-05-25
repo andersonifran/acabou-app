@@ -21,10 +21,10 @@ const scenarios = [
     mockTag: "FAMÍLIA",
     mockTagColor: "text-green-700",
     mockItems: [
-      { name: "Arroz (5kg)",    who: "Ana marcou — Mercado",    dot: "bg-red-400" },
-      { name: "Sabão em pó",   who: "João marcou — Limpeza",   dot: "bg-amber-400" },
-      { name: "Café (500g)",   who: "Ana marcou — Mercado",    dot: "bg-red-400" },
-      { name: "Leite (1L)",    who: "Maria marcou — Geladeira", dot: "bg-amber-400" },
+      { name: "Arroz (5kg)",    who: "Ana marcou",    status: "Acabou",    statusColor: "bg-red-100 text-red-700" },
+      { name: "Sabao em po",   who: "Joao marcou",   status: "Acabando",  statusColor: "bg-amber-100 text-amber-700" },
+      { name: "Cafe (500g)",   who: "Ana marcou",    status: "Acabou",    statusColor: "bg-red-100 text-red-700" },
+      { name: "Leite (1L)",    who: "Maria marcou",  status: "Acabando",  statusColor: "bg-amber-100 text-amber-700" },
     ],
   },
   {
@@ -44,10 +44,10 @@ const scenarios = [
     mockTag: "APÊ",
     mockTagColor: "text-blue-700",
     mockItems: [
-      { name: "Café em pó (500g)", who: "Lucas marcou — Cozinha",   dot: "bg-red-400" },
-      { name: "Cerveja (lata)",    who: "Bruna marcou — Geladeira", dot: "bg-amber-400" },
-      { name: "Detergente",        who: "Lucas marcou — Limpeza",   dot: "bg-red-400" },
-      { name: "Pão de forma",      who: "Bruna marcou — Cozinha",   dot: "bg-amber-400" },
+      { name: "Cafe em po (500g)", who: "Lucas marcou",   status: "Acabou",   statusColor: "bg-red-100 text-red-700" },
+      { name: "Cerveja (lata)",    who: "Bruna marcou", status: "Acabando", statusColor: "bg-amber-100 text-amber-700" },
+      { name: "Detergente",        who: "Lucas marcou",   status: "Acabou",   statusColor: "bg-red-100 text-red-700" },
+      { name: "Pao de forma",      who: "Bruna marcou",   status: "Acabando", statusColor: "bg-amber-100 text-amber-700" },
     ],
   },
   {
@@ -67,10 +67,10 @@ const scenarios = [
     mockTag: "PRAIA",
     mockTagColor: "text-amber-700",
     mockItems: [
-      { name: "Carvão (3kg)",      who: "Rafa marcou — Churrasco",  dot: "bg-red-400" },
-      { name: "Café em pó (500g)", who: "Camila marcou — Cozinha",  dot: "bg-red-400" },
-      { name: "Protetor solar",    who: "Rafa marcou — Banheiro",   dot: "bg-amber-400" },
-      { name: "Gelo",              who: "Camila marcou — Bebidas",  dot: "bg-red-400" },
+      { name: "Carvao (3kg)",      who: "Rafa marcou",  status: "Acabou",   statusColor: "bg-red-100 text-red-700" },
+      { name: "Cafe em po (500g)", who: "Camila marcou",  status: "Acabou",   statusColor: "bg-red-100 text-red-700" },
+      { name: "Protetor solar",    who: "Rafa marcou",   status: "Acabando", statusColor: "bg-amber-100 text-amber-700" },
+      { name: "Gelo",              who: "Camila marcou",  status: "Acabou",   statusColor: "bg-red-100 text-red-700" },
     ],
   },
   {
@@ -90,10 +90,10 @@ const scenarios = [
     mockTag: "EMPRESA",
     mockTagColor: "text-violet-700",
     mockItems: [
-      { name: "Cápsula de café",    who: "Fernanda marcou — Copa",       dot: "bg-red-400" },
-      { name: "Papel higiênico",    who: "Carlos marcou — Banheiro",     dot: "bg-amber-400" },
-      { name: "Copo descartável",   who: "Fernanda marcou — Copa",       dot: "bg-red-400" },
-      { name: "Folha A4",           who: "Carlos marcou — Escritório",   dot: "bg-amber-400" },
+      { name: "Capsula de cafe",    who: "Fernanda marcou",       status: "Acabou",   statusColor: "bg-red-100 text-red-700" },
+      { name: "Papel higienico",    who: "Carlos marcou",     status: "Acabando", statusColor: "bg-amber-100 text-amber-700" },
+      { name: "Copo descartavel",   who: "Fernanda marcou",       status: "Acabou",   statusColor: "bg-red-100 text-red-700" },
+      { name: "Folha A4",           who: "Carlos marcou",   status: "Acabando", statusColor: "bg-amber-100 text-amber-700" },
     ],
   },
 ];
@@ -109,7 +109,7 @@ export function ScenarioShowcase() {
         {/* Título da seção */}
         <div className="text-center mb-10">
           <h2 className="text-2xl md:text-4xl font-black text-gray-900 leading-tight mb-3">
-            Tem apartamento, casa de praia,<br className="hidden md:block" /> sítio e ainda gerencia sua empresa?
+            Tem casa, ape, praia, chacara<br className="hidden md:block" /> e ainda cuida da empresa?
           </h2>
           <p className="text-gray-500 text-base md:text-lg max-w-2xl mx-auto">
             Cada lugar com sua própria lista, sua própria equipe — tudo em um app só.
@@ -180,12 +180,14 @@ export function ScenarioShowcase() {
                 {/* Items mock */}
                 <div className="divide-y divide-gray-50">
                   {s.mockItems.map((item) => (
-                    <div key={item.name} className="flex items-center gap-3 px-4 py-3.5">
-                      <div className={`w-4 h-4 rounded-full border-2 ${item.dot === "bg-red-400" ? "border-red-300" : "border-amber-300"} shrink-0`} />
+                    <div key={item.name} className="flex items-center justify-between gap-3 px-4 py-3.5">
                       <div className="min-w-0">
                         <p className="font-semibold text-gray-900 text-sm leading-tight">{item.name}</p>
                         <p className="text-xs text-gray-400 mt-0.5">{item.who}</p>
                       </div>
+                      <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full shrink-0 ${item.statusColor}`}>
+                        {item.status}
+                      </span>
                     </div>
                   ))}
                 </div>
