@@ -8,6 +8,9 @@ const PUBLIC_PATHS = [
   "/privacidade",
   "/termos",
   "/convite",
+  "/feedback",
+  "/onboarding",
+  "/debug-pwa",
 ];
 
 function isPublicPath(pathname: string): boolean {
@@ -16,7 +19,7 @@ function isPublicPath(pathname: string): boolean {
   );
 }
 
-export async function proxy(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
 
   const supabase = createServerClient(
@@ -59,6 +62,12 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|manifest.json|icon-.*\\.png|.*\\.svg).*)",
+    /*
+     * Roda em TODAS as rotas EXCETO:
+     * - _next/static (arquivos estáticos do Next.js)
+     * - _next/image (otimização de imagem)
+     * - Arquivos estáticos do public/ (favicon, ícones, SW, manifest, etc.)
+     */
+    "/((?!_next/static|_next/image|favicon\\.ico|manifest\\.json|sw\\.js|.*\\.png|.*\\.svg|.*\\.html|.*\\.ico|.*\\.xml|.*\\.txt|api/).*)",
   ],
 };
