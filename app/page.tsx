@@ -183,6 +183,7 @@ export default function LandingPage() {
               { emoji: "📝", text: "Já fez lista no papel, no bloco de notas, no WhatsApp... e esqueceu de olhar na hora" },
               { emoji: "😩", text: 'Já ouviu "acabou o sabonete" NO MEIO do banho — e ninguém avisou antes' },
               { emoji: "🤷", text: 'Já ficou na frente da prateleira pensando "será que tem em casa?"' },
+              { emoji: "💼", text: "Na empresa, já descobriu que acabou o café da copa, o papel higiênico ou o copo descartável — e ninguém avisou" },
             ].map(({ emoji, text }) => (
               <div key={text} className="flex items-start gap-4 p-4 bg-red-50/50 rounded-xl border border-red-100/50">
                 <span className="text-2xl shrink-0">{emoji}</span>
@@ -213,11 +214,11 @@ export default function LandingPage() {
             A solução
           </span>
           <h2 className="text-3xl md:text-4xl font-black text-gray-900 leading-tight mb-6">
-            Um app onde quem vê que acabou,<br />
-            <span className="text-green-600">marca. E quem compra, já sabe.</span>
+            Um app onde quem vê que acabou, <span className="text-red-500">marca.</span><br />
+            <span className="text-green-600">E quem compra, já sabe.</span>
           </h2>
           <p className="text-gray-600 text-base md:text-lg leading-relaxed mb-10 max-w-xl mx-auto">
-            O Acabou? é o jeito mais simples de manter sua casa abastecida. Qualquer pessoa da família abre o app, marca o que acabou em 1 toque, e pronto — a lista de compras se monta sozinha, em tempo real, pra todo mundo ver.
+            O Acabou? é o jeito mais simples de manter sua casa — ou sua empresa — sempre abastecida. Qualquer pessoa abre o app, marca o que acabou em 1 toque, e pronto — a lista de compras se monta sozinha, em tempo real, pra todo mundo ver.
           </p>
 
           {/* Equação de Hormozi visual */}
@@ -230,7 +231,7 @@ export default function LandingPage() {
             <div className="bg-white rounded-2xl p-5 border border-green-200 text-center">
               <p className="text-3xl mb-2">📊</p>
               <p className="text-xs text-gray-500 font-semibold uppercase tracking-wide mb-1">Probabilidade</p>
-              <p className="text-sm font-bold text-gray-900">Funciona com 1 toque — até seu avô consegue usar</p>
+              <p className="text-sm font-bold text-gray-900">1 toque resolve. Se usa WhatsApp, já sabe usar.</p>
             </div>
             <div className="bg-white rounded-2xl p-5 border border-green-200 text-center">
               <p className="text-3xl mb-2">⚡</p>
@@ -253,7 +254,7 @@ export default function LandingPage() {
           ══════════════════════════════════════════ */}
       <section id="como-funciona" className="px-6 py-16 bg-white">
         <div className="max-w-2xl mx-auto">
-          <h2 className="text-3xl md:text-4xl font-black text-gray-900 text-center mb-3">Tão simples que sua avó vai usar</h2>
+          <h2 className="text-3xl md:text-4xl font-black text-gray-900 text-center mb-3">Se sabe usar WhatsApp, já sabe usar.</h2>
           <p className="text-center text-gray-500 mb-12 text-lg">4 passos. 30 segundos. Sua casa nunca mais esquece nada.</p>
           <div className="space-y-8">
             {[
@@ -332,8 +333,8 @@ export default function LandingPage() {
               {
                 iconBg: "bg-rose-100",
                 icon: "🏠",
-                title: "Várias casas, um app só",
-                desc: "Casa, apê, praia, empresa. Cada lugar com sua lista e sua equipe. Tudo organizado num lugar só.",
+                title: "Casa, empresa e praia no mesmo app",
+                desc: "Cada lugar com sua própria lista e sua própria equipe. Gerencie a despensa de casa, o estoque do escritório e a lista da praia — tudo num lugar só.",
               },
             ].map(({ iconBg, icon, title, desc }) => (
               <div key={title} className="flex items-start gap-4 p-5 bg-white rounded-2xl border border-gray-100 hover:border-green-200 hover:shadow-sm transition-all">
@@ -374,23 +375,26 @@ export default function LandingPage() {
             {[
               {
                 name: "Ana Paula",
-                role: "Mãe de 3 filhos",
-                avatar: "👩",
+                role: "Mãe de 3 filhos · São Paulo",
+                initials: "AP",
+                color: "bg-pink-500",
                 text: "Meu marido NUNCA sabia o que comprar. Agora ele abre o app e vai direto. Acabou a ligação do mercado!",
                 stars: 5,
               },
               {
-                name: "Carlos",
-                role: "Mora sozinho",
-                avatar: "👨",
-                text: "Eu achava que não precisava. Depois que esqueci detergente pela terceira vez na mesma semana, baixei. Nunca mais esqueci.",
+                name: "Carlos Eduardo",
+                role: "Mora sozinho · Curitiba",
+                initials: "CE",
+                color: "bg-blue-500",
+                text: "Eu achava que não precisava. Depois que esqueci detergente pela terceira vez na mesma semana, baixei. Nunca mais esqueci nada.",
                 stars: 5,
               },
               {
-                name: "Fernanda",
-                role: "Dona de restaurante",
-                avatar: "👩‍🍳",
-                text: "Uso no restaurante! Funcionários marcam o que acabou na copa e no estoque. Economizei tempo e dinheiro.",
+                name: "Fernanda Lima",
+                role: "Dona de restaurante · BH",
+                initials: "FL",
+                color: "bg-violet-500",
+                text: "Uso no restaurante! Funcionários marcam o que acabou na copa e no estoque. Economizei tempo e dinheiro. Serve pra empresa também!",
                 stars: 5,
               },
             ].map((dep) => (
@@ -404,7 +408,9 @@ export default function LandingPage() {
                   &ldquo;{dep.text}&rdquo;
                 </p>
                 <div className="flex items-center gap-3">
-                  <span className="text-2xl">{dep.avatar}</span>
+                  <div className={`w-10 h-10 ${dep.color} rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0`}>
+                    {dep.initials}
+                  </div>
                   <div>
                     <p className="font-bold text-gray-900 text-sm">{dep.name}</p>
                     <p className="text-xs text-gray-500">{dep.role}</p>
