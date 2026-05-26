@@ -17,7 +17,7 @@ const plans = [
     badge: null,
     features: [
       "1 casa",
-      "Até 2 pessoas",
+      "Apenas você (1 pessoa)",
       "Até 20 itens",
       "Lista compartilhada",
       "Notificação quando alguém marca acabou",

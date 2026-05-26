@@ -29,17 +29,30 @@ export default function NovaCasaPage() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    // Verifica plano
-    const plan = currentHouse?.plan ?? "free";
-    const paid = plan === "monthly" || plan === "yearly";
-    setIsPaid(paid);
-    setCheckingPlan(false);
+    // Verifica plano direto no banco (não no store que pode estar desatualizado)
+    async function checkPlan() {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) { router.replace("/login"); return; }
 
-    // Se não é pago, redireciona para planos
-    if (!paid) {
-      router.replace("/planos?motivo=multiplas-casas");
+      // Verifica se QUALQUER casa do usuário tem plano pago
+      const { data: paidHouse } = await supabase
+        .from("houses")
+        .select("plan")
+        .eq("owner_id", user.id)
+        .in("plan", ["monthly", "yearly"])
+        .limit(1)
+        .maybeSingle();
+
+      const paid = !!paidHouse;
+      setIsPaid(paid);
+      setCheckingPlan(false);
+
+      if (!paid) {
+        router.replace("/planos?motivo=multiplas-casas");
+      }
     }
-  }, [currentHouse]);
+    checkPlan();
+  }, []);
 
   async function handleCreate() {
     if (!houseName.trim()) { setError("Informe o nome do local."); return; }

@@ -240,7 +240,7 @@ export default function LandingPage() {
                 name: "Grátis", price: "R$ 0", period: "para sempre", highlight: false, badge: null,
                 features: [
                   "1 casa",
-                  "Até 2 pessoas",
+                  "Apenas você (1 pessoa)",
                   "Até 20 itens",
                   "Lista compartilhada",
                   "Notificação quando alguém marca acabou",
