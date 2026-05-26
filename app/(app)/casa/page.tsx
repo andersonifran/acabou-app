@@ -505,8 +505,16 @@ export default function CasaPage() {
           </div>
         </div>
 
-        {/* ── CONVIDAR (somente dono) ── */}
-        {isOwner ? (
+        {/* ── CONVIDAR (somente dono + plano pago) ── */}
+        {isOwner && !isPaid && (
+          <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4">
+            <p className="text-sm text-amber-800 text-center">
+              Para convidar membros, faça upgrade para o{" "}
+              <Link href="/planos" className="font-bold underline">Plano Família</Link>.
+            </p>
+          </div>
+        )}
+        {isOwner && isPaid ? (
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
             <h2 className="font-semibold text-gray-900 mb-1">Convidar para a casa</h2>
             <p className="text-sm text-gray-500 mb-4">

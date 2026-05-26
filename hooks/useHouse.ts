@@ -13,6 +13,8 @@ export function useHouse() {
 
   const generateInviteToken = useCallback(async (): Promise<string> => {
     if (!currentHouse) throw new Error("Nenhuma casa selecionada");
+    if (!isPaid) throw new Error("Convites são exclusivos do Plano Família");
+
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error("Não autenticado");
 
@@ -24,7 +26,7 @@ export function useHouse() {
 
     if (error) throw error;
     return data.token;
-  }, [currentHouse, supabase]);
+  }, [currentHouse, isPaid, supabase]);
 
   const getInviteUrl = useCallback(
     (token: string) => {

@@ -79,6 +79,19 @@ export default function ConvitePage({ params }: Props) {
       return;
     }
 
+    // Verifica se a casa tem plano pago (convites são do Plano Família)
+    const { data: house } = await supabase
+      .from("houses")
+      .select("plan, plan_status")
+      .eq("id", invite.house_id)
+      .single();
+
+    if (!house || house.plan === "free" || house.plan_status !== "active") {
+      setError("O dono desta casa precisa ter o Plano Família ativo para convidar membros.");
+      setStatus("error");
+      return;
+    }
+
     // Adiciona como membro
     await supabase.from("house_members").insert({
       house_id: invite.house_id,
