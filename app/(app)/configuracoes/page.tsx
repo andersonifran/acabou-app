@@ -9,7 +9,7 @@ import { ItemEvent, ItemStatus, RECURRENCE_LABELS, RecurrenceType } from "@/type
 import { useItems } from "@/hooks/useItems";
 import { useSubscription } from "@/hooks/useSubscription";
 import { formatRelativeTime, getNextReminderDate } from "@/lib/utils";
-import { Bell, BellRing, Trash2, Shield, FileText, ChevronRight, MessageSquareHeart, Clock, Smartphone } from "lucide-react";
+import { Bell, BellRing, Trash2, Shield, FileText, ChevronRight, MessageSquareHeart, Clock, Smartphone, Plus, Pencil, X, Check as CheckIcon } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
@@ -17,8 +17,9 @@ import { usePushNotifications } from "@/hooks/usePushNotifications";
 export default function ConfiguracoesPage() {
   const router = useRouter();
   const supabase = createClient();
-  const { currentHouse, items, reset, updateItem } = useAppStore();
+  const { currentHouse, items, categories, reset, updateItem } = useAppStore();
   const { isPaid } = useSubscription();
+  const { renameItem, deleteItem, createItem } = useItems();
   const [activeTab, setActiveTab] = useState<"geral" | "historico" | "lembretes" | "notificacoes">("geral");
   const [history, setHistory] = useState<(ItemEvent & { profile?: any; item?: any })[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
@@ -27,6 +28,14 @@ export default function ConfiguracoesPage() {
   const [reminderTime, setReminderTime] = useState(currentHouse?.reminder_time ?? "18:00");
   const [savingReminder, setSavingReminder] = useState(false);
   const push = usePushNotifications();
+
+  // Lembretes: estados de edição
+  const [editingItemId, setEditingItemId] = useState<string | null>(null);
+  const [editingName, setEditingName] = useState("");
+  const [showAddItem, setShowAddItem] = useState(false);
+  const [newItemName, setNewItemName] = useState("");
+  const [addingItem, setAddingItem] = useState(false);
+  const [deletingItemId, setDeletingItemId] = useState<string | null>(null);
 
   async function loadHistory() {
     if (historyLoaded || !currentHouse) return;
@@ -63,6 +72,47 @@ export default function ConfiguracoesPage() {
       .update({ reminder_enabled: enabled, reminder_time: time })
       .eq("id", currentHouse.id);
     setSavingReminder(false);
+  }
+
+  // Lembretes: funções de edição
+  async function handleRenameItem(itemId: string) {
+    const trimmed = editingName.trim();
+    if (!trimmed) { setEditingItemId(null); return; }
+    try {
+      await renameItem(itemId, trimmed);
+    } catch { /* reverted by hook */ }
+    setEditingItemId(null);
+    setEditingName("");
+  }
+
+  async function handleDeleteItemFromReminders(itemId: string) {
+    try {
+      await deleteItem(itemId);
+    } catch (err) {
+      console.error("Erro ao excluir item:", err);
+    }
+    setDeletingItemId(null);
+  }
+
+  async function handleAddReminderItem() {
+    const trimmed = newItemName.trim();
+    if (!trimmed || !currentHouse) return;
+    setAddingItem(true);
+    try {
+      // Usa a primeira categoria disponível (Alimentos por padrão)
+      const defaultCat = categories.find(c => c.name === "Alimentos") ?? categories[0];
+      if (!defaultCat) return;
+      await createItem({
+        name: trimmed,
+        category_id: defaultCat.id,
+        status: "tem" as ItemStatus,
+      });
+      setNewItemName("");
+      setShowAddItem(false);
+    } catch (err) {
+      console.error("Erro ao adicionar item:", err);
+    }
+    setAddingItem(false);
   }
 
   async function handleDeleteAccount() {
@@ -340,52 +390,192 @@ export default function ConfiguracoesPage() {
               </div>
             )}
 
-            <p className="text-sm text-gray-500 mb-3">
-              Marque itens como recorrentes para receber lembretes automáticos.
-            </p>
-
-            <div className="space-y-2">
-              {items.map((item) => (
-                <div
-                  key={item.id}
-                  className="bg-white rounded-xl border border-gray-100 shadow-sm p-4"
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-sm text-gray-500">
+                Marque itens como recorrentes para receber lembretes automáticos.
+              </p>
+              {isPaid && (
+                <button
+                  onClick={() => setShowAddItem(!showAddItem)}
+                  className="shrink-0 ml-2 w-8 h-8 bg-green-600 text-white rounded-full flex items-center justify-center hover:bg-green-700 transition-colors"
                 >
-                  <div className="flex items-center justify-between mb-2">
-                    <p className="font-medium text-gray-900 text-sm">{item.name}</p>
-                    <button
-                      onClick={() => toggleRecurring(item.id, !item.is_recurring, item.recurrence_type as RecurrenceType)}
-                      disabled={!isPaid}
-                      className={cn(
-                        "relative inline-flex h-6 w-11 items-center rounded-full transition-colors disabled:opacity-50",
-                        item.is_recurring ? "bg-green-600" : "bg-gray-200"
-                      )}
-                    >
-                      <span
-                        className={cn(
-                          "inline-block h-4 w-4 transform rounded-full bg-white transition-transform",
-                          item.is_recurring ? "translate-x-6" : "translate-x-1"
-                        )}
-                      />
-                    </button>
-                  </div>
-
-                  {item.is_recurring && (
-                    <select
-                      value={item.recurrence_type ?? "monthly"}
-                      onChange={(e) =>
-                        toggleRecurring(item.id, true, e.target.value as RecurrenceType)
-                      }
-                      disabled={!isPaid}
-                      className="w-full text-sm bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-gray-700"
-                    >
-                      {Object.entries(RECURRENCE_LABELS).map(([value, label]) => (
-                        <option key={value} value={value}>{label}</option>
-                      ))}
-                    </select>
-                  )}
-                </div>
-              ))}
+                  <Plus size={18} />
+                </button>
+              )}
             </div>
+
+            {/* Formulário inline para adicionar novo item */}
+            {showAddItem && isPaid && (
+              <div className="bg-green-50 border border-green-200 rounded-xl p-3 mb-3">
+                <p className="text-xs font-semibold text-green-800 mb-2">Adicionar novo item</p>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={newItemName}
+                    onChange={(e) => setNewItemName(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && handleAddReminderItem()}
+                    placeholder="Ex: Café especial, Ração do Rex..."
+                    className="flex-1 bg-white border border-green-200 rounded-lg px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500"
+                    autoFocus
+                  />
+                  <button
+                    onClick={handleAddReminderItem}
+                    disabled={addingItem || !newItemName.trim()}
+                    className="px-3 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 disabled:opacity-50 transition-colors"
+                  >
+                    {addingItem ? "..." : "Adicionar"}
+                  </button>
+                  <button
+                    onClick={() => { setShowAddItem(false); setNewItemName(""); }}
+                    className="px-2 py-2 text-gray-500 hover:text-gray-700"
+                  >
+                    <X size={18} />
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Agrupado por categoria */}
+            {(() => {
+              const grouped = items.reduce<Record<string, typeof items>>((acc, item) => {
+                const catName = item.category?.name ?? "Outros";
+                const catIcon = item.category?.icon ?? "📦";
+                const key = `${catIcon} ${catName}`;
+                if (!acc[key]) acc[key] = [];
+                acc[key].push(item);
+                return acc;
+              }, {});
+
+              return Object.entries(grouped).map(([catLabel, catItems]) => (
+                <div key={catLabel} className="mb-4">
+                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2 px-1">
+                    {catLabel}
+                  </p>
+                  <div className="bg-white rounded-2xl border border-gray-100 shadow-sm divide-y divide-gray-50 overflow-hidden">
+                    {catItems.map((item) => (
+                      <div key={item.id} className="px-4 py-3">
+                        {/* Confirmação de exclusão */}
+                        {deletingItemId === item.id ? (
+                          <div className="flex items-center justify-between">
+                            <p className="text-sm text-red-600">Excluir <strong>{item.name}</strong>?</p>
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => handleDeleteItemFromReminders(item.id)}
+                                className="text-xs bg-red-500 text-white px-3 py-1.5 rounded-lg font-medium hover:bg-red-600"
+                              >
+                                Sim, excluir
+                              </button>
+                              <button
+                                onClick={() => setDeletingItemId(null)}
+                                className="text-xs text-gray-500 px-3 py-1.5 rounded-lg font-medium hover:bg-gray-100"
+                              >
+                                Cancelar
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <>
+                            <div className="flex items-center justify-between gap-2">
+                              {/* Nome — editável */}
+                              {editingItemId === item.id ? (
+                                <div className="flex items-center gap-1 flex-1 min-w-0">
+                                  <input
+                                    type="text"
+                                    value={editingName}
+                                    onChange={(e) => setEditingName(e.target.value)}
+                                    onKeyDown={(e) => {
+                                      if (e.key === "Enter") handleRenameItem(item.id);
+                                      if (e.key === "Escape") { setEditingItemId(null); setEditingName(""); }
+                                    }}
+                                    className="flex-1 min-w-0 bg-gray-50 border border-green-300 rounded-lg px-2 py-1 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-500"
+                                    autoFocus
+                                  />
+                                  <button
+                                    onClick={() => handleRenameItem(item.id)}
+                                    className="text-green-600 hover:text-green-700 p-1"
+                                  >
+                                    <CheckIcon size={16} />
+                                  </button>
+                                  <button
+                                    onClick={() => { setEditingItemId(null); setEditingName(""); }}
+                                    className="text-gray-400 hover:text-gray-600 p-1"
+                                  >
+                                    <X size={16} />
+                                  </button>
+                                </div>
+                              ) : (
+                                <div className="flex items-center gap-2 flex-1 min-w-0">
+                                  <p className="font-medium text-gray-900 text-sm truncate">{item.name}</p>
+                                  {isPaid && (
+                                    <div className="flex items-center gap-0.5 shrink-0">
+                                      <button
+                                        onClick={() => { setEditingItemId(item.id); setEditingName(item.name); }}
+                                        className="text-gray-300 hover:text-green-600 p-1 transition-colors"
+                                        title="Renomear"
+                                      >
+                                        <Pencil size={14} />
+                                      </button>
+                                      <button
+                                        onClick={() => setDeletingItemId(item.id)}
+                                        className="text-gray-300 hover:text-red-500 p-1 transition-colors"
+                                        title="Excluir"
+                                      >
+                                        <Trash2 size={14} />
+                                      </button>
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+
+                              {/* Toggle recorrente */}
+                              <button
+                                onClick={() => toggleRecurring(item.id, !item.is_recurring, item.recurrence_type as RecurrenceType)}
+                                disabled={!isPaid}
+                                className={cn(
+                                  "relative inline-flex h-6 w-11 items-center rounded-full transition-colors disabled:opacity-50 shrink-0",
+                                  item.is_recurring ? "bg-green-600" : "bg-gray-200"
+                                )}
+                              >
+                                <span
+                                  className={cn(
+                                    "inline-block h-4 w-4 transform rounded-full bg-white transition-transform",
+                                    item.is_recurring ? "translate-x-6" : "translate-x-1"
+                                  )}
+                                />
+                              </button>
+                            </div>
+
+                            {/* Seletor de frequência */}
+                            {item.is_recurring && (
+                              <select
+                                value={item.recurrence_type ?? "monthly"}
+                                onChange={(e) =>
+                                  toggleRecurring(item.id, true, e.target.value as RecurrenceType)
+                                }
+                                disabled={!isPaid}
+                                className="w-full text-sm bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-gray-700 mt-2"
+                              >
+                                {Object.entries(RECURRENCE_LABELS).map(([value, label]) => (
+                                  <option key={value} value={value}>{label}</option>
+                                ))}
+                              </select>
+                            )}
+                          </>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ));
+            })()}
+
+            {items.length === 0 && (
+              <div className="text-center py-12 text-gray-400">
+                <BellRing size={40} className="mx-auto mb-3 opacity-50" />
+                <p className="text-sm">Nenhum item na despensa ainda.</p>
+                <p className="text-xs mt-1">Adicione itens pela Despensa ou pelo botão + acima.</p>
+              </div>
+            )}
           </div>
         )}
       </div>
