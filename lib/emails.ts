@@ -3,8 +3,13 @@ import { Resend } from "resend";
 // =============================================
 // ACABOU? — Templates de E-mail
 // =============================================
-// Centraliza todos os emails do app em um único lugar.
+// Centraliza todos os emails do app em um lugar.
 // Usa Resend como provedor (chave em RESEND_API_KEY).
+//
+// Emails disponíveis:
+// 1. Boas-vindas (cadastro)
+// 2. Pagamento aprovado (assinatura ativada)
+// 3. Plano expirando (3 dias antes — anti-churn)
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://www.acabouapp.com.br";
 const FROM = "Acabou? App <notificacoes@acabouapp.com.br>";
@@ -34,6 +39,15 @@ function emailLayout(content: string) {
 function greenHeader(title: string, subtitle?: string) {
   return `
     <div style="background: linear-gradient(135deg, #16a34a, #15803d); padding: 40px 32px; text-align: center; border-radius: 12px 12px 0 0;">
+      <h1 style="margin: 0; font-size: 32px; color: white;">${title}</h1>
+      ${subtitle ? `<p style="margin: 8px 0 0; font-size: 16px; color: rgba(255,255,255,0.9);">${subtitle}</p>` : ""}
+    </div>
+  `;
+}
+
+function amberHeader(title: string, subtitle?: string) {
+  return `
+    <div style="background: linear-gradient(135deg, #d97706, #b45309); padding: 40px 32px; text-align: center; border-radius: 12px 12px 0 0;">
       <h1 style="margin: 0; font-size: 32px; color: white;">${title}</h1>
       ${subtitle ? `<p style="margin: 8px 0 0; font-size: 16px; color: rgba(255,255,255,0.9);">${subtitle}</p>` : ""}
     </div>
@@ -135,7 +149,7 @@ export async function sendPaymentApprovedEmail(
           <table style="width: 100%; border-collapse: collapse;">
             <tr>
               <td style="padding: 8px 0; font-size: 14px; color: #6b7280;">Plano</td>
-              <td style="padding: 8px 0; font-size: 14px; color: #111827; font-weight: 700; text-align: right;">Plano ${planName}</td>
+              <td style="padding: 8px 0; font-size: 14px; color: #111827; font-weight: 700; text-align: right;">${planName}</td>
             </tr>
             <tr>
               <td style="padding: 8px 0; font-size: 14px; color: #6b7280;">Valor</td>
@@ -166,8 +180,21 @@ export async function sendPaymentApprovedEmail(
           <p style="margin: 0; font-size: 14px; color: #111827;">&#10003; Suporte priorit&aacute;rio</p>
         </div>
 
-        <div style="text-align: center; margin: 32px 0;">
+        <!-- CTA principal -->
+        <div style="text-align: center; margin: 32px 0 16px;">
           <a href="${APP_URL}/home" style="display: inline-block; background: #16a34a; color: white; text-decoration: none; font-weight: 700; font-size: 16px; padding: 14px 40px; border-radius: 12px;">Acessar meu plano</a>
+        </div>
+
+        <!-- CTA secundário: convidar família -->
+        <div style="text-align: center; margin: 0 0 32px;">
+          <a href="${APP_URL}/casa" style="display: inline-block; background: white; color: #16a34a; text-decoration: none; font-weight: 700; font-size: 14px; padding: 12px 32px; border-radius: 12px; border: 2px solid #16a34a;">Convidar minha fam&iacute;lia pelo WhatsApp</a>
+        </div>
+
+        <div style="background: #f0fdf4; border-radius: 8px; padding: 16px; margin: 0 0 24px;">
+          <p style="margin: 0; font-size: 13px; color: #15803d; line-height: 1.6;">
+            💡 <strong>Dica:</strong> Agora que voc&ecirc; tem pessoas ilimitadas, convide toda a fam&iacute;lia!
+            Quanto mais gente usando, menos itens esquecidos no mercado.
+          </p>
         </div>
 
         <p style="margin: 0 0 8px; font-size: 14px; color: #6b7280; line-height: 1.6;">
@@ -182,4 +209,88 @@ export async function sendPaymentApprovedEmail(
   });
 
   console.log(`[Email] ✅ Pagamento aprovado enviado para ${email}`);
+}
+
+// =============================================
+// 3. EMAIL DE PLANO EXPIRANDO (anti-churn)
+// =============================================
+// Enviado 3 dias antes do plano expirar.
+// Chamado pelo cron /api/cron/check-subscriptions.
+export async function sendPlanExpiringEmail(
+  email: string,
+  name: string,
+  plan: string,
+  expiresAt: string,
+  daysLeft: number
+) {
+  if (!process.env.RESEND_API_KEY) return;
+
+  const firstName = name.split(" ")[0] || "Oi";
+  const resend = getResend();
+
+  const planName = plan === "yearly" ? "Fam&iacute;lia Anual" : "Fam&iacute;lia Mensal";
+  const expiresDate = new Date(expiresAt).toLocaleDateString("pt-BR", {
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+  });
+
+  const daysText = daysLeft === 1 ? "amanh&atilde;" : `em ${daysLeft} dias`;
+  const urgencyText = daysLeft <= 1
+    ? "Renove agora para n&atilde;o perder nenhum recurso!"
+    : "Renove antes que expire para continuar aproveitando tudo sem limites.";
+
+  await resend.emails.send({
+    from: FROM,
+    to: email,
+    subject: daysLeft <= 1
+      ? `⚠️ ${firstName}, seu plano expira amanha!`
+      : `${firstName}, seu plano expira em ${daysLeft} dias`,
+    html: emailLayout(`
+      ${amberHeader("Plano Expirando", `Seu plano vence ${daysText}`)}
+      <div style="padding: 40px 32px; border: 1px solid #e5e7eb; border-top: none;">
+        <h2 style="margin: 0 0 16px; font-size: 22px; color: #111827;">
+          ${firstName}, seu plano est&aacute; acabando! ⏳
+        </h2>
+        <p style="margin: 0 0 24px; font-size: 15px; color: #4b5563; line-height: 1.7;">
+          Seu <strong>${planName}</strong> expira em <strong>${expiresDate}</strong>.
+          ${urgencyText}
+        </p>
+
+        <!-- O que você perde -->
+        <div style="background: #fef2f2; border: 2px solid #fecaca; border-radius: 12px; padding: 24px; margin: 0 0 24px;">
+          <p style="margin: 0 0 12px; font-size: 14px; font-weight: 700; color: #991b1b; text-transform: uppercase; letter-spacing: 0.05em;">
+            Sem o plano, voc&ecirc; perde:
+          </p>
+          <p style="margin: 0 0 8px; font-size: 14px; color: #991b1b;">&#10007; Pessoas ilimitadas (volta para 2)</p>
+          <p style="margin: 0 0 8px; font-size: 14px; color: #991b1b;">&#10007; Itens ilimitados (volta para 20)</p>
+          <p style="margin: 0 0 8px; font-size: 14px; color: #991b1b;">&#10007; Lembrete di&aacute;rio no celular</p>
+          <p style="margin: 0 0 8px; font-size: 14px; color: #991b1b;">&#10007; Lembretes recorrentes</p>
+          <p style="margin: 0; font-size: 14px; color: #991b1b;">&#10007; Hist&oacute;rico completo</p>
+        </div>
+
+        <!-- CTA -->
+        <div style="text-align: center; margin: 32px 0;">
+          <a href="${APP_URL}/planos" style="display: inline-block; background: #d97706; color: white; text-decoration: none; font-weight: 700; font-size: 16px; padding: 14px 40px; border-radius: 12px;">Renovar meu plano agora</a>
+        </div>
+
+        <div style="background: #fffbeb; border-radius: 8px; padding: 16px; margin: 0 0 24px;">
+          <p style="margin: 0; font-size: 13px; color: #92400e; line-height: 1.6;">
+            💡 <strong>Dica:</strong> O plano anual sai por apenas R$ 4,99/m&ecirc;s
+            — voc&ecirc; economiza R$ 46,90 por ano comparado ao mensal!
+          </p>
+        </div>
+
+        <p style="margin: 0 0 8px; font-size: 14px; color: #6b7280; line-height: 1.6;">
+          Se precisar de ajuda, responda este e-mail.
+        </p>
+        <p style="margin: 24px 0 0; font-size: 14px; color: #111827;">
+          Conte com a gente,<br>
+          <strong>Equipe Acabou?</strong> 🛒
+        </p>
+      </div>
+    `),
+  });
+
+  console.log(`[Email] ✅ Plano expirando enviado para ${email} (${daysLeft} dias)`);
 }
