@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Check, ChevronRight, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { PLAN_LIMITS } from "@/types";
 
 // Itens por tipo de imóvel
 const ITEMS_BY_TYPE: Record<string, { category: string; items: string[] }[]> = {
@@ -81,6 +82,8 @@ export default function OnboardingPage() {
   const [setupPropertyType, setSetupPropertyType] = useState("casa");
   const [setupLoading, setSetupLoading] = useState(false);
   const [pageReady, setPageReady] = useState(false);
+  const [userIsPaid, setUserIsPaid] = useState(false);
+  const maxItems = userIsPaid ? Infinity : PLAN_LIMITS.free.max_items;
 
   useEffect(() => {
     async function init() {
@@ -100,6 +103,15 @@ export default function OnboardingPage() {
         setPropertyType(pType);
         setActiveCategory((ITEMS_BY_TYPE[pType] ?? ITEMS_BY_TYPE.casa)[0].category);
         setNeedsSetup(false);
+
+        // Verifica se o dono tem plano pago
+        const { data: paidHouse } = await supabase
+          .from("houses")
+          .select("plan")
+          .eq("id", member.house_id)
+          .in("plan", ["monthly", "yearly"])
+          .maybeSingle();
+        if (paidHouse) setUserIsPaid(true);
       } else {
         // Usuário não tem casa (veio pelo Google OAuth)
         setNeedsSetup(true);
@@ -157,8 +169,12 @@ export default function OnboardingPage() {
   function toggleItem(name: string) {
     setSelected((prev) => {
       const next = new Set(prev);
-      if (next.has(name)) next.delete(name);
-      else next.add(name);
+      if (next.has(name)) {
+        next.delete(name);
+      } else {
+        if (next.size >= maxItems) return prev; // Bloqueia se atingiu limite
+        next.add(name);
+      }
       return next;
     });
   }
@@ -167,8 +183,13 @@ export default function OnboardingPage() {
     setSelected((prev) => {
       const next = new Set(prev);
       const allSelected = items.every(i => next.has(i));
-      if (allSelected) items.forEach(i => next.delete(i));
-      else items.forEach(i => next.add(i));
+      if (allSelected) {
+        items.forEach(i => next.delete(i));
+      } else {
+        items.forEach(i => {
+          if (next.size < maxItems) next.add(i);
+        });
+      }
       return next;
     });
   }
@@ -317,8 +338,13 @@ export default function OnboardingPage() {
         <div className="px-4 pt-5 pb-3 max-w-lg mx-auto">
           <div className="flex items-center justify-between mb-1">
             <h1 className="text-xl font-black text-gray-900">{ONBOARDING_TITLE[propertyType] ?? ONBOARDING_TITLE.casa}</h1>
-            <span className="text-xs bg-green-100 text-green-700 font-bold px-2.5 py-1 rounded-full">
-              {selected.size} {selected.size === 1 ? "item" : "itens"}
+            <span className={cn(
+              "text-xs font-bold px-2.5 py-1 rounded-full",
+              !userIsPaid && selected.size >= maxItems
+                ? "bg-amber-100 text-amber-700"
+                : "bg-green-100 text-green-700"
+            )}>
+              {selected.size}{!userIsPaid ? `/${maxItems}` : ""} {selected.size === 1 ? "item" : "itens"}
             </span>
           </div>
           <p className="text-gray-500 text-sm">

@@ -1,14 +1,16 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { useAppStore } from "@/store/appStore";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { AddItemModal } from "@/components/items/AddItemModal";
+import { PlanLimitModal } from "@/components/shared/PlanLimitModal";
 import { PWAInstallBanner } from "@/components/shared/PWAInstallBanner";
 import { PushPermissionBanner } from "@/components/shared/PushPermissionBanner";
 import { useItems } from "@/hooks/useItems";
+import { useSubscription } from "@/hooks/useSubscription";
 import { ItemStatus, House } from "@/types";
 
 const SELECTED_HOUSE_KEY = "acabou_selected_house";
@@ -30,6 +32,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   } = useAppStore();
 
   const { createItem, changeStatus } = useItems();
+  const { canAddItem } = useSubscription();
+  const [showPlanLimit, setShowPlanLimit] = useState(false);
 
   async function loadHouseData(houseId: string) {
     const { data: { user } } = await supabase.auth.getUser();
@@ -112,8 +116,21 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         initialStatus={(initialStatus as ItemStatus) ?? "acabou"}
         categories={categories}
         existingItems={items}
-        onAddItem={createItem}
+        onAddItem={async (data) => {
+          if (!canAddItem) {
+            setAddItemModalOpen(false);
+            setShowPlanLimit(true);
+            return;
+          }
+          return createItem(data);
+        }}
         onUpdateStatus={changeStatus}
+      />
+
+      <PlanLimitModal
+        isOpen={showPlanLimit}
+        onClose={() => setShowPlanLimit(false)}
+        reason="items"
       />
     </div>
   );

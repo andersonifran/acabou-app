@@ -18,7 +18,7 @@ export default function ConfiguracoesPage() {
   const router = useRouter();
   const supabase = createClient();
   const { currentHouse, items, categories, reset, updateItem } = useAppStore();
-  const { isPaid } = useSubscription();
+  const { isPaid, canAddItem } = useSubscription();
   const { renameItem, deleteItem, createItem } = useItems();
   const [activeTab, setActiveTab] = useState<"geral" | "historico" | "lembretes" | "notificacoes">("geral");
   const [history, setHistory] = useState<(ItemEvent & { profile?: any; item?: any })[]>([]);
@@ -98,6 +98,10 @@ export default function ConfiguracoesPage() {
   async function handleAddReminderItem() {
     const trimmed = newItemName.trim();
     if (!trimmed || !currentHouse) return;
+    if (!canAddItem) {
+      alert("Você atingiu o limite de 20 itens no plano grátis. Faça upgrade para o Plano Família.");
+      return;
+    }
     // Usa categoria selecionada ou Alimentos como fallback
     const catId = newItemCategoryId || categories.find(c => c.name === "Alimentos")?.id || categories[0]?.id;
     if (!catId) return;

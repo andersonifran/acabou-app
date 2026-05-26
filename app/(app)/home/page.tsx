@@ -11,7 +11,9 @@ import { buildShoppingListText, buildWhatsAppShareUrl } from "@/lib/utils";
 import { ShoppingCart, Bell, ChevronDown, Plus, Check, Zap } from "lucide-react";
 import { Header } from "@/components/layout/Header";
 import { NotificationBell } from "@/components/shared/NotificationBell";
+import { PlanLimitModal } from "@/components/shared/PlanLimitModal";
 import { WhatsAppIcon } from "@/components/shared/WhatsAppIcon";
+import { useSubscription } from "@/hooks/useSubscription";
 import { cn } from "@/lib/utils";
 
 const SELECTED_HOUSE_KEY = "acabou_selected_house";
@@ -89,7 +91,9 @@ export default function HomePage() {
   const [reminders, setReminders] = useState<{ id: string; name: string }[]>([]);
   const [showHousePicker, setShowHousePicker] = useState(false);
   const [switchingHouse, setSwitchingHouse] = useState(false);
+  const [showPlanLimit, setShowPlanLimit] = useState(false);
   const pickerRef = useRef<HTMLDivElement>(null);
+  const { canAddItem } = useSubscription();
 
   const shoppingItems = items.filter((i) => SHOPPING_LIST_STATUSES.includes(i.status as any));
   const shoppingCount = shoppingItems.length;
@@ -167,6 +171,10 @@ export default function HomePage() {
   }
 
   function openModal(status: string) {
+    if (!canAddItem) {
+      setShowPlanLimit(true);
+      return;
+    }
     setInitialStatus(status);
     setAddItemModalOpen(true);
   }
@@ -447,6 +455,12 @@ export default function HomePage() {
           </>
         )}
       </div>
+
+      <PlanLimitModal
+        isOpen={showPlanLimit}
+        onClose={() => setShowPlanLimit(false)}
+        reason="items"
+      />
     </div>
   );
 }

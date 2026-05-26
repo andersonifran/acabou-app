@@ -3,12 +3,15 @@
 import { useState } from "react";
 import { useAppStore } from "@/store/appStore";
 import { useItems } from "@/hooks/useItems";
+import { useSubscription } from "@/hooks/useSubscription";
 import { ItemCard } from "@/components/items/ItemCard";
 import { EmptyState } from "@/components/shared/EmptyState";
+import { PlanLimitModal } from "@/components/shared/PlanLimitModal";
 import { Header } from "@/components/layout/Header";
 import { Item, ItemStatus, STATUS_LABELS } from "@/types";
-import { Plus, Search, X, Share2 } from "lucide-react";
+import { Plus, Search, X, Share2, Zap } from "lucide-react";
 import { cn } from "@/lib/utils";
+import Link from "next/link";
 
 type FilterStatus = "todos" | ItemStatus;
 
@@ -23,8 +26,10 @@ const filterOptions: { value: FilterStatus; label: string }[] = [
 export default function DespensaPage() {
   const { setAddItemModalOpen, setInitialStatus } = useAppStore();
   const { items, itemsByCategory, changeStatus, deleteItem, renameItem } = useItems();
+  const { canAddItem, isPaid, itemCount, itemsRemaining, limits } = useSubscription();
   const [filter, setFilter] = useState<FilterStatus>("todos");
   const [search, setSearch] = useState("");
+  const [showPlanLimit, setShowPlanLimit] = useState(false);
 
   const filtered = items.filter((item) => {
     const matchStatus = filter === "todos" || item.status === filter;
@@ -40,6 +45,10 @@ export default function DespensaPage() {
   }, {});
 
   function openAdd() {
+    if (!canAddItem) {
+      setShowPlanLimit(true);
+      return;
+    }
     setInitialStatus("acabou");
     setAddItemModalOpen(true);
   }
@@ -48,7 +57,7 @@ export default function DespensaPage() {
     <div>
       <Header
         title="Despensa"
-        subtitle={`${items.length} itens`}
+        subtitle={isPaid ? `${items.length} itens` : `${itemCount}/${limits.max_items} itens`}
         right={
           <button
             onClick={openAdd}
@@ -61,6 +70,24 @@ export default function DespensaPage() {
       />
 
       <div className="max-w-lg mx-auto px-4 py-3 space-y-3">
+        {/* Aviso de limite se perto ou no máximo */}
+        {!isPaid && itemsRemaining <= 5 && itemsRemaining > 0 && (
+          <Link href="/planos" className="flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
+            <Zap size={16} className="text-amber-600 shrink-0" />
+            <p className="text-xs text-amber-800">
+              Restam <strong>{itemsRemaining} {itemsRemaining === 1 ? "item" : "itens"}</strong> no plano grátis. <span className="underline font-semibold">Faça upgrade</span> para itens ilimitados.
+            </p>
+          </Link>
+        )}
+        {!isPaid && itemsRemaining === 0 && (
+          <Link href="/planos" className="flex items-center gap-3 bg-red-50 border border-red-200 rounded-xl px-4 py-3">
+            <Zap size={16} className="text-red-600 shrink-0" />
+            <p className="text-xs text-red-800">
+              Você atingiu o <strong>limite de {limits.max_items} itens</strong>. <span className="underline font-bold">Assine o Plano Família</span> para adicionar sem limites.
+            </p>
+          </Link>
+        )}
+
         {/* Busca */}
         <div className="relative">
           <Search size={17} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
@@ -140,8 +167,27 @@ export default function DespensaPage() {
             </div>
           ))
         )}
+        {/* Banner de upgrade discreto para grátis */}
+        {!isPaid && items.length > 0 && (
+          <Link
+            href="/planos"
+            className="flex items-center justify-center gap-2 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-2xl px-4 py-3.5 hover:from-green-100 hover:to-emerald-100 transition-all mt-2"
+          >
+            <Zap size={14} className="text-green-600" />
+            <p className="text-xs text-green-800 font-semibold">
+              Plano Família: itens ilimitados, convites, lembretes e mais — <span className="underline">a partir de R$ 4,99/mês</span>
+            </p>
+          </Link>
+        )}
+
         <div className="h-4" />
       </div>
+
+      <PlanLimitModal
+        isOpen={showPlanLimit}
+        onClose={() => setShowPlanLimit(false)}
+        reason="items"
+      />
     </div>
   );
 }

@@ -4,9 +4,11 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAppStore } from "@/store/appStore";
 import { useItems } from "@/hooks/useItems";
+import { useSubscription } from "@/hooks/useSubscription";
 import { createClient } from "@/lib/supabase/client";
 import { Header } from "@/components/layout/Header";
 import { EmptyState } from "@/components/shared/EmptyState";
+import { PlanLimitModal } from "@/components/shared/PlanLimitModal";
 import { Item } from "@/types";
 import { buildShoppingListText, buildWhatsAppShareUrl } from "@/lib/utils";
 import { Check, CheckSquare, Square } from "lucide-react";
@@ -34,6 +36,8 @@ export default function ListaPage() {
   const [finishing, setFinishing] = useState(false);
   const [done, setDone] = useState(false);
   const [showPurchasedModal, setShowPurchasedModal] = useState<string | null>(null);
+  const [showPlanLimit, setShowPlanLimit] = useState(false);
+  const { canAddItem } = useSubscription();
 
   // Agrupar por categoria
   const byCategory = shoppingListItems.reduce<Record<string, Item[]>>((acc, item) => {
@@ -164,7 +168,7 @@ export default function ListaPage() {
             description="Nenhum item para comprar agora. Quando algo acabar, é só marcar e aparece aqui automaticamente."
             action={
               <button
-                onClick={() => { setInitialStatus("comprar"); setAddItemModalOpen(true); }}
+                onClick={() => { if (!canAddItem) { setShowPlanLimit(true); return; } setInitialStatus("comprar"); setAddItemModalOpen(true); }}
                 className="bg-green-600 text-white font-semibold px-6 py-3 rounded-xl hover:bg-green-700 transition-colors"
               >
                 Adicionar item à lista
@@ -274,6 +278,12 @@ export default function ListaPage() {
           </div>
         </div>
       )}
+
+      <PlanLimitModal
+        isOpen={showPlanLimit}
+        onClose={() => setShowPlanLimit(false)}
+        reason="items"
+      />
     </div>
   );
 }
