@@ -171,7 +171,7 @@ export function NotificationShowcase() {
                   bg: "bg-blue-50",
                   title: "Convide toda a família",
                   desc: "Esposa, marido, filhos, empregada, funcionários. Sem limite de pessoas. Todos atualizam a mesma lista.",
-                  pain: "No grátis: apenas 2 pessoas",
+                  pain: "No grátis: apenas você, sem convidados",
                 },
                 {
                   emoji: "🏠",

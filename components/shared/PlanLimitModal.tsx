@@ -15,8 +15,8 @@ const messages = {
     description: "No plano grátis você pode ter até 20 itens na despensa. Faça upgrade para adicionar sem limites.",
   },
   members: {
-    title: "Você atingiu o limite de 2 pessoas",
-    description: "No plano grátis sua casa pode ter até 2 membros. Faça upgrade para convidar toda a família.",
+    title: "Convide sua família para o Acabou?",
+    description: "No plano grátis apenas você pode usar. Faça upgrade para o Plano Família e convide todos!",
   },
 };
 
