@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/server";
+import { sendPaymentApprovedEmail } from "@/lib/emails";
 import MercadoPagoLib, { Payment } from "mercadopago";
 
 // =============================================
@@ -155,6 +156,27 @@ export async function POST(request: NextRequest) {
         });
       if (subError) console.error("[Webhook] Erro ao criar subscription:", subError);
       else console.log(`[Webhook] ✅ Subscription criada para casa ${houseId}`);
+    }
+
+    // 3. Envia e-mail de confirmação de pagamento (fire-and-forget)
+    try {
+      const { data: { user: authUser } } = await supabase.auth.admin.getUserById(userId);
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("full_name")
+        .eq("user_id", userId)
+        .maybeSingle();
+
+      if (authUser?.email) {
+        sendPaymentApprovedEmail(
+          authUser.email,
+          profile?.full_name ?? "",
+          plan,
+          expiresAt.toISOString()
+        ).catch((err) => console.error("[Webhook] Erro ao enviar email:", err));
+      }
+    } catch (emailErr) {
+      console.error("[Webhook] Erro ao buscar dados para email:", emailErr);
     }
 
     console.log(`[Webhook] ✅ Pagamento ${paymentId} aprovado — casa ${houseId} → plano ${plan}`);

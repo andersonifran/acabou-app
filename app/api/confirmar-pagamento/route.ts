@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { createAdminClient } from "@/lib/supabase/server";
+import { sendPaymentApprovedEmail } from "@/lib/emails";
 import { cookies } from "next/headers";
 import MercadoPagoLib, { Payment } from "mercadopago";
 
@@ -154,6 +155,22 @@ export async function POST(request: NextRequest) {
           current_period_start: now.toISOString(),
           current_period_end: expiresAt.toISOString(),
         });
+    }
+
+    // Envia e-mail de confirmação de pagamento (fire-and-forget)
+    if (user.email) {
+      const { data: profile } = await supabaseAdmin
+        .from("profiles")
+        .select("full_name")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      sendPaymentApprovedEmail(
+        user.email,
+        profile?.full_name ?? "",
+        plan,
+        expiresAt.toISOString()
+      ).catch((err) => console.error("[Confirmar Pagamento] Erro email:", err));
     }
 
     console.log(`[Confirmar Pagamento] ✅ Casa ${houseId} → plano ${plan} ativado via confirmação`);
