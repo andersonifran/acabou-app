@@ -8,16 +8,17 @@ const preference = new Preference(client);
 
 export { preference };
 
+// ⚡ PREÇOS DE LANÇAMENTO — voltar para 12.90 e 89.90 após fase de lançamento
 export const PLANS = {
   monthly: {
     id: "familia-mensal",
     title: "Acabou? — Plano Família Mensal",
-    amount: 9.90,
+    amount: 8.90,
   },
   yearly: {
     id: "familia-anual",
     title: "Acabou? — Plano Família Anual",
-    amount: 79.90,
+    amount: 59.90,
   },
 } as const;
 

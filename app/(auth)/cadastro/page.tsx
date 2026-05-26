@@ -84,6 +84,11 @@ export default function CadastroPage() {
         throw new Error(data.error ?? "Erro ao criar casa.");
       }
 
+      // Meta Pixel — rastreia conversão de cadastro
+      if (typeof window !== "undefined" && typeof (window as any).fbq === "function") {
+        (window as any).fbq("track", "CompleteRegistration");
+      }
+
       // Se veio de um convite, redireciona de volta para aceitar
       if (conviteToken) {
         router.push(`/convite/${conviteToken}`);

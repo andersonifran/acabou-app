@@ -102,12 +102,12 @@ export default function DespensaPage() {
         {/* Lista */}
         {filtered.length === 0 ? (
           <EmptyState
-            icon="🛒"
-            title={search ? "Nenhum item encontrado" : "Despensa vazia"}
+            icon="📦"
+            title={search ? "Nenhum item encontrado" : "Sua despensa está vazia"}
             description={
               search
                 ? `Nenhum item com "${search}"`
-                : "Adicione os itens que você tem em casa."
+                : "Comece adicionando o que você já tem em casa. Depois é só marcar quando acabar!"
             }
             action={
               !search ? (

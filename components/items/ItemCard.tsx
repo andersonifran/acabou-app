@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, memo } from "react";
 import { Item, ItemStatus } from "@/types";
 import { StatusButtons } from "./StatusButtons";
 import { StatusBadge } from "@/components/shared/StatusBadge";
@@ -17,7 +17,7 @@ interface ItemCardProps {
   onDelete?: (itemId: string) => Promise<void>;
 }
 
-export function ItemCard({
+export const ItemCard = memo(function ItemCard({
   item,
   onStatusChange,
   onMarkPurchased,
@@ -239,4 +239,4 @@ export function ItemCard({
       )}
     </>
   );
-}
+});

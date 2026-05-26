@@ -25,12 +25,15 @@ export function useItems() {
       const item = items.find((i) => i.id === itemId);
       if (!item) return;
 
+      // Pega o usuário uma única vez
+      const { data: { user } } = await supabase.auth.getUser();
+
       // Atualiza otimisticamente
       updateItem(itemId, { status: newStatus });
 
       const { error } = await supabase
         .from("items")
-        .update({ status: newStatus, updated_by: (await supabase.auth.getUser()).data.user?.id })
+        .update({ status: newStatus, updated_by: user?.id })
         .eq("id", itemId);
 
       if (error) {
@@ -40,7 +43,6 @@ export function useItems() {
       }
 
       // Registra evento
-      const { data: { user } } = await supabase.auth.getUser();
       if (user && currentHouse) {
         await supabase.from("item_events").insert({
           house_id: currentHouse.id,
@@ -151,6 +153,28 @@ export function useItems() {
     [supabase, removeItem]
   );
 
+  const updateQuantity = useCallback(
+    async (itemId: string, quantity: string) => {
+      const item = items.find((i) => i.id === itemId);
+      if (!item) return;
+
+      const trimmed = quantity.trim();
+      updateItem(itemId, { quantity_text: trimmed || undefined });
+
+      const { data: { user } } = await supabase.auth.getUser();
+      const { error } = await supabase
+        .from("items")
+        .update({ quantity_text: trimmed || null, updated_by: user?.id })
+        .eq("id", itemId);
+
+      if (error) {
+        updateItem(itemId, { quantity_text: item.quantity_text });
+        throw error;
+      }
+    },
+    [items, supabase, updateItem]
+  );
+
   const renameItem = useCallback(
     async (itemId: string, newName: string) => {
       const trimmed = newName.trim();
@@ -183,5 +207,6 @@ export function useItems() {
     createItem,
     deleteItem,
     renameItem,
+    updateQuantity,
   };
 }

@@ -28,6 +28,7 @@ export interface House {
   owner_id: string;
   plan: PlanType;
   plan_status: PlanStatus;
+  plan_expires_at?: string;
   reminder_enabled?: boolean;
   reminder_time?: string;
   created_at: string;
@@ -125,7 +126,7 @@ export interface InviteToken {
 export const PLAN_LIMITS = {
   free: {
     max_members: 2,
-    max_items: 40,
+    max_items: 20,
     recurring_reminders: false,
     full_history: false,
   },

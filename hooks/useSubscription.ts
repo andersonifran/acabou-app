@@ -6,10 +6,15 @@ import { PLAN_LIMITS } from "@/types";
 export function useSubscription() {
   const { currentHouse, items, members } = useAppStore();
 
-  const plan = currentHouse?.plan ?? "free";
+  const rawPlan = currentHouse?.plan ?? "free";
+  const planStatus = currentHouse?.plan_status ?? "active";
+
+  // Se o plano expirou (status inactive), trata como free nos limites
+  const isExpired = rawPlan !== "free" && planStatus === "inactive";
+  const plan = isExpired ? "free" : rawPlan;
   const limits = PLAN_LIMITS[plan];
 
-  const isPaid = plan === "monthly" || plan === "yearly";
+  const isPaid = !isExpired && (rawPlan === "monthly" || rawPlan === "yearly");
 
   const itemCount = items.length;
   const memberCount = members.filter((m) => m.status === "active").length;
@@ -23,6 +28,7 @@ export function useSubscription() {
   return {
     plan,
     isPaid,
+    isExpired,
     limits,
     canAddItem,
     canAddMember,

@@ -5,30 +5,30 @@ import { Header } from "@/components/layout/Header";
 import { Check, Star, Home, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useSearchParams } from "next/navigation";
-import { Suspense, useState } from "react";
+import { Suspense, useState, useEffect } from "react";
 
 const plans = [
   {
     id: "free",
-    name: "Gratis",
+    name: "Grátis",
     price: "R$ 0",
     period: "para sempre",
     highlight: false,
     badge: null,
     features: [
       "1 casa",
-      "Ate 2 pessoas",
-      "Ate 40 itens",
+      "Até 2 pessoas",
+      "Até 20 itens",
       "Lista compartilhada",
-      "Notificacao quando alguem marca acabou",
+      "Notificação quando alguém marca acabou",
     ],
     notIncluded: [
-      "Lembrete diario no celular",
+      "Lembrete diário no celular",
       "Pessoas ilimitadas",
       "Casas ilimitadas",
       "Itens ilimitados",
       "Lembretes recorrentes",
-      "Historico completo",
+      "Histórico completo",
     ],
     cta: "Plano atual",
     ctaDisabled: true,
@@ -36,40 +36,40 @@ const plans = [
   },
   {
     id: "monthly",
-    name: "Familia Mensal",
-    price: "R$ 9,90",
-    period: "por mes",
+    name: "Família Mensal",
+    price: "R$ 8,90",
+    period: "por mês",
     highlight: false,
-    badge: null,
+    badge: "🚀 Preço de lançamento",
     features: [
       "Pessoas ilimitadas",
       "Itens ilimitados",
       "Casas ilimitadas",
-      "Lembrete diario no celular",
+      "Lembrete diário no celular",
       "Lembretes recorrentes",
-      "Historico completo",
-      "Suporte prioritario",
+      "Histórico completo",
+      "Suporte prioritário",
     ],
     notIncluded: [],
-    cta: "Assinar por R$ 9,90/mes",
+    cta: "Assinar por R$ 8,90/mês",
     ctaDisabled: false,
     priceId: "price_monthly",
   },
   {
     id: "yearly",
-    name: "Familia Anual",
-    price: "R$ 79,90",
+    name: "Família Anual",
+    price: "R$ 59,90",
     period: "por ano",
     highlight: true,
-    badge: "Mais popular — R$ 6,66/mes",
+    badge: "🚀 Lançamento — R$ 4,99/mês",
     features: [
       "Tudo do Mensal",
-      "Economize R$ 38,90 por ano",
+      "Economize R$ 46,90 por ano",
       "Prioridade em novidades",
-      "Suporte prioritario",
+      "Suporte prioritário",
     ],
     notIncluded: [],
-    cta: "Economizar 20% no anual",
+    cta: "Garantir preço de lançamento",
     ctaDisabled: false,
     priceId: "price_yearly",
   },
@@ -82,6 +82,40 @@ function PlanosContent() {
   const motivo = searchParams.get("motivo");
   const status = searchParams.get("status");
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
+
+  // Quando volta do Mercado Pago com sucesso, confirma e ativa o plano
+  useEffect(() => {
+    if (status !== "sucesso") return;
+
+    // Meta Pixel — rastreia compra
+    if (typeof window !== "undefined" && typeof (window as any).fbq === "function") {
+      (window as any).fbq("track", "Purchase", { currency: "BRL", value: 0 });
+    }
+
+    // Chama API de confirmação para garantir que o plano foi ativado
+    async function confirmPayment() {
+      try {
+        const res = await fetch("/api/confirmar-pagamento", { method: "POST" });
+        const data = await res.json();
+        if (data.ok && data.plan) {
+          // Atualiza o estado local da casa com o novo plano
+          const { setCurrentHouse, currentHouse } = useAppStore.getState();
+          if (currentHouse) {
+            setCurrentHouse({
+              ...currentHouse,
+              plan: data.plan,
+              plan_status: "active",
+              plan_expires_at: data.expires_at,
+            });
+          }
+        }
+      } catch (err) {
+        console.error("[Confirmar pagamento]", err);
+      }
+    }
+
+    confirmPayment();
+  }, [status]);
 
   async function handleSubscribe(plan: typeof plans[0]) {
     if (plan.ctaDisabled || !plan.priceId || loadingPlan) return;
@@ -99,6 +133,15 @@ function PlanosContent() {
 
       if (!res.ok || !data.url) {
         throw new Error(data.error ?? "Erro ao iniciar pagamento.");
+      }
+
+      // Meta Pixel — rastreia início do checkout
+      if (typeof window !== "undefined" && typeof (window as any).fbq === "function") {
+        (window as any).fbq("track", "InitiateCheckout", {
+          content_name: plan.name,
+          currency: "BRL",
+          value: plan.id === "yearly" ? 59.90 : 8.90,
+        });
       }
 
       // Redireciona para o checkout do Mercado Pago

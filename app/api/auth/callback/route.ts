@@ -26,6 +26,23 @@ export async function GET(request: NextRequest) {
 
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) {
+      // Verifica se o usuário já tem alguma casa
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: member } = await supabase
+          .from("house_members")
+          .select("house_id")
+          .eq("user_id", user.id)
+          .eq("status", "active")
+          .limit(1)
+          .single();
+
+        if (!member) {
+          // Novo usuário (Google OAuth) — vai para onboarding criar casa
+          return NextResponse.redirect(`${origin}/onboarding`);
+        }
+      }
+
       return NextResponse.redirect(`${origin}${next}`);
     }
   }

@@ -22,8 +22,8 @@ const scenarios = [
     mockTagColor: "text-green-700",
     mockItems: [
       { name: "Arroz (5kg)",    who: "Ana marcou",    status: "Acabou",    statusColor: "bg-red-100 text-red-700" },
-      { name: "Sabao em po",   who: "Joao marcou",   status: "Acabando",  statusColor: "bg-amber-100 text-amber-700" },
-      { name: "Cafe (500g)",   who: "Ana marcou",    status: "Acabou",    statusColor: "bg-red-100 text-red-700" },
+      { name: "Sabão em pó",   who: "João marcou",   status: "Acabando",  statusColor: "bg-amber-100 text-amber-700" },
+      { name: "Café (500g)",   who: "Ana marcou",    status: "Acabou",    statusColor: "bg-red-100 text-red-700" },
       { name: "Leite (1L)",    who: "Maria marcou",  status: "Acabando",  statusColor: "bg-amber-100 text-amber-700" },
     ],
   },
@@ -44,10 +44,10 @@ const scenarios = [
     mockTag: "APÊ",
     mockTagColor: "text-blue-700",
     mockItems: [
-      { name: "Cafe em po (500g)", who: "Lucas marcou",   status: "Acabou",   statusColor: "bg-red-100 text-red-700" },
+      { name: "Café em pó (500g)", who: "Lucas marcou",   status: "Acabou",   statusColor: "bg-red-100 text-red-700" },
       { name: "Cerveja (lata)",    who: "Bruna marcou", status: "Acabando", statusColor: "bg-amber-100 text-amber-700" },
       { name: "Detergente",        who: "Lucas marcou",   status: "Acabou",   statusColor: "bg-red-100 text-red-700" },
-      { name: "Pao de forma",      who: "Bruna marcou",   status: "Acabando", statusColor: "bg-amber-100 text-amber-700" },
+      { name: "Pão de forma",      who: "Bruna marcou",   status: "Acabando", statusColor: "bg-amber-100 text-amber-700" },
     ],
   },
   {
@@ -67,8 +67,8 @@ const scenarios = [
     mockTag: "PRAIA",
     mockTagColor: "text-amber-700",
     mockItems: [
-      { name: "Carvao (3kg)",      who: "Rafa marcou",  status: "Acabou",   statusColor: "bg-red-100 text-red-700" },
-      { name: "Cafe em po (500g)", who: "Camila marcou",  status: "Acabou",   statusColor: "bg-red-100 text-red-700" },
+      { name: "Carvão (3kg)",      who: "Rafa marcou",  status: "Acabou",   statusColor: "bg-red-100 text-red-700" },
+      { name: "Café em pó (500g)", who: "Camila marcou",  status: "Acabou",   statusColor: "bg-red-100 text-red-700" },
       { name: "Protetor solar",    who: "Rafa marcou",   status: "Acabando", statusColor: "bg-amber-100 text-amber-700" },
       { name: "Gelo",              who: "Camila marcou",  status: "Acabou",   statusColor: "bg-red-100 text-red-700" },
     ],
@@ -90,9 +90,9 @@ const scenarios = [
     mockTag: "EMPRESA",
     mockTagColor: "text-violet-700",
     mockItems: [
-      { name: "Capsula de cafe",    who: "Fernanda marcou",       status: "Acabou",   statusColor: "bg-red-100 text-red-700" },
-      { name: "Papel higienico",    who: "Carlos marcou",     status: "Acabando", statusColor: "bg-amber-100 text-amber-700" },
-      { name: "Copo descartavel",   who: "Fernanda marcou",       status: "Acabou",   statusColor: "bg-red-100 text-red-700" },
+      { name: "Cápsula de café",    who: "Fernanda marcou",       status: "Acabou",   statusColor: "bg-red-100 text-red-700" },
+      { name: "Papel higiênico",    who: "Carlos marcou",     status: "Acabando", statusColor: "bg-amber-100 text-amber-700" },
+      { name: "Copo descartável",   who: "Fernanda marcou",       status: "Acabou",   statusColor: "bg-red-100 text-red-700" },
       { name: "Folha A4",           who: "Carlos marcou",   status: "Acabando", statusColor: "bg-amber-100 text-amber-700" },
     ],
   },

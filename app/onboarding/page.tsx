@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { Check, ChevronRight } from "lucide-react";
+import { Check, ChevronRight, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 // Itens por tipo de imóvel
@@ -56,6 +56,15 @@ function categoryNameClean(cat: string) {
   return cat.replace(/^[\p{Emoji}\s]+/u, "").trim();
 }
 
+const PROPERTY_TYPES = [
+  { id: "casa",        label: "Casa",        icon: "🏠", desc: "Residência principal" },
+  { id: "apartamento", label: "Apê",         icon: "🏢", desc: "Apartamento" },
+  { id: "praia",       label: "Praia",       icon: "🏖️", desc: "Casa de praia" },
+  { id: "veraneio",    label: "Veraneio",    icon: "🌲", desc: "Sítio / chácara" },
+  { id: "empresa",     label: "Empresa",     icon: "💼", desc: "Escritório / negócio" },
+  { id: "outro",       label: "Outro",       icon: "📍", desc: "Outro tipo de local" },
+];
+
 export default function OnboardingPage() {
   const router = useRouter();
   const supabase = createClient();
@@ -65,6 +74,13 @@ export default function OnboardingPage() {
   const [propertyType, setPropertyType] = useState<string>("casa");
   const [categories, setCategories] = useState<Record<string, string>>({});
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
+
+  // Step de setup da casa (para usuários Google que não têm casa)
+  const [needsSetup, setNeedsSetup] = useState(false);
+  const [setupHouseName, setSetupHouseName] = useState("");
+  const [setupPropertyType, setSetupPropertyType] = useState("casa");
+  const [setupLoading, setSetupLoading] = useState(false);
+  const [pageReady, setPageReady] = useState(false);
 
   useEffect(() => {
     async function init() {
@@ -83,6 +99,10 @@ export default function OnboardingPage() {
         const pType = (member as any).houses?.property_type ?? "casa";
         setPropertyType(pType);
         setActiveCategory((ITEMS_BY_TYPE[pType] ?? ITEMS_BY_TYPE.casa)[0].category);
+        setNeedsSetup(false);
+      } else {
+        // Usuário não tem casa (veio pelo Google OAuth)
+        setNeedsSetup(true);
       }
 
       const { data: cats } = await supabase.from("categories").select("id, name");
@@ -91,9 +111,48 @@ export default function OnboardingPage() {
         cats.forEach((c) => { map[c.name] = c.id; });
         setCategories(map);
       }
+
+      setPageReady(true);
     }
     init();
   }, []);
+
+  async function handleCreateHouse() {
+    if (!setupHouseName.trim()) return;
+    setSetupLoading(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) { router.push("/login"); return; }
+
+      // Cria perfil + casa via API
+      const res = await fetch("/api/criar-casa", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: user.id,
+          houseName: setupHouseName.trim(),
+          fullName: user.user_metadata?.full_name ?? user.email?.split("@")[0] ?? "",
+          phone: null,
+          propertyType: setupPropertyType,
+        }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error ?? "Erro ao criar casa.");
+      }
+
+      const data = await res.json();
+      setHouseId(data.houseId);
+      setPropertyType(setupPropertyType);
+      setActiveCategory((ITEMS_BY_TYPE[setupPropertyType] ?? ITEMS_BY_TYPE.casa)[0].category);
+      setNeedsSetup(false);
+    } catch (err: any) {
+      console.error("Erro ao criar casa:", err);
+    } finally {
+      setSetupLoading(false);
+    }
+  }
 
   function toggleItem(name: string) {
     setSelected((prev) => {
@@ -158,6 +217,98 @@ export default function OnboardingPage() {
     empresa:     "O que costuma ter na empresa?",
     outro:       "O que costuma ter no local?",
   };
+
+  // Loading inicial
+  if (!pageReady) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="w-8 h-8 border-2 border-gray-200 border-t-green-600 rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  // Step de configurar a casa (para quem entrou pelo Google)
+  if (needsSetup) {
+    return (
+      <div className="min-h-screen bg-white flex flex-col">
+        <div className="px-6 pt-10 pb-6 flex flex-col items-center text-center">
+          <div className="text-5xl mb-4">🏠</div>
+          <h1 className="text-2xl font-black text-gray-900 mb-2">Bem-vindo ao Acabou?</h1>
+          <p className="text-gray-500 text-sm max-w-xs">
+            Antes de começar, vamos configurar seu local. Você pode mudar tudo isso depois.
+          </p>
+        </div>
+
+        <div className="flex-1 px-6 max-w-md mx-auto w-full space-y-5">
+          {/* Tipo de imóvel */}
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-3">
+              Que tipo de lugar é esse?
+            </label>
+            <div className="grid grid-cols-3 gap-2">
+              {PROPERTY_TYPES.map((p) => (
+                <button
+                  key={p.id}
+                  onClick={() => setSetupPropertyType(p.id)}
+                  className={cn(
+                    "flex flex-col items-center gap-1 py-3.5 rounded-2xl border-2 transition-all",
+                    setupPropertyType === p.id
+                      ? "border-green-500 bg-green-50"
+                      : "border-gray-200 bg-white hover:border-green-300"
+                  )}
+                >
+                  <span className="text-2xl">{p.icon}</span>
+                  <span className={cn(
+                    "text-xs font-semibold",
+                    setupPropertyType === p.id ? "text-green-700" : "text-gray-600"
+                  )}>
+                    {p.label}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Nome */}
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Dê um nome ao local *
+            </label>
+            <input
+              type="text"
+              value={setupHouseName}
+              onChange={(e) => setSetupHouseName(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleCreateHouse()}
+              placeholder="Ex: Casa da Ana, Família Silva, Meu Apê..."
+              maxLength={60}
+              autoFocus
+              className="w-full px-4 py-3.5 rounded-xl border border-gray-200 bg-gray-50 focus:outline-none focus:border-green-400 focus:bg-white transition-colors text-gray-900"
+            />
+          </div>
+
+          <div className="bg-green-50 rounded-xl p-4">
+            <p className="text-sm text-green-800">
+              💡 Depois você pode convidar sua família e adicionar mais locais.
+            </p>
+          </div>
+
+          <button
+            onClick={handleCreateHouse}
+            disabled={setupLoading || !setupHouseName.trim()}
+            className="w-full bg-green-600 text-white font-black py-4 rounded-2xl hover:bg-green-700 transition-colors disabled:opacity-60 text-base shadow-md shadow-green-200 flex items-center justify-center gap-2"
+          >
+            {setupLoading ? (
+              "Criando..."
+            ) : (
+              <>
+                Continuar <ArrowRight size={18} />
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">

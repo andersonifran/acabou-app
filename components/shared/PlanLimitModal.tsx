@@ -11,12 +11,12 @@ interface PlanLimitModalProps {
 
 const messages = {
   items: {
-    title: "Você chegou ao limite de 40 itens",
-    description: "No plano grátis você pode ter até 40 itens na despensa.",
+    title: "Você atingiu o limite de 20 itens",
+    description: "No plano grátis você pode ter até 20 itens na despensa. Faça upgrade para adicionar sem limites.",
   },
   members: {
-    title: "Você chegou ao limite de 2 pessoas",
-    description: "No plano grátis sua casa pode ter até 2 membros.",
+    title: "Você atingiu o limite de 2 pessoas",
+    description: "No plano grátis sua casa pode ter até 2 membros. Faça upgrade para convidar toda a família.",
   },
 };
 
@@ -59,7 +59,7 @@ export function PlanLimitModal({ isOpen, onClose, reason }: PlanLimitModalProps)
           onClick={() => { onClose(); router.push("/planos"); }}
           className="w-full bg-green-600 text-white font-semibold py-3.5 rounded-xl hover:bg-green-700 transition-colors"
         >
-          Desbloquear Plano Família por R$ 9,90/mês
+          Desbloquear Plano Família — a partir de R$ 4,99/mês
         </button>
         <button
           onClick={onClose}

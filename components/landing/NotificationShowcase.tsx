@@ -9,21 +9,21 @@ const notifications = [
   {
     icon: "📦",
     title: "Casa da Silva",
-    body: 'Ana marcou "Cafe" como acabou',
+    body: 'Ana marcou "Café" como acabou',
     time: "agora",
     delay: 0,
   },
   {
     icon: "📦",
     title: "Casa da Silva",
-    body: 'Joao marcou "Arroz" como esta acabando',
-    time: "2 min",
+    body: 'João marcou "Arroz" como está acabando',
+    time: "30 seg",
     delay: 2000,
   },
   {
     icon: "🛒",
-    title: "Hora de ir as compras!",
-    body: 'Voce tem 6 itens para comprar na "Casa da Silva"',
+    title: "Hora de ir às compras!",
+    body: 'Você tem 6 itens para comprar na "Casa da Silva"',
     time: "18:00",
     delay: 4000,
     isPremium: true,
@@ -109,16 +109,16 @@ export function NotificationShowcase() {
         {/* ── Titulo da seção ── */}
         <div className="text-center mb-14">
           <div className="inline-flex items-center gap-2 bg-green-100 text-green-700 text-xs font-black px-4 py-2 rounded-full mb-5 uppercase tracking-wide">
-            Por que assinar o Plano Familia
+            Por que assinar o Plano Família
           </div>
           <h2 className="text-3xl md:text-4xl font-black text-gray-900 leading-tight mb-4">
-            Pare de perguntar{" "}
-            <span className="text-green-600">"tem cafe?"</span>
+            Cansou de perguntar{" "}
+            <span className="text-green-600">"tem café?"</span>
             <br className="hidden md:block" />
-            O app avisa voce automaticamente.
+            O app avisa antes de você perceber.
           </h2>
           <p className="text-gray-500 text-base md:text-lg max-w-2xl mx-auto">
-            No plano gratuito voce ja resolve o basico. No Familia, sua casa funciona no piloto automatico.
+            No plano grátis você já resolve o básico. No Família, sua casa funciona no piloto automático.
           </p>
         </div>
 
@@ -169,44 +169,44 @@ export function NotificationShowcase() {
                 {
                   emoji: "👨‍👩‍👧‍👦",
                   bg: "bg-blue-50",
-                  title: "Convide toda a familia",
-                  desc: "Esposa, marido, filhos, empregada, funcionarios. Sem limite de pessoas. Todos atualizam a mesma lista.",
-                  pain: "No gratis: apenas 2 pessoas",
+                  title: "Convide toda a família",
+                  desc: "Esposa, marido, filhos, empregada, funcionários. Sem limite de pessoas. Todos atualizam a mesma lista.",
+                  pain: "No grátis: apenas 2 pessoas",
                 },
                 {
                   emoji: "🏠",
                   bg: "bg-purple-50",
-                  title: "Varias casas em um app so",
+                  title: "Várias casas em um app só",
                   desc: "Casa, apartamento, praia, sitio, empresa. Cada uma com sua lista e sua equipe.",
-                  pain: "No gratis: apenas 1 casa",
+                  pain: "No grátis: apenas 1 casa",
                 },
                 {
                   emoji: "🔔",
                   bg: "bg-amber-50",
-                  title: "Lembrete diario no celular",
-                  desc: 'Escolha o horario. As 18h voce recebe: "Voce tem 6 itens para comprar". Nunca mais esqueca.',
-                  pain: "Exclusivo do plano Familia",
+                  title: "Lembrete diário no celular",
+                  desc: 'Escolha o horário. Às 18h você recebe: "Você tem 6 itens para comprar". Nunca mais esqueça.',
+                  pain: "Exclusivo do plano Família",
                 },
                 {
                   emoji: "♾️",
                   bg: "bg-green-50",
                   title: "Itens ilimitados",
                   desc: "Cadastre todos os itens da sua casa. Sem trava, sem limite, sem ter que escolher o que entra.",
-                  pain: "No gratis: maximo 40 itens",
+                  pain: "No grátis: máximo 20 itens",
                 },
                 {
                   emoji: "🔄",
                   bg: "bg-cyan-50",
                   title: "Lembretes recorrentes",
-                  desc: "Cafe acaba todo mes? O app lembra automaticamente de adicionar na lista na hora certa.",
-                  pain: "Exclusivo do plano Familia",
+                  desc: "Café acaba todo mês? O app lembra automaticamente de adicionar na lista na hora certa.",
+                  pain: "Exclusivo do plano Família",
                 },
                 {
                   emoji: "📊",
                   bg: "bg-rose-50",
-                  title: "Historico completo",
+                  title: "Histórico completo",
                   desc: "Veja tudo: quem marcou, quem comprou, quando. Controle total da sua casa.",
-                  pain: "Exclusivo do plano Familia",
+                  pain: "Exclusivo do plano Família",
                 },
               ].map((item) => (
                 <div key={item.title} className="flex items-start gap-4">
@@ -239,18 +239,18 @@ export function NotificationShowcase() {
 
             {/* Ancoragem de preco */}
             <div className="mt-8 bg-green-50 border border-green-100 rounded-2xl p-5 text-center">
-              <p className="text-sm text-gray-600 mb-1">Tudo isso por</p>
+              <p className="text-sm text-gray-600 mb-1">Tudo isso por menos que um cafezinho</p>
               <p className="text-3xl font-black text-green-700">
-                R$ 6,66<span className="text-base font-bold text-gray-500">/mes</span>
+                R$ 4,99<span className="text-base font-bold text-gray-500">/mês</span>
               </p>
               <p className="text-xs text-gray-500 mt-1 mb-4">
-                Menos que 1 cafe por mes. No plano anual.
+                No plano anual. Cancele quando quiser.
               </p>
               <Link
                 href="/cadastro"
                 className="inline-flex items-center gap-2 bg-green-600 text-white font-bold px-8 py-3.5 rounded-2xl hover:bg-green-700 transition-all hover:scale-105 active:scale-95 shadow-lg shadow-green-200 text-sm"
               >
-                Comecar agora
+                Começar agora
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                   <path d="M3 8h10m0 0L9 4m4 4L9 12" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
