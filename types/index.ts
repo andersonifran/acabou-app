@@ -125,7 +125,7 @@ export interface InviteToken {
 // --- Limites dos planos ---
 export const PLAN_LIMITS = {
   free: {
-    max_members: 2,
+    max_members: 1,
     max_items: 20,
     recurring_reminders: false,
     full_history: false,
