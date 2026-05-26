@@ -26,10 +26,29 @@ export async function POST(request: NextRequest) {
         phone: phone ?? null,
       }, { onConflict: "user_id" });
 
-    // Cria a casa
+    // Verifica se o dono tem alguma casa com plano pago → herda o plano
+    const { data: paidHouse } = await supabase
+      .from("houses")
+      .select("plan, plan_status, plan_expires_at")
+      .eq("owner_id", userId)
+      .neq("plan", "free")
+      .eq("plan_status", "active")
+      .limit(1)
+      .maybeSingle();
+
+    const inheritedPlan = paidHouse
+      ? { plan: paidHouse.plan, plan_status: paidHouse.plan_status, plan_expires_at: paidHouse.plan_expires_at }
+      : { plan: "free", plan_status: "active" };
+
+    // Cria a casa (herdando plano se existir)
     const { data: house, error: houseError } = await supabase
       .from("houses")
-      .insert({ name: houseName.trim(), owner_id: userId, property_type: propertyType ?? "casa" })
+      .insert({
+        name: houseName.trim(),
+        owner_id: userId,
+        property_type: propertyType ?? "casa",
+        ...inheritedPlan,
+      })
       .select()
       .single();
 

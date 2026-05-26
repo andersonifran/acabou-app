@@ -107,7 +107,11 @@ export async function POST(request: NextRequest) {
       expiresAt.setMonth(expiresAt.getMonth() + 1);
     }
 
-    // 7. Atualiza o plano da casa
+    // 7. Atualiza TODAS as casas do dono para o plano pago
+    const { data: houseData } = await supabaseAdmin
+      .from("houses").select("owner_id").eq("id", houseId).single();
+    const ownerId = houseData?.owner_id ?? user.id;
+
     const { error: houseError } = await supabaseAdmin
       .from("houses")
       .update({
@@ -115,7 +119,7 @@ export async function POST(request: NextRequest) {
         plan_status: "active",
         plan_expires_at: expiresAt.toISOString(),
       })
-      .eq("id", houseId);
+      .eq("owner_id", ownerId);
 
     if (houseError) {
       console.error("[Confirmar Pagamento] Erro ao atualizar casa:", houseError);

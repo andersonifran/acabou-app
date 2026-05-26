@@ -8,8 +8,8 @@ import { Header } from "@/components/layout/Header";
 import { LoadingSpinner } from "@/components/shared/LoadingSpinner";
 import { generateInviteMessage, buildWhatsAppShareUrl } from "@/lib/utils";
 import {
-  Users, Crown, Shield, User, Share2, Copy, LogOut, Settings,
-  ChevronRight, X, Camera, Pencil, Check, Plus, MessageSquareHeart,
+  Users, Crown, Shield, User, Share2, Copy, LogOut, Settings, Trash2,
+  ChevronRight, X, Camera, Pencil, Check, Plus, MessageSquareHeart, UserMinus,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { MemberRole } from "@/types";
@@ -43,8 +43,8 @@ const RELATIONS_FAMILIAR = ["Cônjuge", "Filho(a)", "Pai", "Mãe", "Irmão(ã)",
 export default function CasaPage() {
   const router = useRouter();
   const supabase = createClient();
-  const { currentHouse, members, isPaid, generateInviteToken, getInviteUrl } = useHouse();
-  const { reset, setCurrentHouse } = useAppStore();
+  const { currentHouse, members, isPaid, generateInviteToken, getInviteUrl, removeMember } = useHouse();
+  const { reset, setCurrentHouse, allHouses, setAllHouses } = useAppStore();
 
   const [inviteUrl, setInviteUrl] = useState("");
   const [loadingInvite, setLoadingInvite] = useState(false);
@@ -57,11 +57,20 @@ export default function CasaPage() {
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Edição do nome do perfil
+  const [editingProfileName, setEditingProfileName] = useState(false);
+  const [savingProfileName, setSavingProfileName] = useState(false);
+  const profileNameInputRef = useRef<HTMLInputElement>(null);
+
   // Edição do nome da casa
   const [editingHouseName, setEditingHouseName] = useState(false);
   const [houseName, setHouseName] = useState("");
   const [savingHouseName, setSavingHouseName] = useState(false);
   const houseNameInputRef = useRef<HTMLInputElement>(null);
+
+  // Excluir casa
+  const [deletingHouse, setDeletingHouse] = useState(false);
+  const [confirmDeleteHouse, setConfirmDeleteHouse] = useState(false);
 
   // Modal de convite
   const [showInviteModal, setShowInviteModal] = useState(false);
@@ -99,6 +108,13 @@ export default function CasaPage() {
       houseNameInputRef.current.select();
     }
   }, [editingHouseName]);
+
+  useEffect(() => {
+    if (editingProfileName && profileNameInputRef.current) {
+      profileNameInputRef.current.focus();
+      profileNameInputRef.current.select();
+    }
+  }, [editingProfileName]);
 
   const propertyType = PROPERTY_TYPES.find(p => p.id === (currentHouse as any)?.property_type) ?? PROPERTY_TYPES[0];
   const activeMembers = members.filter((m) => m.status === "active");
@@ -149,6 +165,70 @@ export default function CasaPage() {
       setUploadingAvatar(false);
       // Limpa o input para permitir re-seleção da mesma foto
       if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  }
+
+  // ── EDITAR NOME DO PERFIL ────────────────────────────────
+  async function handleSaveProfileName() {
+    const trimmed = profileName.trim();
+    if (!trimmed || !currentUserId) return;
+    setSavingProfileName(true);
+    try {
+      const { error } = await supabase
+        .from("profiles")
+        .update({ full_name: trimmed })
+        .eq("user_id", currentUserId);
+      if (error) throw error;
+      setEditingProfileName(false);
+    } catch {
+      alert("Erro ao salvar nome.");
+    } finally {
+      setSavingProfileName(false);
+    }
+  }
+
+  // ── EXCLUIR CASA (somente dono) ────────────────────────
+  async function handleDeleteHouse() {
+    if (!currentHouse || !isOwner) return;
+    // Não permite excluir se for a única casa
+    if (allHouses.length <= 1) {
+      alert("Você não pode excluir seu único local.");
+      return;
+    }
+    setDeletingHouse(true);
+    try {
+      // Remove itens, eventos, membros e a casa
+      await supabase.from("item_events").delete().eq("house_id", currentHouse.id);
+      await supabase.from("items").delete().eq("house_id", currentHouse.id);
+      await supabase.from("invite_tokens").delete().eq("house_id", currentHouse.id);
+      await supabase.from("house_members").delete().eq("house_id", currentHouse.id);
+      await supabase.from("subscriptions").delete().eq("house_id", currentHouse.id);
+      await supabase.from("houses").delete().eq("id", currentHouse.id);
+
+      // Atualiza lista e troca para outra casa
+      const remaining = allHouses.filter(h => h.id !== currentHouse.id);
+      setAllHouses(remaining);
+      if (remaining.length > 0) {
+        setCurrentHouse(remaining[0]);
+        localStorage.setItem("acabou_selected_house", remaining[0].id);
+      }
+      setConfirmDeleteHouse(false);
+      router.push("/home");
+    } catch (err) {
+      console.error("Erro ao excluir casa:", err);
+      alert("Erro ao excluir local. Tente novamente.");
+    } finally {
+      setDeletingHouse(false);
+    }
+  }
+
+  // ── REMOVER MEMBRO (somente dono) ─────────────────────
+  async function handleRemoveMember(memberId: string, memberName: string) {
+    if (!confirm(`Remover ${memberName} deste local?`)) return;
+    try {
+      await removeMember(memberId);
+    } catch {
+      alert("Erro ao remover membro.");
     }
   }
 
@@ -270,13 +350,55 @@ export default function CasaPage() {
 
             {/* Nome e papel */}
             <div className="flex-1 min-w-0">
-              <p className="font-semibold text-gray-900 truncate">{profileName || "Sem nome"}</p>
+              {editingProfileName ? (
+                <div className="flex items-center gap-2">
+                  <input
+                    ref={profileNameInputRef}
+                    value={profileName}
+                    onChange={(e) => setProfileName(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") handleSaveProfileName();
+                      if (e.key === "Escape") setEditingProfileName(false);
+                    }}
+                    maxLength={60}
+                    placeholder="Seu nome"
+                    className="flex-1 text-base font-semibold text-gray-900 border-b-2 border-green-400 bg-transparent outline-none pb-0.5"
+                  />
+                  <button
+                    onClick={handleSaveProfileName}
+                    disabled={savingProfileName || !profileName.trim()}
+                    className="text-green-600 hover:text-green-700 disabled:opacity-50 shrink-0 p-1"
+                  >
+                    {savingProfileName
+                      ? <div className="w-4 h-4 border-2 border-green-600 border-t-transparent rounded-full animate-spin" />
+                      : <Check size={16} strokeWidth={2.5} />
+                    }
+                  </button>
+                  <button
+                    onClick={() => setEditingProfileName(false)}
+                    className="text-gray-400 hover:text-gray-600 shrink-0 p-1"
+                  >
+                    <X size={16} />
+                  </button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <p className="font-semibold text-gray-900 truncate">{profileName || "Sem nome"}</p>
+                  <button
+                    onClick={() => setEditingProfileName(true)}
+                    className="text-gray-400 hover:text-green-600 transition-colors shrink-0"
+                    title="Editar nome"
+                  >
+                    <Pencil size={14} />
+                  </button>
+                </div>
+              )}
               <div className="flex items-center gap-1 mt-0.5">
-                <Crown size={13} className="text-amber-500" />
-                <span className="text-xs text-gray-500">Dono da casa</span>
+                {isOwner ? <Crown size={13} className="text-amber-500" /> : <User size={13} className="text-gray-400" />}
+                <span className="text-xs text-gray-500">{isOwner ? "Dono da conta" : "Membro"}</span>
               </div>
-              {isOwner && (
-                <p className="text-xs text-gray-400 mt-1">Toque na câmera para alterar sua foto</p>
+              {!profileName && (
+                <p className="text-xs text-amber-500 mt-1">Toque no lápis para adicionar seu nome</p>
               )}
             </div>
           </div>
@@ -368,6 +490,16 @@ export default function CasaPage() {
                     </div>
                   </div>
                 </div>
+                {/* Botão remover — somente dono pode remover, e não pode remover a si mesmo */}
+                {isOwner && member.user_id !== currentUserId && (
+                  <button
+                    onClick={() => handleRemoveMember(member.id, member.profile?.full_name ?? "este membro")}
+                    className="text-gray-300 hover:text-red-500 transition-colors p-1.5"
+                    title="Remover membro"
+                  >
+                    <UserMinus size={16} />
+                  </button>
+                )}
               </div>
             ))}
           </div>
@@ -447,6 +579,42 @@ export default function CasaPage() {
             </div>
             <ChevronRight size={16} className="text-green-500 ml-auto shrink-0" />
           </Link>
+        )}
+
+        {/* ── EXCLUIR LOCAL (somente dono, e se tem mais de 1 casa) ── */}
+        {isOwner && allHouses.length > 1 && (
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+            {!confirmDeleteHouse ? (
+              <button
+                onClick={() => setConfirmDeleteHouse(true)}
+                className="w-full flex items-center justify-center gap-2 text-red-400 hover:text-red-600 text-sm font-medium transition-colors"
+              >
+                <Trash2 size={16} />
+                Excluir este local
+              </button>
+            ) : (
+              <div>
+                <p className="text-sm text-red-600 font-medium text-center mb-3">
+                  Excluir <strong>{currentHouse?.name}</strong> e todos os seus itens?
+                </p>
+                <div className="flex gap-2">
+                  <button
+                    onClick={handleDeleteHouse}
+                    disabled={deletingHouse}
+                    className="flex-1 bg-red-500 text-white text-sm font-semibold py-2.5 rounded-xl hover:bg-red-600 disabled:opacity-50"
+                  >
+                    {deletingHouse ? "Excluindo..." : "Sim, excluir"}
+                  </button>
+                  <button
+                    onClick={() => setConfirmDeleteHouse(false)}
+                    className="flex-1 border border-gray-200 text-gray-600 text-sm font-medium py-2.5 rounded-xl hover:bg-gray-50"
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
         )}
 
         {/* ── MENU (somente dono) ── */}

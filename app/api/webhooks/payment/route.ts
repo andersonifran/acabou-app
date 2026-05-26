@@ -103,7 +103,7 @@ export async function POST(request: NextRequest) {
       expiresAt.setMonth(expiresAt.getMonth() + 1);
     }
 
-    // 1. Atualiza o plano da casa
+    // 1. Atualiza TODAS as casas do dono para o plano pago
     const { error: houseError } = await supabase
       .from("houses")
       .update({
@@ -111,12 +111,12 @@ export async function POST(request: NextRequest) {
         plan_status: "active",
         plan_expires_at: expiresAt.toISOString(),
       })
-      .eq("id", houseId);
+      .eq("owner_id", userId);
 
     if (houseError) {
-      console.error("[Webhook] Erro ao atualizar casa:", houseError);
+      console.error("[Webhook] Erro ao atualizar casas:", houseError);
     } else {
-      console.log(`[Webhook] ✅ Casa ${houseId} atualizada para plano ${plan}, expira em ${expiresAt.toISOString()}`);
+      console.log(`[Webhook] ✅ Todas as casas do user ${userId} atualizadas para plano ${plan}`);
     }
 
     // 2. Salva subscription — tenta update primeiro, se não existe faz insert

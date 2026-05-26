@@ -70,7 +70,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       if (!user) { router.push("/login"); return; }
 
       // Categorias
-      const { data: cats } = await supabase.from("categories").select("*").order("sort_order");
+      const { data: cats } = await supabase.from("categories").select("*").eq("is_default", true).order("sort_order");
       if (cats) setCategories(cats);
 
       // Todas as casas do usuário

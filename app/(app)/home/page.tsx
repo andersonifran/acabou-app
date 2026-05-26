@@ -84,6 +84,7 @@ export default function HomePage() {
   const supabase = createClient();
   const { items, currentHouse, allHouses, setCurrentHouse, setMembers, setItems, setAddItemModalOpen, setInitialStatus } = useAppStore();
 
+  const [currentUserId, setCurrentUserId] = useState<string>("");
   const [recentEvents, setRecentEvents] = useState<(ItemEvent & { profile?: any; item?: any })[]>([]);
   const [reminders, setReminders] = useState<{ id: string; name: string }[]>([]);
   const [showHousePicker, setShowHousePicker] = useState(false);
@@ -107,6 +108,12 @@ export default function HomePage() {
     document.addEventListener("mousedown", close);
     return () => document.removeEventListener("mousedown", close);
   }, [showHousePicker]);
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (user) setCurrentUserId(user.id);
+    });
+  }, []);
 
   useEffect(() => {
     if (!currentHouse) return;
@@ -321,8 +328,8 @@ export default function HomePage() {
               </Link>
             )}
 
-            {/* Banner de upgrade — plano grátis */}
-            {currentHouse?.plan === "free" && (
+            {/* Banner de upgrade — plano grátis (só mostra para o dono, não para convidados) */}
+            {currentHouse?.plan === "free" && (currentHouse as any)?.owner_id === currentUserId && (
               <Link
                 href="/planos"
                 className="flex items-center gap-3 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-2xl px-4 py-3.5 hover:from-amber-100 hover:to-orange-100 transition-all"
