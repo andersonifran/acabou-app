@@ -86,10 +86,26 @@ export default function ConvitePage({ params }: Props) {
       .eq("id", invite.house_id)
       .single();
 
-    if (!house || house.plan === "free" || house.plan_status !== "active") {
+    // Aceita convites de casas com plano pago (ativo ou trial)
+    const validStatuses = ["active", "trialing"];
+    if (!house || house.plan === "free" || !validStatuses.includes(house.plan_status)) {
       setError("O dono desta casa precisa ter o Plano Família ativo para convidar membros.");
       setStatus("error");
       return;
+    }
+
+    // Verifica se o trial/plano não expirou (proteção extra caso cron não tenha rodado)
+    if (house.plan_status === "trialing") {
+      const { data: houseExpiry } = await supabase
+        .from("houses")
+        .select("plan_expires_at")
+        .eq("id", invite.house_id)
+        .single();
+      if (houseExpiry?.plan_expires_at && new Date(houseExpiry.plan_expires_at) < new Date()) {
+        setError("O período de teste grátis do dono desta casa expirou.");
+        setStatus("error");
+        return;
+      }
     }
 
     // Adiciona como membro

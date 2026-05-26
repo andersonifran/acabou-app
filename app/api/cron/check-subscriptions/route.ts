@@ -36,9 +36,9 @@ export async function GET(request: NextRequest) {
 
     const { data: expiringHouses } = await supabase
       .from("houses")
-      .select("id, name, plan, plan_expires_at, owner_id")
+      .select("id, name, plan, plan_status, plan_expires_at, owner_id")
       .neq("plan", "free")
-      .eq("plan_status", "active")
+      .in("plan_status", ["active", "trialing"])
       .gt("plan_expires_at", nowISO)
       .lte("plan_expires_at", threeDaysFromNow.toISOString());
 
@@ -61,10 +61,11 @@ export async function GET(request: NextRequest) {
             .maybeSingle();
 
           if (authUser?.email) {
+            const isTrial = house.plan_status === "trialing";
             await sendPlanExpiringEmail(
               authUser.email,
               profile?.full_name ?? "",
-              house.plan,
+              isTrial ? "trial" : house.plan,
               house.plan_expires_at,
               daysLeft
             );
@@ -82,8 +83,9 @@ export async function GET(request: NextRequest) {
     // =============================================
     const { data: expiredHouses, error } = await supabase
       .from("houses")
-      .select("id, name, plan, plan_expires_at")
+      .select("id, name, plan, plan_status, plan_expires_at")
       .neq("plan", "free")
+      .in("plan_status", ["active", "trialing"])
       .lt("plan_expires_at", nowISO);
 
     if (error) {
@@ -111,7 +113,8 @@ export async function GET(request: NextRequest) {
           .eq("house_id", house.id)
           .eq("status", "active");
 
-        console.log(`[Cron] ⬇️ Casa "${house.name}" (${house.id}) — plano ${house.plan} expirou → free`);
+        const wasTrialing = house.plan_status === "trialing";
+        console.log(`[Cron] ⬇️ Casa "${house.name}" (${house.id}) — ${wasTrialing ? "trial" : "plano " + house.plan} expirou → free`);
         downgraded++;
       }
     }

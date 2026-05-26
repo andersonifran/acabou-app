@@ -3,13 +3,13 @@
 import { useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useAppStore } from "@/store/appStore";
+import { useSubscription } from "@/hooks/useSubscription";
 import { House, HouseMember } from "@/types";
 
 export function useHouse() {
   const { currentHouse, members, setCurrentHouse, setMembers } = useAppStore();
   const supabase = createClient();
-
-  const isPaid = currentHouse?.plan === "monthly" || currentHouse?.plan === "yearly";
+  const { isPaid } = useSubscription();
 
   const generateInviteToken = useCallback(async (): Promise<string> => {
     if (!currentHouse) throw new Error("Nenhuma casa selecionada");
