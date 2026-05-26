@@ -35,6 +35,7 @@ export default function ConfiguracoesPage() {
   const [showAddItem, setShowAddItem] = useState(false);
   const [newItemName, setNewItemName] = useState("");
   const [addingItem, setAddingItem] = useState(false);
+  const [newItemCategoryId, setNewItemCategoryId] = useState("");
   const [deletingItemId, setDeletingItemId] = useState<string | null>(null);
 
   async function loadHistory() {
@@ -97,17 +98,18 @@ export default function ConfiguracoesPage() {
   async function handleAddReminderItem() {
     const trimmed = newItemName.trim();
     if (!trimmed || !currentHouse) return;
+    // Usa categoria selecionada ou Alimentos como fallback
+    const catId = newItemCategoryId || categories.find(c => c.name === "Alimentos")?.id || categories[0]?.id;
+    if (!catId) return;
     setAddingItem(true);
     try {
-      // Usa a primeira categoria disponível (Alimentos por padrão)
-      const defaultCat = categories.find(c => c.name === "Alimentos") ?? categories[0];
-      if (!defaultCat) return;
       await createItem({
         name: trimmed,
-        category_id: defaultCat.id,
+        category_id: catId,
         status: "tem" as ItemStatus,
       });
       setNewItemName("");
+      setNewItemCategoryId("");
       setShowAddItem(false);
     } catch (err) {
       console.error("Erro ao adicionar item:", err);
@@ -404,34 +406,44 @@ export default function ConfiguracoesPage() {
               )}
             </div>
 
-            {/* Formulário inline para adicionar novo item */}
+            {/* Formulário para adicionar novo item */}
             {showAddItem && isPaid && (
-              <div className="bg-green-50 border border-green-200 rounded-xl p-3 mb-3">
-                <p className="text-xs font-semibold text-green-800 mb-2">Adicionar novo item</p>
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={newItemName}
-                    onChange={(e) => setNewItemName(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && handleAddReminderItem()}
-                    placeholder="Ex: Café especial, Ração do Rex..."
-                    className="flex-1 bg-white border border-green-200 rounded-lg px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500"
-                    autoFocus
-                  />
+              <div className="bg-green-50 border border-green-200 rounded-xl p-4 mb-4">
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-sm font-semibold text-green-800">Adicionar novo item</p>
                   <button
-                    onClick={handleAddReminderItem}
-                    disabled={addingItem || !newItemName.trim()}
-                    className="px-3 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 disabled:opacity-50 transition-colors"
-                  >
-                    {addingItem ? "..." : "Adicionar"}
-                  </button>
-                  <button
-                    onClick={() => { setShowAddItem(false); setNewItemName(""); }}
-                    className="px-2 py-2 text-gray-500 hover:text-gray-700"
+                    onClick={() => { setShowAddItem(false); setNewItemName(""); setNewItemCategoryId(""); }}
+                    className="text-gray-400 hover:text-gray-600 p-1"
                   >
                     <X size={18} />
                   </button>
                 </div>
+                <input
+                  type="text"
+                  value={newItemName}
+                  onChange={(e) => setNewItemName(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleAddReminderItem()}
+                  placeholder="Nome do item"
+                  className="w-full bg-white border border-green-200 rounded-lg px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 mb-2"
+                  autoFocus
+                />
+                <select
+                  value={newItemCategoryId}
+                  onChange={(e) => setNewItemCategoryId(e.target.value)}
+                  className="w-full bg-white border border-green-200 rounded-lg px-3 py-2.5 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500 mb-3"
+                >
+                  <option value="">Selecione a categoria</option>
+                  {categories.map((cat) => (
+                    <option key={cat.id} value={cat.id}>{cat.icon} {cat.name}</option>
+                  ))}
+                </select>
+                <button
+                  onClick={handleAddReminderItem}
+                  disabled={addingItem || !newItemName.trim()}
+                  className="w-full py-2.5 bg-green-600 text-white text-sm font-semibold rounded-lg hover:bg-green-700 disabled:opacity-50 transition-colors"
+                >
+                  {addingItem ? "Adicionando..." : "Adicionar item"}
+                </button>
               </div>
             )}
 

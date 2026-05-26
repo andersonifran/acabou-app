@@ -49,7 +49,8 @@ export async function middleware(request: NextRequest) {
 
   const { pathname } = request.nextUrl;
 
-  if (user && (pathname === "/login" || pathname === "/cadastro")) {
+  // Usuário logado: redireciona landing, login e cadastro para /home
+  if (user && (pathname === "/" || pathname === "/login" || pathname === "/cadastro")) {
     return NextResponse.redirect(new URL("/home", request.url));
   }
 
