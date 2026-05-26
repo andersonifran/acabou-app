@@ -239,18 +239,21 @@ export function NotificationShowcase() {
 
             {/* Ancoragem de preco */}
             <div className="mt-8 bg-green-50 border border-green-100 rounded-2xl p-5 text-center">
-              <p className="text-sm text-gray-600 mb-1">Tudo isso por menos que um cafezinho</p>
+              <p className="text-sm text-gray-600 mb-1">Tudo isso por menos que um cafezinho por dia</p>
               <p className="text-3xl font-black text-green-700">
                 R$ 4,99<span className="text-base font-bold text-gray-500">/mês</span>
               </p>
-              <p className="text-xs text-gray-500 mt-1 mb-4">
+              <p className="text-xs text-gray-500 mt-1">
                 No plano anual. Cancele quando quiser.
+              </p>
+              <p className="text-xs text-amber-600 font-bold mt-2 mb-4">
+                🎁 Comece com 7 dias grátis — sem cartão
               </p>
               <Link
                 href="/cadastro"
                 className="inline-flex items-center gap-2 bg-green-600 text-white font-bold px-8 py-3.5 rounded-2xl hover:bg-green-700 transition-all hover:scale-105 active:scale-95 shadow-lg shadow-green-200 text-sm"
               >
-                Começar agora
+                Testar 7 dias grátis
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                   <path d="M3 8h10m0 0L9 4m4 4L9 12" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>

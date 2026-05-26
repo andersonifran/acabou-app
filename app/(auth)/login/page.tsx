@@ -17,6 +17,12 @@ export default function LoginPage() {
   const [loadingGoogle, setLoadingGoogle] = useState(false);
   const [error, setError] = useState("");
 
+  // Captura token de convite se vier da URL ?convite=TOKEN
+  const [conviteToken] = useState(() => {
+    if (typeof window === "undefined") return null;
+    return new URLSearchParams(window.location.search).get("convite");
+  });
+
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
@@ -30,17 +36,27 @@ export default function LoginPage() {
       return;
     }
 
-    router.push("/home");
+    // Se veio de um convite, redireciona para aceitar
+    if (conviteToken) {
+      router.push(`/convite/${conviteToken}`);
+    } else {
+      router.push("/home");
+    }
     router.refresh();
   }
 
   async function handleGoogle() {
     setLoadingGoogle(true);
     setError("");
+    // Preserva token de convite na URL de callback
+    const callbackUrl = conviteToken
+      ? `${window.location.origin}/api/auth/callback?next=${encodeURIComponent(`/convite/${conviteToken}`)}`
+      : `${window.location.origin}/api/auth/callback`;
+
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${window.location.origin}/api/auth/callback`,
+        redirectTo: callbackUrl,
       },
     });
     if (error) {
@@ -143,7 +159,10 @@ export default function LoginPage() {
         <div className="mt-6 text-center">
           <p className="text-gray-500 text-sm">
             Não tem conta?{" "}
-            <Link href="/cadastro" className="text-green-600 font-semibold hover:underline">
+            <Link
+              href={conviteToken ? `/cadastro?convite=${conviteToken}` : "/cadastro"}
+              className="text-green-600 font-semibold hover:underline"
+            >
               Criar conta grátis
             </Link>
           </p>

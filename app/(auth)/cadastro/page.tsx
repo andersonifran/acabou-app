@@ -10,12 +10,18 @@ import { Eye, EyeOff, ArrowLeft } from "lucide-react";
 export default function CadastroPage() {
   const router = useRouter();
   const supabase = createClient();
-  const [step, setStep] = useState<1 | 2>(1);
+
   // Captura token de convite se vier da URL ?convite=TOKEN
   const [conviteToken] = useState(() => {
     if (typeof window === "undefined") return null;
     return new URLSearchParams(window.location.search).get("convite");
   });
+
+  // Se tem convite, não precisa de Step 2 (criar casa)
+  const hasInvite = !!conviteToken;
+  const totalSteps = hasInvite ? 1 : 2;
+
+  const [step, setStep] = useState<1 | 2>(1);
   const [loading, setLoading] = useState(false);
   const [loadingGoogle, setLoadingGoogle] = useState(false);
   const [error, setError] = useState("");
@@ -27,7 +33,7 @@ export default function CadastroPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [phone, setPhone] = useState("");
 
-  // Step 2: casa
+  // Step 2: casa (só para quem NÃO tem convite)
   const [houseName, setHouseName] = useState("");
   const [propertyType, setPropertyType] = useState("casa");
 
@@ -43,7 +49,8 @@ export default function CadastroPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
 
-    if (step === 1) {
+    // Step 1 → validação e avanço
+    if (step === 1 && !hasInvite) {
       if (password.length < 6) {
         setError("A senha deve ter pelo menos 6 caracteres.");
         return;
@@ -53,11 +60,19 @@ export default function CadastroPage() {
       return;
     }
 
-    // Step 2: cria conta + casa
+    // Se tem convite → criar conta + perfil (sem casa) e ir para /convite/TOKEN
+    // Se NÃO tem convite → criar conta + casa + perfil e ir para /onboarding
     setLoading(true);
     setError("");
 
     try {
+      // Valida senha no step 1 quando tem convite
+      if (hasInvite && password.length < 6) {
+        setError("A senha deve ter pelo menos 6 caracteres.");
+        setLoading(false);
+        return;
+      }
+
       // 1. Cria conta no Supabase Auth
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
@@ -72,16 +87,30 @@ export default function CadastroPage() {
 
       const userId = authData.user.id;
 
-      // 2. Cria a casa e o perfil via API (usa service role para bypassar RLS)
-      const res = await fetch("/api/criar-casa", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId, houseName, fullName, phone, propertyType }),
-      });
+      if (hasInvite) {
+        // Usuário convidado: só cria perfil, sem casa
+        const res = await fetch("/api/criar-perfil", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ userId, fullName, phone }),
+        });
 
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error ?? "Erro ao criar casa.");
+        if (!res.ok) {
+          const data = await res.json();
+          throw new Error(data.error ?? "Erro ao criar perfil.");
+        }
+      } else {
+        // Usuário normal: cria casa + perfil
+        const res = await fetch("/api/criar-casa", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ userId, houseName, fullName, phone, propertyType }),
+        });
+
+        if (!res.ok) {
+          const data = await res.json();
+          throw new Error(data.error ?? "Erro ao criar casa.");
+        }
       }
 
       // Meta Pixel — rastreia conversão de cadastro
@@ -89,7 +118,7 @@ export default function CadastroPage() {
         (window as any).fbq("track", "CompleteRegistration");
       }
 
-      // Se veio de um convite, redireciona de volta para aceitar
+      // Redireciona
       if (conviteToken) {
         router.push(`/convite/${conviteToken}`);
       } else {
@@ -110,10 +139,16 @@ export default function CadastroPage() {
   async function handleGoogle() {
     setLoadingGoogle(true);
     setError("");
+
+    // Preserva o token de convite na URL de callback
+    const callbackUrl = conviteToken
+      ? `${window.location.origin}/api/auth/callback?next=${encodeURIComponent(`/convite/${conviteToken}`)}`
+      : `${window.location.origin}/api/auth/callback`;
+
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${window.location.origin}/api/auth/callback`,
+        redirectTo: callbackUrl,
       },
     });
     if (error) {
@@ -143,7 +178,11 @@ export default function CadastroPage() {
       <div className="px-6 pt-6 pb-6 flex flex-col items-center text-center">
         <Logo size="lg" linked />
         <p className="text-gray-500 text-sm mt-3">
-          {step === 1 ? "Crie sua conta grátis" : "Como se chama sua casa?"}
+          {hasInvite
+            ? "Crie sua conta para aceitar o convite"
+            : step === 1
+              ? "Crie sua conta grátis"
+              : "Como se chama sua casa?"}
         </p>
       </div>
 
@@ -151,9 +190,13 @@ export default function CadastroPage() {
       <div className="px-6 mb-6">
         <div className="flex gap-2">
           <div className="flex-1 h-1.5 rounded-full bg-green-600" />
-          <div className={`flex-1 h-1.5 rounded-full ${step === 2 ? "bg-green-600" : "bg-gray-200"}`} />
+          {!hasInvite && (
+            <div className={`flex-1 h-1.5 rounded-full ${step === 2 ? "bg-green-600" : "bg-gray-200"}`} />
+          )}
         </div>
-        <p className="text-xs text-gray-400 mt-1.5">Passo {step} de 2</p>
+        <p className="text-xs text-gray-400 mt-1.5">
+          {hasInvite ? "Cadastro rápido" : `Passo ${step} de ${totalSteps}`}
+        </p>
       </div>
 
       <div className="flex-1 px-6 max-w-md mx-auto w-full">
@@ -244,6 +287,14 @@ export default function CadastroPage() {
                   className="w-full px-4 py-3.5 rounded-xl border border-gray-200 bg-gray-50 focus:outline-none focus:border-green-400 focus:bg-white transition-colors text-gray-900"
                 />
               </div>
+
+              {hasInvite && (
+                <div className="bg-green-50 rounded-xl p-4">
+                  <p className="text-sm text-green-800">
+                    🎉 Você foi convidado! Após criar sua conta, você será direcionado para aceitar o convite.
+                  </p>
+                </div>
+              )}
             </>
           ) : (
             <>
@@ -300,10 +351,16 @@ export default function CadastroPage() {
 
           <button
             type="submit"
-            disabled={loading || (step === 1 ? !fullName || !email || !password || !phone : !houseName)}
+            disabled={loading || (step === 1
+              ? !fullName || !email || !password || !phone
+              : !houseName)}
             className="w-full bg-green-600 text-white font-semibold py-4 rounded-xl hover:bg-green-700 transition-colors disabled:opacity-60 text-base mt-2"
           >
-            {loading ? "Criando conta..." : step === 1 ? "Continuar" : "Criar minha casa"}
+            {loading
+              ? (hasInvite ? "Criando conta..." : "Criando conta...")
+              : step === 1
+                ? (hasInvite ? "Criar conta e aceitar convite" : "Continuar")
+                : "Criar minha casa"}
           </button>
         </form>
 
@@ -311,7 +368,10 @@ export default function CadastroPage() {
           <div className="mt-6 text-center">
             <p className="text-gray-500 text-sm">
               Já tem conta?{" "}
-              <Link href="/login" className="text-green-600 font-semibold hover:underline">
+              <Link
+                href={conviteToken ? `/login?convite=${conviteToken}` : "/login"}
+                className="text-green-600 font-semibold hover:underline"
+              >
                 Entrar
               </Link>
             </p>

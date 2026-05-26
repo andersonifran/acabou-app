@@ -11,11 +11,21 @@ interface Props {
   params: Promise<{ token: string }>;
 }
 
+const PROPERTY_LABELS: Record<string, { label: string; icon: string; preposition: string }> = {
+  casa:        { label: "casa",      icon: "🏠", preposition: "na" },
+  apartamento: { label: "apê",       icon: "🏢", preposition: "no" },
+  praia:       { label: "casa de praia", icon: "🏖️", preposition: "na" },
+  veraneio:    { label: "casa de veraneio", icon: "🌲", preposition: "na" },
+  empresa:     { label: "empresa",   icon: "💼", preposition: "na" },
+  outro:       { label: "local",     icon: "📍", preposition: "no" },
+};
+
 export default function ConvitePage({ params }: Props) {
   const router = useRouter();
   const supabase = createClient();
   const [status, setStatus] = useState<"loading" | "ready" | "error" | "success">("loading");
   const [houseName, setHouseName] = useState("");
+  const [propertyType, setPropertyType] = useState("casa");
   const [error, setError] = useState("");
   const [token, setToken] = useState("");
 
@@ -29,7 +39,7 @@ export default function ConvitePage({ params }: Props) {
   async function checkInvite(t: string) {
     const { data: invite, error } = await supabase
       .from("invite_tokens")
-      .select("*, house:houses(name)")
+      .select("*, house:houses(name, property_type)")
       .eq("token", t)
       .is("used_at", null)
       .single();
@@ -46,7 +56,9 @@ export default function ConvitePage({ params }: Props) {
       return;
     }
 
-    setHouseName((invite.house as any)?.name ?? "Casa");
+    const house = invite.house as any;
+    setHouseName(house?.name ?? "");
+    setPropertyType(house?.property_type ?? "casa");
     setStatus("ready");
   }
 
@@ -127,6 +139,9 @@ export default function ConvitePage({ params }: Props) {
     setTimeout(() => router.push("/home"), 2000);
   }
 
+  // Monta a frase com base no tipo de imóvel
+  const prop = PROPERTY_LABELS[propertyType] || PROPERTY_LABELS.outro;
+
   return (
     <div className="min-h-screen bg-white flex flex-col items-center justify-center px-6 text-center">
       <div className="mb-8">
@@ -137,10 +152,10 @@ export default function ConvitePage({ params }: Props) {
 
       {status === "ready" && (
         <div className="max-w-sm">
-          <div className="text-5xl mb-4">🏠</div>
+          <div className="text-5xl mb-4">{prop.icon}</div>
           <h2 className="text-xl font-bold text-gray-900 mb-2">Você foi convidado!</h2>
           <p className="text-gray-500 mb-6">
-            Entrar na casa <strong>{houseName}</strong> e ver a lista compartilhada.
+            Entrar {prop.preposition} <strong>{houseName}</strong> e ver a lista compartilhada.
           </p>
           <button
             onClick={handleAccept}
@@ -158,7 +173,7 @@ export default function ConvitePage({ params }: Props) {
         <div className="max-w-sm">
           <div className="text-5xl mb-4">✅</div>
           <h2 className="text-xl font-bold text-gray-900 mb-2">Pronto!</h2>
-          <p className="text-gray-500">Você entrou na casa. Redirecionando...</p>
+          <p className="text-gray-500">Você entrou {prop.preposition} {houseName}. Redirecionando...</p>
         </div>
       )}
 

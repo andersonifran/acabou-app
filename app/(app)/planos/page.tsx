@@ -20,8 +20,8 @@ const plans = [
       "1 casa",
       "Apenas você (1 pessoa)",
       "Até 20 itens",
-      "Lista compartilhada",
-      "Notificação quando alguém marca acabou",
+      "Lista de compras automática",
+      "Compartilhar pelo WhatsApp",
     ],
     notIncluded: [
       "Lembrete diário no celular",
