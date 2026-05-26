@@ -93,7 +93,7 @@ export default function HomePage() {
   const [switchingHouse, setSwitchingHouse] = useState(false);
   const [showPlanLimit, setShowPlanLimit] = useState(false);
   const pickerRef = useRef<HTMLDivElement>(null);
-  const { canAddItem } = useSubscription();
+  const { canAddItem, isTrialing, trialDaysLeft, trialExpired } = useSubscription();
 
   const shoppingItems = items.filter((i) => SHOPPING_LIST_STATUSES.includes(i.status as any));
   const shoppingCount = shoppingItems.length;
@@ -319,8 +319,44 @@ export default function HomePage() {
 
         {!switchingHouse && (
           <>
-            {/* Banner de plano expirado */}
-            {currentHouse?.plan !== "free" && currentHouse?.plan_status === "inactive" && (
+            {/* Banner de trial ativo */}
+            {isTrialing && (currentHouse as any)?.owner_id === currentUserId && (
+              <Link
+                href="/planos"
+                className="flex items-center gap-3 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-2xl px-4 py-3.5 hover:from-blue-100 hover:to-indigo-100 transition-all"
+              >
+                <div className="w-9 h-9 bg-blue-500 rounded-full flex items-center justify-center shrink-0">
+                  <Zap size={18} className="text-white fill-white" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-bold text-blue-900 text-sm">
+                    Teste grátis — {trialDaysLeft} {trialDaysLeft === 1 ? "dia restante" : "dias restantes"}
+                  </p>
+                  <p className="text-xs text-blue-700 mt-0.5">Aproveite todos os recursos do Plano Família. Assine para não perder!</p>
+                </div>
+                <ChevronDown size={16} className="text-blue-500 shrink-0 -rotate-90" />
+              </Link>
+            )}
+
+            {/* Banner de trial expirado */}
+            {trialExpired && (currentHouse as any)?.owner_id === currentUserId && (
+              <Link
+                href="/planos"
+                className="flex items-center gap-3 bg-gradient-to-r from-red-50 to-orange-50 border border-red-200 rounded-2xl px-4 py-3.5 hover:from-red-100 hover:to-orange-100 transition-all"
+              >
+                <div className="w-9 h-9 bg-red-400 rounded-full flex items-center justify-center shrink-0">
+                  <Zap size={18} className="text-white fill-white" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-bold text-red-900 text-sm">Seu teste grátis acabou</p>
+                  <p className="text-xs text-red-700 mt-0.5">Assine o Plano Família para manter itens ilimitados, convites e mais</p>
+                </div>
+                <ChevronDown size={16} className="text-red-500 shrink-0 -rotate-90" />
+              </Link>
+            )}
+
+            {/* Banner de plano expirado (pago real, não trial) */}
+            {!trialExpired && currentHouse?.plan !== "free" && currentHouse?.plan_status === "inactive" && (
               <Link
                 href="/planos"
                 className="flex items-center gap-3 bg-gradient-to-r from-red-50 to-orange-50 border border-red-200 rounded-2xl px-4 py-3.5 hover:from-red-100 hover:to-orange-100 transition-all"
@@ -336,8 +372,8 @@ export default function HomePage() {
               </Link>
             )}
 
-            {/* Banner de upgrade — plano grátis (só mostra para o dono, não para convidados) */}
-            {currentHouse?.plan === "free" && (currentHouse as any)?.owner_id === currentUserId && (
+            {/* Banner de upgrade — plano grátis sem trial (só mostra para o dono) */}
+            {!isTrialing && !trialExpired && currentHouse?.plan === "free" && currentHouse?.plan_status !== "inactive" && (currentHouse as any)?.owner_id === currentUserId && (
               <Link
                 href="/planos"
                 className="flex items-center gap-3 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-2xl px-4 py-3.5 hover:from-amber-100 hover:to-orange-100 transition-all"

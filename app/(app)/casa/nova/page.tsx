@@ -82,7 +82,7 @@ export default function NovaCasaPage() {
 
       const data = await res.json();
 
-      // Adiciona a nova casa na lista
+      // Adiciona a nova casa na lista do store
       const { data: newHouse } = await supabase
         .from("houses").select("*").eq("id", data.houseId).single();
 
@@ -90,8 +90,8 @@ export default function NovaCasaPage() {
         setAllHouses([...allHouses, newHouse as any]);
       }
 
-      // Vai para o onboarding da nova casa ou direto para home
-      router.push("/home");
+      // Redireciona para onboarding com o houseId + propertyType para selecionar itens
+      router.push(`/onboarding?houseId=${data.houseId}&type=${propertyType}`);
     } catch (err: any) {
       setError(err.message ?? "Erro ao criar local.");
     } finally {

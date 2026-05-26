@@ -1,6 +1,7 @@
 "use client";
 
 import { useAppStore } from "@/store/appStore";
+import { useSubscription } from "@/hooks/useSubscription";
 import { Header } from "@/components/layout/Header";
 import { Check, Star, Home, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -77,6 +78,7 @@ const plans = [
 
 function PlanosContent() {
   const { currentHouse } = useAppStore();
+  const { isTrialing, trialDaysLeft, trialExpired } = useSubscription();
   const currentPlan = currentHouse?.plan ?? "free";
   const searchParams = useSearchParams();
   const motivo = searchParams.get("motivo");
@@ -204,10 +206,40 @@ function PlanosContent() {
             </div>
           </div>
         )}
+        {/* Banner de trial */}
+        {isTrialing && (
+          <div className="bg-blue-50 border border-blue-200 rounded-2xl p-4 flex items-start gap-3">
+            <span className="text-2xl">🎁</span>
+            <div>
+              <p className="font-semibold text-blue-800 text-sm">
+                Teste grátis — {trialDaysLeft} {trialDaysLeft === 1 ? "dia restante" : "dias restantes"}
+              </p>
+              <p className="text-blue-700 text-xs mt-1">
+                Você está aproveitando todos os recursos do Plano Família. Assine antes que acabe!
+              </p>
+            </div>
+          </div>
+        )}
+        {trialExpired && (
+          <div className="bg-red-50 border border-red-200 rounded-2xl p-4 flex items-start gap-3">
+            <span className="text-2xl">⏰</span>
+            <div>
+              <p className="font-semibold text-red-800 text-sm">Seu teste grátis acabou</p>
+              <p className="text-red-700 text-xs mt-1">
+                Assine agora para continuar com itens ilimitados, convites e todos os recursos.
+              </p>
+            </div>
+          </div>
+        )}
+
         <div className="text-center py-2">
           <p className="text-gray-500 text-sm">
             Plano atual: <span className="font-semibold text-gray-800 capitalize">
-              {currentPlan === "free" ? "Grátis" : currentPlan === "monthly" ? "Família Mensal" : "Família Anual"}
+              {isTrialing
+                ? "Teste grátis (7 dias)"
+                : trialExpired
+                  ? "Trial expirado"
+                  : currentPlan === "free" ? "Grátis" : currentPlan === "monthly" ? "Família Mensal" : "Família Anual"}
             </span>
           </p>
         </div>

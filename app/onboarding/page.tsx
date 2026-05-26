@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useState, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Check, ChevronRight, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -67,7 +67,20 @@ const PROPERTY_TYPES = [
 ];
 
 export default function OnboardingPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="w-8 h-8 border-2 border-gray-200 border-t-green-600 rounded-full animate-spin" />
+      </div>
+    }>
+      <OnboardingContent />
+    </Suspense>
+  );
+}
+
+function OnboardingContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const supabase = createClient();
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(false);
@@ -90,31 +103,45 @@ export default function OnboardingPage() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { router.push("/login"); return; }
 
-      const { data: member } = await supabase
-        .from("house_members")
-        .select("house_id, houses(property_type)")
-        .eq("user_id", user.id)
-        .eq("status", "active")
-        .single();
+      // Se veio de /casa/nova com houseId e type, usa esses dados
+      const paramHouseId = searchParams.get("houseId");
+      const paramType = searchParams.get("type");
 
-      if (member) {
-        setHouseId(member.house_id);
-        const pType = (member as any).houses?.property_type ?? "casa";
+      if (paramHouseId) {
+        // Novo local criado — pular direto para seleção de itens
+        setHouseId(paramHouseId);
+        const pType = paramType ?? "casa";
         setPropertyType(pType);
         setActiveCategory((ITEMS_BY_TYPE[pType] ?? ITEMS_BY_TYPE.casa)[0].category);
         setNeedsSetup(false);
-
-        // Verifica se o dono tem plano pago
-        const { data: paidHouse } = await supabase
-          .from("houses")
-          .select("plan")
-          .eq("id", member.house_id)
-          .in("plan", ["monthly", "yearly"])
-          .maybeSingle();
-        if (paidHouse) setUserIsPaid(true);
+        setUserIsPaid(true); // Se criou novo local, tem plano pago (apenas pago pode criar)
       } else {
-        // Usuário não tem casa (veio pelo Google OAuth)
-        setNeedsSetup(true);
+        const { data: member } = await supabase
+          .from("house_members")
+          .select("house_id, houses(property_type)")
+          .eq("user_id", user.id)
+          .eq("status", "active")
+          .single();
+
+        if (member) {
+          setHouseId(member.house_id);
+          const pType = (member as any).houses?.property_type ?? "casa";
+          setPropertyType(pType);
+          setActiveCategory((ITEMS_BY_TYPE[pType] ?? ITEMS_BY_TYPE.casa)[0].category);
+          setNeedsSetup(false);
+
+          // Verifica se o dono tem plano pago
+          const { data: paidHouse } = await supabase
+            .from("houses")
+            .select("plan")
+            .eq("id", member.house_id)
+            .in("plan", ["monthly", "yearly"])
+            .maybeSingle();
+          if (paidHouse) setUserIsPaid(true);
+        } else {
+          // Usuário não tem casa (veio pelo Google OAuth)
+          setNeedsSetup(true);
+        }
       }
 
       const { data: cats } = await supabase.from("categories").select("id, name");
@@ -203,6 +230,7 @@ export default function OnboardingPage() {
 
       if (selected.size > 0) {
         const groups = ITEMS_BY_TYPE[propertyType] ?? ITEMS_BY_TYPE.casa;
+
         const itemMap: Record<string, string> = {};
         groups.forEach(g => g.items.forEach(i => { itemMap[i] = categoryNameClean(g.category); }));
 
@@ -214,6 +242,9 @@ export default function OnboardingPage() {
 
         await supabase.from("items").insert(items);
       }
+
+      // Salva o houseId selecionado para que o layout abra neste local
+      localStorage.setItem("acabou_selected_house", houseId);
 
       router.push("/home");
       router.refresh();

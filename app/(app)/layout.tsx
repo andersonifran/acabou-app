@@ -34,6 +34,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { createItem, changeStatus } = useItems();
   const { canAddItem } = useSubscription();
   const [showPlanLimit, setShowPlanLimit] = useState(false);
+  const [isReady, setIsReady] = useState(false);
 
   async function loadHouseData(houseId: string) {
     const { data: { user } } = await supabase.auth.getUser();
@@ -97,10 +98,20 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       const selectedHouse = houses.find(h => h.id === savedId) ?? houses[0];
 
       await loadHouseData(selectedHouse.id);
+      setIsReady(true);
     }
 
     loadData();
   }, []);
+
+  if (!isReady) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center gap-3">
+        <div className="w-10 h-10 border-3 border-gray-200 border-t-green-600 rounded-full animate-spin" />
+        <p className="text-sm text-gray-400 font-medium">Carregando...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 pb-16">

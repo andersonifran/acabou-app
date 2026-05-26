@@ -5,7 +5,7 @@
 export type ItemStatus = "tem" | "acabando" | "acabou" | "comprar";
 export type MemberRole = "owner" | "admin" | "member";
 export type PlanType = "free" | "monthly" | "yearly";
-export type PlanStatus = "active" | "inactive" | "cancelled" | "past_due";
+export type PlanStatus = "active" | "inactive" | "cancelled" | "past_due" | "trialing";
 export type RecurrenceType = "weekly" | "biweekly" | "monthly" | "bimonthly";
 export type EventSource = "app" | "whatsapp" | "web";
 

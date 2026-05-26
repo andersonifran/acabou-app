@@ -32,13 +32,30 @@ export async function POST(request: NextRequest) {
       .select("plan, plan_status, plan_expires_at")
       .eq("owner_id", userId)
       .neq("plan", "free")
-      .eq("plan_status", "active")
       .limit(1)
       .maybeSingle();
 
-    const inheritedPlan = paidHouse
-      ? { plan: paidHouse.plan, plan_status: paidHouse.plan_status, plan_expires_at: paidHouse.plan_expires_at }
-      : { plan: "free", plan_status: "active" };
+    let inheritedPlan: { plan: string; plan_status: string; plan_expires_at?: string };
+
+    if (paidHouse && (paidHouse.plan_status === "active" || paidHouse.plan_status === "trialing")) {
+      // Herda plano pago ou trial existente
+      inheritedPlan = { plan: paidHouse.plan, plan_status: paidHouse.plan_status, plan_expires_at: paidHouse.plan_expires_at ?? undefined };
+    } else {
+      // Verifica se é a PRIMEIRA casa do usuário → ativa trial de 7 dias
+      const { count } = await supabase
+        .from("houses")
+        .select("id", { count: "exact", head: true })
+        .eq("owner_id", userId);
+
+      if (count === 0 || count === null) {
+        // Primeira casa — trial de 7 dias
+        const trialEnd = new Date();
+        trialEnd.setDate(trialEnd.getDate() + 7);
+        inheritedPlan = { plan: "monthly", plan_status: "trialing", plan_expires_at: trialEnd.toISOString() };
+      } else {
+        inheritedPlan = { plan: "free", plan_status: "active" };
+      }
+    }
 
     // Cria a casa (herdando plano se existir)
     const { data: house, error: houseError } = await supabase
