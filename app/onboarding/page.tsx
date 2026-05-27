@@ -18,9 +18,12 @@ const ITEMS_BY_TYPE: Record<string, { category: string; items: string[] }[]> = {
     { category: "💊 Farmácia", items: ["Curativo", "Álcool", "Algodão", "Termômetro"] },
   ],
   apartamento: [
-    { category: "🛒 Alimentos", items: ["Arroz", "Feijão", "Café", "Açúcar", "Sal", "Óleo", "Leite", "Ovos", "Pão", "Manteiga", "Macarrão", "Molho de tomate", "Frango", "Queijo"] },
-    { category: "🧹 Limpeza", items: ["Detergente", "Sabão em pó", "Amaciante", "Água sanitária", "Multiuso", "Esponja", "Saco de lixo", "Papel toalha"] },
-    { category: "🚿 Higiene", items: ["Papel higiênico", "Sabonete", "Shampoo", "Condicionador", "Creme dental", "Desodorante"] },
+    { category: "🛒 Alimentos", items: ["Arroz", "Feijão", "Café", "Açúcar", "Sal", "Óleo", "Leite", "Ovos", "Pão", "Manteiga", "Macarrão", "Molho de tomate", "Farinha", "Carne", "Frango", "Queijo", "Presunto", "Frutas", "Verduras", "Legumes"] },
+    { category: "🧹 Limpeza", items: ["Detergente", "Sabão em pó", "Amaciante", "Água sanitária", "Desinfetante", "Esponja", "Saco de lixo", "Papel toalha", "Multiuso"] },
+    { category: "🚿 Higiene", items: ["Papel higiênico", "Sabonete", "Shampoo", "Condicionador", "Creme dental", "Escova de dente", "Desodorante", "Absorvente"] },
+    { category: "🐾 Pet", items: ["Ração", "Areia do gato", "Tapete higiênico", "Petisco"] },
+    { category: "👶 Bebê", items: ["Fralda", "Lenço umedecido", "Pomada", "Fórmula"] },
+    { category: "💊 Farmácia", items: ["Curativo", "Álcool", "Algodão", "Termômetro"] },
   ],
   praia: [
     { category: "🏖️ Praia essencial", items: ["Protetor solar", "Repelente", "Protetor labial", "Óculos de sol", "Toalha de praia", "Chinelo"] },

@@ -8,7 +8,7 @@ import { useAppStore } from "@/store/appStore";
 import { ItemEvent, SHOPPING_LIST_STATUSES, House } from "@/types";
 import { formatRelativeTime } from "@/lib/utils";
 import { buildShoppingListText, buildWhatsAppShareUrl } from "@/lib/utils";
-import { ShoppingCart, Bell, ChevronDown, Plus, Check, Zap } from "lucide-react";
+import { ShoppingCart, Bell, ChevronDown, Plus, Check, Zap, Trash2 } from "lucide-react";
 import { Header } from "@/components/layout/Header";
 import { NotificationBell } from "@/components/shared/NotificationBell";
 import { PlanLimitModal } from "@/components/shared/PlanLimitModal";
@@ -21,7 +21,7 @@ const SELECTED_HOUSE_KEY = "acabou_selected_house";
 
 const PROPERTY_MAP: Record<string, { icon: string; label: string }> = {
   casa:        { icon: "🏠", label: "Casa" },
-  apartamento: { icon: "🏢", label: "Apartamento" },
+  apartamento: { icon: "🏢", label: "Apê" },
   praia:       { icon: "🏖️", label: "Praia" },
   veraneio:    { icon: "🌲", label: "Veraneio" },
   empresa:     { icon: "💼", label: "Empresa" },
@@ -82,10 +82,18 @@ function IconComprar() {
   );
 }
 
+// Constante fora do componente — evita re-criação a cada render
+const ACTION_BUTTONS = [
+  { label: "Acabou!", sublabel: "Precisa repor", icon: <IconAcabou />, bg: "bg-red-50 border-red-100", status: "acabou" },
+  { label: "Está acabando!", sublabel: "Já está no fim", icon: <IconAcabando />, bg: "bg-amber-50 border-amber-100", status: "acabando" },
+  { label: "Quero comprar!", sublabel: "Adicionar à lista", icon: <IconQueroComprar />, bg: "bg-blue-50 border-blue-100", status: "comprar" },
+  { label: "Comprei!", sublabel: "Já comprou o item", icon: <IconComprar />, bg: "bg-green-50 border-green-100", status: "tem" },
+];
+
 export default function HomePage() {
   const router = useRouter();
   const supabase = createClient();
-  const { items, currentHouse, allHouses, setCurrentHouse, setMembers, setItems, setAddItemModalOpen, setInitialStatus } = useAppStore();
+  const { items, currentHouse, allHouses, setCurrentHouse, setAllHouses, setMembers, setItems, setAddItemModalOpen, setInitialStatus } = useAppStore();
 
   const [currentUserId, setCurrentUserId] = useState<string>("");
   const [recentEvents, setRecentEvents] = useState<(ItemEvent & { profile?: any; item?: any })[]>([]);
@@ -93,6 +101,8 @@ export default function HomePage() {
   const [showHousePicker, setShowHousePicker] = useState(false);
   const [switchingHouse, setSwitchingHouse] = useState(false);
   const [showPlanLimit, setShowPlanLimit] = useState(false);
+  const [confirmDeleteHouseId, setConfirmDeleteHouseId] = useState<string | null>(null);
+  const [deletingHouse, setDeletingHouse] = useState(false);
   const pickerRef = useRef<HTMLDivElement>(null);
   const { canAddItem, isTrialing, trialDaysLeft, trialExpired, isFrozen } = useSubscription();
   const { canManageItems, isOwner: isRoleOwner } = useRole();
@@ -172,6 +182,34 @@ export default function HomePage() {
     setSwitchingHouse(false);
   }
 
+  async function handleDeleteHouse(houseId: string) {
+    if (allHouses.length <= 1) return;
+    setDeletingHouse(true);
+    try {
+      await supabase.from("item_events").delete().eq("house_id", houseId);
+      await supabase.from("items").delete().eq("house_id", houseId);
+      await supabase.from("invite_tokens").delete().eq("house_id", houseId);
+      await supabase.from("house_members").delete().eq("house_id", houseId);
+      await supabase.from("subscriptions").delete().eq("house_id", houseId);
+      await supabase.from("houses").delete().eq("id", houseId);
+
+      const remaining = allHouses.filter(h => h.id !== houseId);
+      setAllHouses(remaining);
+
+      // Se excluiu a casa ativa, troca para outra
+      if (currentHouse?.id === houseId && remaining.length > 0) {
+        await switchHouse(remaining[0]);
+      }
+    } catch (err) {
+      console.error("Erro ao excluir local:", err);
+      alert("Erro ao excluir local. Tente novamente.");
+    } finally {
+      setDeletingHouse(false);
+      setConfirmDeleteHouseId(null);
+      setShowHousePicker(false);
+    }
+  }
+
   function openModal(status: string) {
     // "Comprei!" → vai direto para a lista de compras (para marcar itens como comprados)
     if (status === "tem") {
@@ -179,16 +217,17 @@ export default function HomePage() {
       return;
     }
 
-    if (canManageItems) {
-      // Dono/admin: abre modal de buscar item existente OU criar novo
-      // O limite de itens é verificado DENTRO do modal ao criar novo item (layout.tsx onAddItem)
-      // Aqui não bloqueamos porque o dono pode mudar status de itens existentes mesmo no plano grátis
+    // "Quero comprar!" → abre modal de buscar/adicionar item para TODOS os usuários
+    // (membros podem buscar itens existentes e mudar status para "comprar")
+    if (status === "comprar") {
       setInitialStatus(status);
       setAddItemModalOpen(true);
-    } else {
-      // Membro: vai para a despensa para marcar status dos itens existentes
-      router.push("/despensa");
+      return;
     }
+
+    // "Acabou!" e "Está acabando!" → navega para despensa filtrada pelo status
+    // Assim o usuário vê os itens relevantes e pode gerenciá-los
+    router.push(`/despensa?filtro=${status}`);
   }
 
   function eventLabel(event: any): string {
@@ -207,37 +246,6 @@ export default function HomePage() {
     }
   }
 
-  const actionButtons = [
-    {
-      label: "Acabou!",
-      sublabel: "Precisa repor",
-      icon: <IconAcabou />,
-      bg: "bg-red-50 border-red-100",
-      status: "acabou",
-    },
-    {
-      label: "Está acabando!",
-      sublabel: "Já está no fim",
-      icon: <IconAcabando />,
-      bg: "bg-amber-50 border-amber-100",
-      status: "acabando",
-    },
-    {
-      label: "Quero comprar!",
-      sublabel: "Adicionar à lista",
-      icon: <IconQueroComprar />,
-      bg: "bg-blue-50 border-blue-100",
-      status: "comprar",
-    },
-    {
-      label: "Comprei!",
-      sublabel: "Já comprou o item",
-      icon: <IconComprar />,
-      bg: "bg-green-50 border-green-100",
-      status: "tem",
-    },
-  ];
-
   return (
     <div>
       {/* Header com ícone do imóvel + seletor de casas */}
@@ -247,58 +255,113 @@ export default function HomePage() {
             <button
               onClick={() => allHouses.length > 1 && setShowHousePicker(!showHousePicker)}
               className={cn(
-                "flex items-center gap-2 min-w-0",
+                "flex items-center gap-3 min-w-0",
                 allHouses.length > 1 && "cursor-pointer"
               )}
             >
-              <span className="text-2xl shrink-0">{propertyInfo.icon}</span>
-              <div className="min-w-0">
-                <div className="flex items-center gap-1">
-                  <h1 className="font-semibold text-gray-900 truncate text-sm leading-tight max-w-[160px] sm:max-w-[220px]">
+              <div className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center shrink-0">
+                <span className="text-xl leading-none">{propertyInfo.icon}</span>
+              </div>
+              <div className="min-w-0 text-left">
+                <div className="flex items-center gap-1.5">
+                  <h1 className="font-bold text-gray-900 truncate text-[15px] leading-snug max-w-[45vw] sm:max-w-[240px]">
                     {currentHouse?.name ?? "Minha Casa"}
                   </h1>
                   {allHouses.length > 1 && (
-                    <ChevronDown size={16} className={cn("text-gray-400 shrink-0 transition-transform", showHousePicker && "rotate-180")} />
+                    <ChevronDown size={14} className={cn("text-gray-400 shrink-0 transition-transform", showHousePicker && "rotate-180")} />
                   )}
                 </div>
-                <p className="text-xs text-gray-500 leading-tight">{propertyInfo.label} · O que mudou hoje?</p>
+                <p className="text-[11px] text-gray-400 leading-snug mt-0.5 truncate">{propertyInfo.label} · O que mudou hoje?</p>
               </div>
             </button>
 
             {/* Dropdown de casas */}
             {showHousePicker && (
-              <div className="absolute top-full left-0 mt-2 w-72 bg-white rounded-2xl border border-gray-100 shadow-xl z-50 overflow-hidden">
-                <p className="px-4 pt-3 pb-1 text-xs font-semibold text-gray-400 uppercase tracking-wide">Suas casas</p>
-                {allHouses.map((house) => {
-                  const pt = PROPERTY_MAP[(house as any).property_type ?? "casa"] ?? PROPERTY_MAP.casa;
-                  return (
-                    <button
-                      key={house.id}
-                      onClick={() => switchHouse(house)}
-                      className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors text-left"
-                    >
-                      <span className="text-xl shrink-0">{pt.icon}</span>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium text-gray-900 text-sm truncate">{house.name}</p>
-                        <p className="text-xs text-gray-500">{pt.label}</p>
+              <div className="absolute top-full left-0 mt-2 w-[min(90vw,320px)] bg-white rounded-2xl border border-gray-100 shadow-2xl z-50 overflow-hidden">
+                <p className="px-4 pt-3.5 pb-1.5 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Seus locais</p>
+                <div className="max-h-[280px] overflow-y-auto">
+                  {allHouses.map((house) => {
+                    const pt = PROPERTY_MAP[(house as any).property_type ?? "casa"] ?? PROPERTY_MAP.casa;
+                    const isActive = house.id === currentHouse?.id;
+                    const isConfirmingDelete = confirmDeleteHouseId === house.id;
+
+                    return (
+                      <div key={house.id} className="relative">
+                        {isConfirmingDelete ? (
+                          /* Confirmação de exclusão inline */
+                          <div className="px-4 py-3 bg-red-50 border-y border-red-100">
+                            <p className="text-sm text-red-700 font-medium mb-2.5">
+                              Excluir <strong>{house.name}</strong> e todos os itens?
+                            </p>
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => handleDeleteHouse(house.id)}
+                                disabled={deletingHouse}
+                                className="flex-1 py-2 bg-red-500 text-white text-xs font-bold rounded-lg hover:bg-red-600 disabled:opacity-50 transition-colors"
+                              >
+                                {deletingHouse ? "Excluindo..." : "Sim, excluir"}
+                              </button>
+                              <button
+                                onClick={() => setConfirmDeleteHouseId(null)}
+                                className="flex-1 py-2 bg-white border border-gray-200 text-gray-600 text-xs font-medium rounded-lg hover:bg-gray-50 transition-colors"
+                              >
+                                Cancelar
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors">
+                            <button
+                              onClick={() => switchHouse(house)}
+                              className="flex items-center gap-3 flex-1 min-w-0 text-left"
+                            >
+                              <div className={cn(
+                                "w-10 h-10 rounded-xl flex items-center justify-center shrink-0",
+                                isActive ? "bg-green-50 ring-2 ring-green-200" : "bg-gray-50"
+                              )}>
+                                <span className="text-lg leading-none">{pt.icon}</span>
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className={cn(
+                                  "text-sm truncate leading-snug",
+                                  isActive ? "font-bold text-green-700" : "font-medium text-gray-900"
+                                )}>{house.name}</p>
+                                <p className="text-[11px] text-gray-400 leading-snug mt-0.5">{pt.label}</p>
+                              </div>
+                            </button>
+
+                            <div className="flex items-center gap-1 shrink-0">
+                              {isActive && (
+                                <Check size={16} className="text-green-600" />
+                              )}
+                              {/* Botão excluir — só dono, e se tem mais de 1 casa */}
+                              {isRoleOwner && allHouses.length > 1 && !isActive && (
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); setConfirmDeleteHouseId(house.id); }}
+                                  className="p-1.5 text-gray-300 hover:text-red-400 transition-colors rounded-lg hover:bg-red-50"
+                                  title="Excluir local"
+                                >
+                                  <Trash2 size={14} />
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        )}
                       </div>
-                      {house.id === currentHouse?.id && (
-                        <Check size={16} className="text-green-600 shrink-0" />
-                      )}
-                    </button>
-                  );
-                })}
+                    );
+                  })}
+                </div>
                 {isRoleOwner && (
-                  <div className="border-t border-gray-50 p-2">
+                  <div className="border-t border-gray-100 p-2">
                     <Link
                       href="/casa/nova"
                       onClick={() => setShowHousePicker(false)}
-                      className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl hover:bg-green-50 transition-colors"
+                      className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-green-50 transition-colors"
                     >
-                      <div className="w-7 h-7 bg-green-100 rounded-full flex items-center justify-center">
-                        <Plus size={14} className="text-green-600" />
+                      <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                        <Plus size={15} className="text-green-600" />
                       </div>
-                      <span className="text-sm font-semibold text-green-700">Adicionar novo local</span>
+                      <span className="text-sm font-bold text-green-700">Adicionar novo local</span>
                     </Link>
                   </div>
                 )}
@@ -458,7 +521,7 @@ export default function HomePage() {
                 O que aconteceu?
               </p>
               <div className="grid grid-cols-2 gap-3">
-                {actionButtons.map(({ label, sublabel, icon, bg, status }) => (
+                {ACTION_BUTTONS.map(({ label, sublabel, icon, bg, status }) => (
                   <button
                     key={status}
                     onClick={() => openModal(status)}

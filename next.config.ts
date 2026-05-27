@@ -2,8 +2,16 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   images: {
-    remotePatterns: [],
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "xroejgnmcuwydrekiury.supabase.co",
+        pathname: "/storage/v1/object/public/**",
+      },
+    ],
   },
+  // Compressão gzip automática para respostas menores
+  compress: true,
   async headers() {
     return [
       {

@@ -142,7 +142,7 @@ export default function LandingPage() {
             <p className="text-green-200 text-xs md:text-sm mt-1">pra configurar tudo</p>
           </div>
           <div>
-            <p className="text-xl md:text-3xl font-black leading-tight">R$ 4,99<span className="text-base font-bold">/mês</span></p>
+            <p className="text-xl md:text-3xl font-black leading-tight whitespace-nowrap">R$&nbsp;4,99<span className="text-base font-bold">/mês</span></p>
             <p className="text-green-200 text-xs md:text-sm mt-1">no plano anual</p>
           </div>
           <div>
@@ -162,8 +162,8 @@ export default function LandingPage() {
         <div className="max-w-2xl mx-auto">
           <div className="text-center mb-10">
             <h2 className="text-3xl md:text-4xl font-black text-gray-900 leading-tight mb-4">
-              Se você se identificou com<br />
-              <span className="text-red-500">alguma dessas situações...</span>
+              Se você se identificou<br className="hidden md:block" />{" "}
+              <span className="text-red-500">com alguma dessas situações...</span>
             </h2>
           </div>
 
@@ -210,8 +210,8 @@ export default function LandingPage() {
           ══════════════════════════════════════════ */}
       <section className="px-6 py-16 bg-green-50">
         <div className="max-w-2xl mx-auto text-center">
-          <span className="inline-flex items-center gap-2 bg-green-600 text-white text-xs font-black px-4 py-2 rounded-full mb-6 uppercase tracking-wide">
-            A solução
+          <span className="inline-flex items-center gap-2 bg-green-600 text-white text-sm font-black px-5 py-2.5 rounded-full mb-6 uppercase tracking-wider">
+            ✨ A solução
           </span>
           <h2 className="text-3xl md:text-4xl font-black text-gray-900 leading-tight mb-6">
             Um app onde quem vê que acabou, <span className="text-red-500">marca.</span><br />
@@ -366,7 +366,7 @@ export default function LandingPage() {
       <section className="px-6 py-16 bg-white">
         <div className="max-w-3xl mx-auto text-center">
           <h2 className="text-3xl md:text-4xl font-black text-gray-900 mb-4">
-            Quem usa, não volta pro papel
+            Quem usa, não volta<br className="md:hidden" /> pro&nbsp;papel
           </h2>
           <p className="text-gray-500 text-lg mb-12">Veja o que estão dizendo sobre o Acabou?</p>
 
@@ -670,7 +670,7 @@ export default function LandingPage() {
             <LogoIcon size={72} />
           </div>
           <h2 className="text-3xl md:text-4xl font-black mb-4 leading-tight">
-            Sua família merece uma casa<br />onde nada falta.
+            Sua família merece uma<br className="md:hidden" /> casa&nbsp;onde&nbsp;nada&nbsp;falta.
           </h2>
           <p className="text-green-100 mb-4 text-lg leading-relaxed">
             Chega de esquecer. Chega de comprar repetido. Chega de perguntar "tem arroz?". Em 30 segundos você organiza sua casa pra sempre.

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { useAppStore } from "@/store/appStore";
 import { useItems } from "@/hooks/useItems";
@@ -26,6 +26,18 @@ const filterOptions: { value: FilterStatus; label: string }[] = [
 ];
 
 export default function DespensaPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex items-center justify-center py-20">
+        <div className="w-8 h-8 border-2 border-gray-200 border-t-green-600 rounded-full animate-spin" />
+      </div>
+    }>
+      <DespensaContent />
+    </Suspense>
+  );
+}
+
+function DespensaContent() {
   const searchParams = useSearchParams();
   const { setAddItemModalOpen, setInitialStatus } = useAppStore();
   const { items, itemsByCategory, changeStatus, deleteItem, renameItem } = useItems();

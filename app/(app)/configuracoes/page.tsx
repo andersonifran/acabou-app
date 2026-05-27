@@ -1,11 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { useAppStore } from "@/store/appStore";
 import { Header } from "@/components/layout/Header";
-import { ItemEvent, ItemStatus, RECURRENCE_LABELS, RecurrenceType } from "@/types";
+import { ItemEvent, ItemStatus, RECURRENCE_LABELS, RecurrenceType, Profile } from "@/types";
 import { useItems } from "@/hooks/useItems";
 import { useSubscription } from "@/hooks/useSubscription";
 import { formatRelativeTime, getNextReminderDate } from "@/lib/utils";
@@ -16,6 +16,7 @@ import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { usePWAInstall } from "@/hooks/usePWAInstall";
 import { ThemeToggle } from "@/components/shared/ThemeToggle";
 import { useRole } from "@/hooks/useRole";
+import { ProfileAvatar } from "@/components/shared/ProfileAvatar";
 
 export default function ConfiguracoesPage() {
   const router = useRouter();
@@ -28,6 +29,25 @@ export default function ConfiguracoesPage() {
   const [history, setHistory] = useState<(ItemEvent & { profile?: any; item?: any })[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [historyLoaded, setHistoryLoaded] = useState(false);
+
+  // Perfil do usuário
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [loadingProfile, setLoadingProfile] = useState(true);
+
+  useEffect(() => {
+    async function loadProfile() {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("user_id", user.id)
+        .single();
+      if (data) setProfile(data as Profile);
+      setLoadingProfile(false);
+    }
+    loadProfile();
+  }, []);
   const [reminderEnabled, setReminderEnabled] = useState(currentHouse?.reminder_enabled ?? false);
   const [reminderTime, setReminderTime] = useState(currentHouse?.reminder_time ?? "18:00");
   const [savingReminder, setSavingReminder] = useState(false);
@@ -196,6 +216,32 @@ export default function ConfiguracoesPage() {
         {/* Aba: Geral */}
         {activeTab === "geral" && (
           <div className="space-y-3">
+            {/* Seção de Perfil com Foto */}
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+              <div className="flex flex-col items-center text-center">
+                {loadingProfile ? (
+                  <div className="w-28 h-28 rounded-full bg-gray-100 animate-pulse" />
+                ) : (
+                  <ProfileAvatar
+                    avatarUrl={profile?.avatar_url ?? null}
+                    fullName={profile?.full_name ?? ""}
+                    size="lg"
+                    editable
+                    onAvatarChange={(newUrl) => {
+                      setProfile((prev) => prev ? { ...prev, avatar_url: newUrl } : prev);
+                    }}
+                  />
+                )}
+                <h2 className="font-bold text-gray-900 text-lg mt-3">
+                  {profile?.full_name ?? "..."}
+                </h2>
+                <p className="text-sm text-gray-500 mt-0.5">{profile?.email ?? ""}</p>
+                {profile?.phone && (
+                  <p className="text-xs text-gray-400 mt-0.5">{profile.phone}</p>
+                )}
+              </div>
+            </div>
+
             {/* Instalar App (quando no navegador e ainda não instalou) */}
             {!pwa.isInstalled && (
               <button
