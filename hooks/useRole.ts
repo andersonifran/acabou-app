@@ -11,6 +11,11 @@ import { MemberRole } from "@/types";
  *
  * Enquanto userId ainda não foi carregado (null), TODAS as permissões
  * são false. Isso é seguro: o membro nunca vê controles do dono.
+ *
+ * Filosofia de permissões:
+ * - Convidados (member) podem gerenciar itens (add/edit/delete/status/notes)
+ *   porque o objetivo é AJUDAR o dono, não sobrecarregá-lo.
+ * - Ações estruturais (casa, plano, convites, categorias) ficam com o dono.
  */
 export function useRole() {
   const { userId, currentHouse, members } = useAppStore();
@@ -27,13 +32,31 @@ export function useRole() {
 
   const isAdmin = loaded && (role === "owner" || role === "admin");
 
-  // Permissões — false até carregar (sem flash)
-  const canManageItems = loaded && isAdmin;
-  const canChangeStatus = true;
-  const canManageHouse = loaded && isOwner;
-  const canAccessPlans = loaded && isOwner;
-  const canAccessSettings = true;
-  const canInviteMembers = loaded && isOwner;
+  // ── Permissões — false até carregar (sem flash) ──
+
+  // Itens: TODOS os membros podem gerenciar (add, edit, rename, delete, notes, status)
+  // Isso permite que convidados ajudem o dono sem sobrecarregá-lo
+  const canManageItems = loaded;
+
+  // Status: todos podem mudar
+  const canChangeStatus = loaded;
+
+  // Compartilhar lista via WhatsApp: todos podem
+  const canShareList = loaded;
+
+  // Finalizar compras: todos podem (útil quando convidado vai ao mercado)
+  const canFinishShopping = loaded;
+
+  // ── Ações protegidas — somente dono (owner) ──
+  const canManageHouse = loaded && isOwner;       // Renomear/excluir casa
+  const canAccessPlans = loaded && isOwner;        // Ver/alterar plano/pagamento
+  const canInviteMembers = loaded && isOwner;      // Enviar convites
+  const canRemoveMembers = loaded && isOwner;      // Remover outros membros
+  const housePlan = (currentHouse as any)?.plan;
+  const isPaidPlan = housePlan && housePlan !== "free";
+  const canEditCategories = loaded && isAdmin && isPaidPlan; // Renomear categorias (owner/admin + plano pago)
+  const canAccessSettings = loaded;                // Configurações pessoais (todos)
+  const canDeleteHouse = loaded && isOwner;        // Excluir casa/local
 
   return {
     role,
@@ -42,11 +65,18 @@ export function useRole() {
     isMember: loaded && !isOwner && !isAdmin,
     currentUserId: userId ?? "",
     loaded,
+    // Itens (todos)
     canManageItems,
     canChangeStatus,
+    canShareList,
+    canFinishShopping,
+    // Estruturais (dono)
     canManageHouse,
     canAccessPlans,
     canAccessSettings,
     canInviteMembers,
+    canRemoveMembers,
+    canEditCategories,
+    canDeleteHouse,
   };
 }

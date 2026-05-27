@@ -5,7 +5,7 @@ import { Item, ItemStatus } from "@/types";
 import { StatusButtons } from "./StatusButtons";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { cn, truncate } from "@/lib/utils";
-import { ChevronDown, ChevronUp, MoreVertical, Pencil, Trash2, Check, X } from "lucide-react";
+import { ChevronDown, ChevronUp, MoreVertical, Pencil, Trash2, Check, X, StickyNote } from "lucide-react";
 
 interface ItemCardProps {
   item: Item;
@@ -14,6 +14,7 @@ interface ItemCardProps {
   showPurchaseButton?: boolean;
   compact?: boolean;
   onEdit?: (itemId: string, newName: string) => Promise<void>;
+  onEditFull?: (itemId: string, data: { name: string; note?: string; quantity_text?: string }) => Promise<void>;
   onDelete?: (itemId: string) => Promise<void>;
 }
 
@@ -24,6 +25,7 @@ export const ItemCard = memo(function ItemCard({
   showPurchaseButton = false,
   compact = false,
   onEdit,
+  onEditFull,
   onDelete,
 }: ItemCardProps) {
   const [loading, setLoading] = useState(false);
@@ -31,6 +33,8 @@ export const ItemCard = memo(function ItemCard({
   const [menuOpen, setMenuOpen] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [editName, setEditName] = useState(item.name);
+  const [editNote, setEditNote] = useState(item.note || "");
+  const [editQuantity, setEditQuantity] = useState(item.quantity_text || "");
   const [confirmDelete, setConfirmDelete] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const editInputRef = useRef<HTMLInputElement>(null);
@@ -66,16 +70,41 @@ export const ItemCard = memo(function ItemCard({
   }
 
   async function handleSaveEdit() {
-    if (!onEdit || !editName.trim()) return;
+    if (!editName.trim()) return;
     setLoading(true);
     try {
-      await onEdit(item.id, editName);
+      if (onEditFull) {
+        await onEditFull(item.id, {
+          name: editName,
+          note: editNote || undefined,
+          quantity_text: editQuantity || undefined,
+        });
+      } else if (onEdit) {
+        await onEdit(item.id, editName);
+      }
       setEditMode(false);
     } catch {
       setEditName(item.name);
+      setEditNote(item.note || "");
+      setEditQuantity(item.quantity_text || "");
     } finally {
       setLoading(false);
     }
+  }
+
+  function enterEditMode() {
+    setEditName(item.name);
+    setEditNote(item.note || "");
+    setEditQuantity(item.quantity_text || "");
+    setEditMode(true);
+    setMenuOpen(false);
+  }
+
+  function cancelEdit() {
+    setEditMode(false);
+    setEditName(item.name);
+    setEditNote(item.note || "");
+    setEditQuantity(item.quantity_text || "");
   }
 
   async function handleDelete() {
@@ -89,7 +118,10 @@ export const ItemCard = memo(function ItemCard({
     }
   }
 
-  const hasActions = !!(onEdit || onDelete);
+  const hasActions = !!(onEdit || onEditFull || onDelete);
+  const notePreview = item.note || item.quantity_text
+    ? [item.quantity_text, item.note].filter(Boolean).join(" · ")
+    : null;
 
   return (
     <>
@@ -103,36 +135,62 @@ export const ItemCard = memo(function ItemCard({
           <div className="flex items-start justify-between gap-2 mb-3">
             <div className="flex-1 min-w-0">
               {editMode ? (
-                <div className="flex items-center gap-2">
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <input
+                      ref={editInputRef}
+                      value={editName}
+                      onChange={(e) => setEditName(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") handleSaveEdit();
+                        if (e.key === "Escape") cancelEdit();
+                      }}
+                      placeholder="Nome do item"
+                      className="flex-1 text-sm font-semibold text-gray-900 border-b-2 border-green-400 bg-transparent outline-none pb-0.5"
+                      maxLength={100}
+                    />
+                    <button onClick={handleSaveEdit} className="text-green-600 hover:text-green-700 shrink-0">
+                      <Check size={16} strokeWidth={2.5} />
+                    </button>
+                    <button onClick={cancelEdit} className="text-gray-400 hover:text-gray-600 shrink-0">
+                      <X size={16} />
+                    </button>
+                  </div>
                   <input
-                    ref={editInputRef}
-                    value={editName}
-                    onChange={(e) => setEditName(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") handleSaveEdit();
-                      if (e.key === "Escape") { setEditMode(false); setEditName(item.name); }
-                    }}
-                    className="flex-1 text-sm font-semibold text-gray-900 border-b-2 border-green-400 bg-transparent outline-none pb-0.5"
-                    maxLength={100}
+                    value={editQuantity}
+                    onChange={(e) => setEditQuantity(e.target.value)}
+                    placeholder="Quantidade (ex: 2 unidades, 1kg)"
+                    className="w-full text-xs text-gray-700 border border-gray-200 rounded-lg px-3 py-2 bg-gray-50 outline-none focus:border-green-300 focus:ring-1 focus:ring-green-100 transition-colors"
+                    maxLength={50}
                   />
-                  <button onClick={handleSaveEdit} className="text-green-600 hover:text-green-700 shrink-0">
-                    <Check size={16} strokeWidth={2.5} />
-                  </button>
-                  <button onClick={() => { setEditMode(false); setEditName(item.name); }} className="text-gray-400 hover:text-gray-600 shrink-0">
-                    <X size={16} />
-                  </button>
+                  <textarea
+                    value={editNote}
+                    onChange={(e) => setEditNote(e.target.value)}
+                    placeholder="Observação (ex: marca Ypê, sem lactose...)"
+                    rows={2}
+                    className="w-full text-xs text-gray-700 border border-gray-200 rounded-lg px-3 py-2 bg-gray-50 outline-none focus:border-green-300 focus:ring-1 focus:ring-green-100 transition-colors resize-none"
+                    maxLength={200}
+                  />
                 </div>
               ) : (
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="font-semibold text-gray-900">{item.name}</span>
-                  {item.is_recurring && (
-                    <span className="text-xs text-purple-600 bg-purple-50 px-2 py-0.5 rounded-full">
-                      🔄 Recorrente
-                    </span>
+                <div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="font-semibold text-gray-900">{item.name}</span>
+                    {item.is_recurring && (
+                      <span className="text-xs text-purple-600 bg-purple-50 px-2 py-0.5 rounded-full">
+                        🔄 Recorrente
+                      </span>
+                    )}
+                  </div>
+                  {notePreview && (
+                    <p className="text-xs text-gray-400 mt-0.5 flex items-center gap-1 truncate max-w-[220px]">
+                      <StickyNote size={11} className="shrink-0 text-amber-400" />
+                      <span className="truncate">{notePreview}</span>
+                    </p>
                   )}
                 </div>
               )}
-              {item.category && (
+              {item.category && !editMode && (
                 <span className="text-xs text-gray-500 mt-0.5 block">
                   {item.category.icon} {item.category.name}
                 </span>
@@ -158,13 +216,13 @@ export const ItemCard = memo(function ItemCard({
                   </button>
                   {menuOpen && (
                     <div className="absolute right-0 top-6 z-20 bg-white border border-gray-100 rounded-xl shadow-lg overflow-hidden min-w-[140px]">
-                      {onEdit && (
+                      {(onEdit || onEditFull) && (
                         <button
-                          onClick={() => { setEditMode(true); setMenuOpen(false); }}
+                          onClick={enterEditMode}
                           className="flex items-center gap-2.5 w-full px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                         >
                           <Pencil size={14} className="text-gray-500" />
-                          Renomear
+                          Editar
                         </button>
                       )}
                       {onDelete && (

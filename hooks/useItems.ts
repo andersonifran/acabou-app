@@ -220,6 +220,45 @@ export function useItems() {
     [items, supabase, updateItem]
   );
 
+  const editItem = useCallback(
+    async (itemId: string, data: { name: string; note?: string; quantity_text?: string }) => {
+      const trimmed = data.name.trim();
+      if (!trimmed) throw new Error("Nome inválido");
+
+      const original = items.find((i) => i.id === itemId);
+      if (!original) return;
+
+      // Atualiza otimisticamente
+      updateItem(itemId, {
+        name: trimmed,
+        note: data.note?.trim() || undefined,
+        quantity_text: data.quantity_text?.trim() || undefined,
+      });
+
+      const { data: { user } } = await supabase.auth.getUser();
+      const { error } = await supabase
+        .from("items")
+        .update({
+          name: trimmed,
+          note: data.note?.trim() || null,
+          quantity_text: data.quantity_text?.trim() || null,
+          updated_by: user?.id,
+        })
+        .eq("id", itemId);
+
+      if (error) {
+        // Reverte
+        updateItem(itemId, {
+          name: original.name,
+          note: original.note,
+          quantity_text: original.quantity_text,
+        });
+        throw error;
+      }
+    },
+    [items, supabase, updateItem]
+  );
+
   return {
     items,
     shoppingListItems,
@@ -229,6 +268,7 @@ export function useItems() {
     createItem,
     deleteItem,
     renameItem,
+    editItem,
     updateQuantity,
   };
 }

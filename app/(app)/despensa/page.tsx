@@ -11,7 +11,7 @@ import { EmptyState } from "@/components/shared/EmptyState";
 import { PlanLimitModal } from "@/components/shared/PlanLimitModal";
 import { Header } from "@/components/layout/Header";
 import { Item, ItemStatus, STATUS_LABELS } from "@/types";
-import { Plus, Search, X, Share2, Zap } from "lucide-react";
+import { Plus, Search, X, Share2, Zap, Pencil, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 
@@ -40,12 +40,41 @@ export default function DespensaPage() {
 function DespensaContent() {
   const searchParams = useSearchParams();
   const { setAddItemModalOpen, setInitialStatus } = useAppStore();
-  const { items, itemsByCategory, changeStatus, deleteItem, renameItem } = useItems();
+  const { items, itemsByCategory, changeStatus, deleteItem, renameItem, editItem } = useItems();
   const { canAddItem, isPaid, itemCount, itemsRemaining, limits } = useSubscription();
-  const { canManageItems } = useRole();
+  const { canManageItems, canEditCategories } = useRole();
   const initialFilter = (searchParams.get("filtro") as FilterStatus) || "todos";
   const [filter, setFilter] = useState<FilterStatus>(initialFilter);
   const [search, setSearch] = useState("");
+  const [editingCat, setEditingCat] = useState<string | null>(null);
+  const [editingCatName, setEditingCatName] = useState("");
+  const [savingCat, setSavingCat] = useState(false);
+  const { categories, setCategories } = useAppStore();
+
+  async function handleRenameCategory(catId: string) {
+    const trimmed = editingCatName.trim();
+    if (!trimmed || savingCat) return;
+    setSavingCat(true);
+    try {
+      const res = await fetch("/api/categories/rename", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ categoryId: catId, newName: trimmed }),
+      });
+      if (res.ok) {
+        // Atualiza categorias no store
+        setCategories(categories.map(c => c.id === catId ? { ...c, name: trimmed } : c));
+        setEditingCat(null);
+      } else {
+        const data = await res.json();
+        alert(data.error || "Erro ao renomear categoria");
+      }
+    } catch {
+      alert("Erro de conexão");
+    } finally {
+      setSavingCat(false);
+    }
+  }
 
   // Sincroniza filtro quando URL muda (ex: vindo da Home)
   useEffect(() => {
@@ -175,11 +204,57 @@ function DespensaContent() {
             }
           />
         ) : (
-          Object.entries(filteredByCategory).sort(([a], [b]) => a.localeCompare(b)).map(([category, catItems]) => (
+          Object.entries(filteredByCategory).sort(([a], [b]) => a.localeCompare(b)).map(([category, catItems]) => {
+            const catId = catItems[0].category?.id;
+            const isEditingThis = editingCat === catId;
+            return (
             <div key={category}>
-              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2 px-1">
-                {catItems[0].category?.icon} {category} ({catItems.length})
-              </p>
+              <div className="flex items-center gap-1.5 mb-2 px-1">
+                {isEditingThis ? (
+                  <div className="flex items-center gap-1.5 flex-1">
+                    <span className="text-xs">{catItems[0].category?.icon}</span>
+                    <input
+                      autoFocus
+                      value={editingCatName}
+                      onChange={(e) => setEditingCatName(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && catId) handleRenameCategory(catId);
+                        if (e.key === "Escape") setEditingCat(null);
+                      }}
+                      className="flex-1 text-xs font-semibold text-gray-700 uppercase tracking-wide bg-white border-b-2 border-green-400 outline-none pb-0.5"
+                      maxLength={40}
+                    />
+                    <button
+                      onClick={() => catId && handleRenameCategory(catId)}
+                      disabled={savingCat}
+                      className="text-green-600 hover:text-green-700 p-0.5"
+                    >
+                      <Check size={14} strokeWidth={2.5} />
+                    </button>
+                    <button
+                      onClick={() => setEditingCat(null)}
+                      className="text-gray-400 hover:text-gray-600 p-0.5"
+                    >
+                      <X size={14} />
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">
+                      {catItems[0].category?.icon} {category} ({catItems.length})
+                    </p>
+                    {canEditCategories && catId && (
+                      <button
+                        onClick={() => { setEditingCat(catId); setEditingCatName(category); }}
+                        className="text-gray-300 hover:text-gray-500 transition-colors p-0.5"
+                        title="Renomear categoria"
+                      >
+                        <Pencil size={11} />
+                      </button>
+                    )}
+                  </>
+                )}
+              </div>
               <div className="space-y-2">
                 {catItems.map((item) => (
                   <ItemCard
@@ -187,12 +262,13 @@ function DespensaContent() {
                     item={item}
                     onStatusChange={changeStatus}
                     onEdit={canManageItems ? renameItem : undefined}
+                    onEditFull={canManageItems ? editItem : undefined}
                     onDelete={canManageItems ? deleteItem : undefined}
                   />
                 ))}
               </div>
             </div>
-          ))
+          );})
         )}
         {/* Banner de upgrade discreto para grátis */}
         {!isPaid && items.length > 0 && (

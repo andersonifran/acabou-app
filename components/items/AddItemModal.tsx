@@ -5,9 +5,9 @@ import { X, Search, Plus } from "lucide-react";
 import { Item, ItemStatus, Category, STATUS_LABELS, SHOPPING_LIST_STATUSES } from "@/types";
 import { cn } from "@/lib/utils";
 
-// Itens sugeridos para busca/onboarding
+// Itens sugeridos para busca — unifica todos os tipos de local
 export const SUGGESTED_ITEMS: { name: string; category: string }[] = [
-  // Alimentos
+  // ── Alimentos ──
   { name: "Arroz", category: "Alimentos" },
   { name: "Feijão", category: "Alimentos" },
   { name: "Óleo", category: "Alimentos" },
@@ -28,7 +28,10 @@ export const SUGGESTED_ITEMS: { name: string; category: string }[] = [
   { name: "Frutas", category: "Alimentos" },
   { name: "Verduras", category: "Alimentos" },
   { name: "Legumes", category: "Alimentos" },
-  // Limpeza
+  { name: "Batata", category: "Alimentos" },
+  { name: "Cebola", category: "Alimentos" },
+  { name: "Alho", category: "Alimentos" },
+  // ── Limpeza ──
   { name: "Detergente", category: "Limpeza" },
   { name: "Sabão em pó", category: "Limpeza" },
   { name: "Amaciante", category: "Limpeza" },
@@ -37,7 +40,11 @@ export const SUGGESTED_ITEMS: { name: string; category: string }[] = [
   { name: "Esponja", category: "Limpeza" },
   { name: "Saco de lixo", category: "Limpeza" },
   { name: "Papel toalha", category: "Limpeza" },
-  // Higiene
+  { name: "Multiuso", category: "Limpeza" },
+  { name: "Rodo", category: "Limpeza" },
+  { name: "Vassoura", category: "Limpeza" },
+  { name: "Luva de borracha", category: "Limpeza" },
+  // ── Higiene ──
   { name: "Papel higiênico", category: "Higiene" },
   { name: "Sabonete", category: "Higiene" },
   { name: "Shampoo", category: "Higiene" },
@@ -46,24 +53,85 @@ export const SUGGESTED_ITEMS: { name: string; category: string }[] = [
   { name: "Escova de dente", category: "Higiene" },
   { name: "Desodorante", category: "Higiene" },
   { name: "Absorvente", category: "Higiene" },
-  // Pet
+  // ── Pet ──
   { name: "Ração", category: "Pet" },
   { name: "Areia do gato", category: "Pet" },
   { name: "Tapete higiênico", category: "Pet" },
   { name: "Petisco", category: "Pet" },
   { name: "Shampoo pet", category: "Pet" },
-  // Bebê
+  // ── Bebê ──
   { name: "Fralda", category: "Bebê" },
   { name: "Lenço umedecido", category: "Bebê" },
   { name: "Pomada", category: "Bebê" },
   { name: "Fórmula", category: "Bebê" },
   { name: "Sabonete bebê", category: "Bebê" },
-  // Farmácia
+  // ── Farmácia ──
   { name: "Curativo", category: "Farmácia" },
   { name: "Álcool", category: "Farmácia" },
   { name: "Algodão", category: "Farmácia" },
   { name: "Termômetro", category: "Farmácia" },
   { name: "Remédio recorrente", category: "Farmácia" },
+  // ── Bebidas (Praia / Veraneio) ──
+  { name: "Cerveja", category: "Bebidas" },
+  { name: "Água mineral", category: "Bebidas" },
+  { name: "Refrigerante", category: "Bebidas" },
+  { name: "Suco", category: "Bebidas" },
+  { name: "Água de coco", category: "Bebidas" },
+  { name: "Gelo", category: "Bebidas" },
+  // ── Churrasqueira ──
+  { name: "Carvão", category: "Churrasqueira" },
+  { name: "Linguiça", category: "Churrasqueira" },
+  { name: "Costelinha", category: "Churrasqueira" },
+  { name: "Farofa", category: "Churrasqueira" },
+  { name: "Vinagrete", category: "Churrasqueira" },
+  { name: "Pão de alho", category: "Churrasqueira" },
+  { name: "Sal grosso", category: "Churrasqueira" },
+  { name: "Milho", category: "Churrasqueira" },
+  { name: "Mandioca", category: "Churrasqueira" },
+  // ── Descartáveis ──
+  { name: "Copo descartável", category: "Descartáveis" },
+  { name: "Prato descartável", category: "Descartáveis" },
+  { name: "Garfo descartável", category: "Descartáveis" },
+  { name: "Guardanapo", category: "Descartáveis" },
+  { name: "Palito", category: "Descartáveis" },
+  { name: "Toalha umedecida", category: "Descartáveis" },
+  { name: "Canudinho", category: "Descartáveis" },
+  // ── Praia essencial ──
+  { name: "Protetor solar", category: "Praia essencial" },
+  { name: "Repelente", category: "Praia essencial" },
+  { name: "Protetor labial", category: "Praia essencial" },
+  { name: "Óculos de sol", category: "Praia essencial" },
+  { name: "Toalha de praia", category: "Praia essencial" },
+  { name: "Chinelo", category: "Praia essencial" },
+  // ── Escritório / Empresa ──
+  { name: "Cápsula de café", category: "Escritório / Empresa" },
+  { name: "Adoçante", category: "Escritório / Empresa" },
+  { name: "Leite em pó", category: "Escritório / Empresa" },
+  { name: "Chá", category: "Escritório / Empresa" },
+  { name: "Biscoito", category: "Escritório / Empresa" },
+  { name: "Bala / Bombom", category: "Escritório / Empresa" },
+  { name: "Achocolatado", category: "Escritório / Empresa" },
+  { name: "Suco de caixinha", category: "Escritório / Empresa" },
+  { name: "Caneta", category: "Escritório / Empresa" },
+  { name: "Folha A4", category: "Escritório / Empresa" },
+  { name: "Post-it", category: "Escritório / Empresa" },
+  { name: "Grampo", category: "Escritório / Empresa" },
+  { name: "Clipe", category: "Escritório / Empresa" },
+  { name: "Fita adesiva", category: "Escritório / Empresa" },
+  { name: "Pilha AA", category: "Escritório / Empresa" },
+  { name: "Pilha AAA", category: "Escritório / Empresa" },
+  { name: "Toner impressora", category: "Escritório / Empresa" },
+  { name: "Envelope", category: "Escritório / Empresa" },
+  { name: "Sabonete líquido", category: "Escritório / Empresa" },
+  { name: "Álcool gel", category: "Escritório / Empresa" },
+  { name: "Desodorizador", category: "Escritório / Empresa" },
+  { name: "Copo descartável (empresa)", category: "Escritório / Empresa" },
+  { name: "Papel toalha (empresa)", category: "Escritório / Empresa" },
+  { name: "Garrafa de água", category: "Escritório / Empresa" },
+  // ── Utilidades ──
+  { name: "Pilha", category: "Utilidades" },
+  { name: "Vela", category: "Utilidades" },
+  { name: "Isqueiro", category: "Utilidades" },
 ];
 
 interface AddItemModalProps {
@@ -133,12 +201,36 @@ export function AddItemModal({
   }
 
   async function handleCreateFromSuggested(suggested: { name: string; category: string }) {
-    const cat = categories.find((c) => c.name === suggested.category) ?? categories[0];
     setLoading(true);
     try {
+      let cat = categories.find((c) => c.name === suggested.category);
+
+      // Se a categoria não existe no banco, cria via API
+      if (!cat) {
+        const CATEGORY_ICONS: Record<string, string> = {
+          "Bebidas": "🍺", "Churrasqueira": "🍖", "Descartáveis": "🍽️",
+          "Praia essencial": "🏖️", "Escritório / Empresa": "🏢",
+          "Utilidades": "🔦", "Sítio / Campo": "🌲",
+        };
+        const res = await fetch("/api/ensure-categories", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            categories: [{ name: suggested.category, icon: CATEGORY_ICONS[suggested.category] ?? "📦" }],
+          }),
+        });
+        if (res.ok) {
+          const data = await res.json();
+          const newCatId = data.categories?.[suggested.category];
+          if (newCatId) {
+            cat = { id: newCatId, name: suggested.category, icon: "📦" } as Category;
+          }
+        }
+      }
+
       await onAddItem({
         name: suggested.name,
-        category_id: cat?.id ?? "",
+        category_id: cat?.id ?? categories[0]?.id ?? "",
         status: initialStatus,
       });
       onClose();
@@ -184,7 +276,7 @@ export function AddItemModal({
             </h2>
             <p className="text-sm text-gray-500">
               Marcando como:{" "}
-              <span className="font-medium text-gray-700">{statusLabel[initialStatus]}</span>
+              <span className="font-medium text-gray-700">{statusLabel[mode === "create" ? newStatus : initialStatus]}</span>
             </p>
           </div>
           <button onClick={onClose} className="p-2 text-gray-400 hover:text-gray-600 rounded-xl">

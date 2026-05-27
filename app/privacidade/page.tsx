@@ -80,7 +80,9 @@ export default function PrivacidadePage() {
           <h2 className="text-xl font-bold text-gray-900 mb-3">7. Contato</h2>
           <p className="text-gray-600">
             Dúvidas sobre privacidade? Envie um e-mail para{" "}
-            <strong>privacidade@acabou.app</strong> (substitua pelo seu e-mail real).
+            <a href="mailto:contato@acabouapp.com.br" className="font-bold text-green-700 hover:underline">
+              contato@acabouapp.com.br
+            </a>.
           </p>
         </section>
       </main>

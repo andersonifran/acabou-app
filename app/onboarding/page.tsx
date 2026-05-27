@@ -42,11 +42,10 @@ const ITEMS_BY_TYPE: Record<string, { category: string; items: string[] }[]> = {
     { category: "🔦 Utilidades", items: ["Pilha", "Vela", "Isqueiro", "Repelente"] },
   ],
   empresa: [
-    { category: "☕ Copa / Cozinha", items: ["Café", "Cápsula de café", "Açúcar", "Adoçante", "Leite em pó", "Chá", "Biscoito", "Bala / Bombom", "Água mineral", "Achocolatado", "Suco de caixinha"] },
+    { category: "🏢 Escritório / Empresa", items: ["Café", "Cápsula de café", "Açúcar", "Adoçante", "Leite em pó", "Chá", "Biscoito", "Bala / Bombom", "Achocolatado", "Suco de caixinha", "Caneta", "Folha A4", "Post-it", "Grampo", "Clipe", "Fita adesiva", "Toner impressora", "Envelope", "Etiqueta adesiva", "Pilha AA", "Pilha AAA", "Sabonete líquido", "Álcool gel", "Garrafa de água"] },
     { category: "🍽️ Descartáveis", items: ["Copo descartável (200ml)", "Copinho para café (50ml)", "Prato descartável", "Garfo descartável", "Faca descartável", "Colher descartável", "Mexedor descartável", "Guardanapo", "Papel toalha", "Canudinho"] },
     { category: "🧹 Limpeza", items: ["Detergente", "Esponja", "Sabão em pó", "Saco de lixo", "Desinfetante", "Multiuso", "Papel toalha", "Água sanitária", "Luva de borracha", "Rodo", "Vassoura"] },
-    { category: "🚿 Banheiro", items: ["Papel higiênico", "Sabonete líquido", "Papel toalha", "Álcool gel", "Desodorizador de banheiro", "Absorvente"] },
-    { category: "📎 Escritório", items: ["Caneta", "Folha A4", "Post-it", "Grampo", "Clipe", "Fita adesiva", "Pilha AA", "Pilha AAA", "Toner impressora", "Envelope", "Etiqueta adesiva", "Pincel atômico"] },
+    { category: "🚿 Higiene", items: ["Papel higiênico", "Sabonete", "Papel toalha", "Desodorizador de banheiro", "Absorvente"] },
   ],
   outro: [
     { category: "🛒 Alimentos", items: ["Arroz", "Feijão", "Café", "Açúcar", "Sal", "Óleo", "Leite", "Ovos", "Pão", "Manteiga"] },
@@ -265,12 +264,43 @@ function OnboardingContent() {
       if (selected.size > 0) {
         const groups = ITEMS_BY_TYPE[propertyType] ?? ITEMS_BY_TYPE.casa;
 
+        // Mapeia item -> nome limpo da categoria e item -> emoji da categoria
         const itemMap: Record<string, string> = {};
-        groups.forEach(g => g.items.forEach(i => { itemMap[i] = categoryNameClean(g.category); }));
+        const categoryIcons: Record<string, string> = {};
+        groups.forEach(g => {
+          const cleanName = categoryNameClean(g.category);
+          const icon = g.category.split(" ")[0]; // Emoji
+          categoryIcons[cleanName] = icon;
+          g.items.forEach(i => { itemMap[i] = cleanName; });
+        });
+
+        // Coleta todas as categorias necessárias para os itens selecionados
+        const neededCats = new Set<string>();
+        Array.from(selected).forEach(name => {
+          neededCats.add(itemMap[name] ?? "Outros");
+        });
+
+        // Garante que todas as categorias existam no banco (via API com admin client)
+        const catsToEnsure = Array.from(neededCats).map(name => ({
+          name,
+          icon: categoryIcons[name] ?? "📦",
+        }));
+
+        const res = await fetch("/api/ensure-categories", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ categories: catsToEnsure }),
+        });
+
+        let catMap = categories;
+        if (res.ok) {
+          const data = await res.json();
+          catMap = data.categories; // Mapa completo name -> id do banco
+        }
 
         const items = Array.from(selected).map((name) => {
           const catName = itemMap[name] ?? "Outros";
-          const catId = categories[catName] ?? Object.values(categories)[0];
+          const catId = catMap[catName] ?? Object.values(catMap)[0];
           return { house_id: houseId, category_id: catId, name, status: "tem", created_by: user.id, updated_by: user.id, source: "app" };
         });
 
