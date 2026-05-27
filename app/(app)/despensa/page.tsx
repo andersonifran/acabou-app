@@ -1,9 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import { useAppStore } from "@/store/appStore";
 import { useItems } from "@/hooks/useItems";
 import { useSubscription } from "@/hooks/useSubscription";
+import { useRole } from "@/hooks/useRole";
 import { ItemCard } from "@/components/items/ItemCard";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { PlanLimitModal } from "@/components/shared/PlanLimitModal";
@@ -24,11 +26,22 @@ const filterOptions: { value: FilterStatus; label: string }[] = [
 ];
 
 export default function DespensaPage() {
+  const searchParams = useSearchParams();
   const { setAddItemModalOpen, setInitialStatus } = useAppStore();
   const { items, itemsByCategory, changeStatus, deleteItem, renameItem } = useItems();
   const { canAddItem, isPaid, itemCount, itemsRemaining, limits } = useSubscription();
-  const [filter, setFilter] = useState<FilterStatus>("todos");
+  const { canManageItems } = useRole();
+  const initialFilter = (searchParams.get("filtro") as FilterStatus) || "todos";
+  const [filter, setFilter] = useState<FilterStatus>(initialFilter);
   const [search, setSearch] = useState("");
+
+  // Sincroniza filtro quando URL muda (ex: vindo da Home)
+  useEffect(() => {
+    const urlFilter = searchParams.get("filtro") as FilterStatus;
+    if (urlFilter && filterOptions.some(f => f.value === urlFilter)) {
+      setFilter(urlFilter);
+    }
+  }, [searchParams]);
   const [showPlanLimit, setShowPlanLimit] = useState(false);
 
   const filtered = items.filter((item) => {
@@ -59,13 +72,15 @@ export default function DespensaPage() {
         title="Despensa"
         subtitle={isPaid ? `${items.length} itens` : `${itemCount}/${limits.max_items} itens`}
         right={
-          <button
-            onClick={openAdd}
-            className="flex items-center gap-1.5 bg-green-600 text-white px-3 py-1.5 rounded-xl text-sm font-semibold hover:bg-green-700 transition-colors"
-          >
-            <Plus size={16} />
-            Adicionar
-          </button>
+          canManageItems ? (
+            <button
+              onClick={openAdd}
+              className="flex items-center gap-1.5 bg-green-600 text-white px-3 py-1.5 rounded-xl text-sm font-semibold hover:bg-green-700 transition-colors"
+            >
+              <Plus size={16} />
+              Adicionar
+            </button>
+          ) : undefined
         }
       />
 
@@ -108,14 +123,14 @@ export default function DespensaPage() {
           )}
         </div>
 
-        {/* Filtros de status */}
-        <div className="flex gap-2 overflow-x-auto pb-1 -mx-4 px-4">
+        {/* Filtros de status — grid fixo sem scroll */}
+        <div className="grid grid-cols-5 gap-1.5">
           {filterOptions.map(({ value, label }) => (
             <button
               key={value}
               onClick={() => setFilter(value)}
               className={cn(
-                "px-3.5 py-1.5 rounded-full text-sm font-medium border whitespace-nowrap transition-all shrink-0",
+                "py-2 rounded-xl text-xs font-semibold border transition-all text-center",
                 filter === value
                   ? "bg-green-600 text-white border-green-600"
                   : "bg-white text-gray-600 border-gray-200 hover:border-green-300"
@@ -159,8 +174,8 @@ export default function DespensaPage() {
                     key={item.id}
                     item={item}
                     onStatusChange={changeStatus}
-                    onEdit={renameItem}
-                    onDelete={deleteItem}
+                    onEdit={canManageItems ? renameItem : undefined}
+                    onDelete={canManageItems ? deleteItem : undefined}
                   />
                 ))}
               </div>

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { useAppStore } from "@/store/appStore";
 
 // ── Ícones SVG customizados com cores ──────────────────────────
 
@@ -135,19 +136,33 @@ const navItems = [
 
 // Cores da label por aba (ativa)
 const activeLabelColors: Record<string, string> = {
-  "/home":     "text-green-700",
-  "/despensa": "text-teal-700",
-  "/lista":    "text-amber-700",
-  "/casa":     "text-violet-700",
+  "/home":           "text-green-700",
+  "/despensa":       "text-teal-700",
+  "/lista":          "text-amber-700",
+  "/casa":           "text-violet-700",
+  "/configuracoes":  "text-violet-700",
 };
 
 export function BottomNav() {
   const pathname = usePathname();
+  const { userId, currentHouse } = useAppStore();
+
+  // Síncrono — sem async, sem useEffect, sem flash
+  const isOwner = !!(userId && currentHouse && (currentHouse as any).owner_id === userId);
+
+  // Membros não veem aba "Casa" (gestão) — veem aba "Perfil" simplificada
+  const items = isOwner
+    ? navItems
+    : navItems.map((item) =>
+        item.href === "/casa"
+          ? { ...item, href: "/configuracoes", label: "Perfil" }
+          : item
+      );
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-100 safe-area-pb">
       <div className="max-w-lg mx-auto flex">
-        {navItems.map(({ href, label, Icon }) => {
+        {items.map(({ href, label, Icon }) => {
           const active = pathname === href;
           return (
             <Link

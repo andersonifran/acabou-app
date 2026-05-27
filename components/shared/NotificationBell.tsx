@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useAppStore } from "@/store/appStore";
-import { Bell, X, Check } from "lucide-react";
+import { Bell, X, Check, Trash2 } from "lucide-react";
 import { formatRelativeTime } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 
@@ -18,25 +18,24 @@ interface Notification {
 
 export function NotificationBell() {
   const supabase = createClient();
-  const { currentHouse } = useAppStore();
+  const { userId, currentHouse } = useAppStore();
   const [open, setOpen] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
     loadNotifications();
-  }, [currentHouse?.id]);
+  }, [currentHouse?.id, userId]);
 
   async function loadNotifications() {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    if (!userId) return;
 
     const { data } = await supabase
       .from("notifications")
       .select("id, type, title, body, read, created_at")
-      .eq("user_id", user.id)
+      .eq("user_id", userId)
       .order("created_at", { ascending: false })
-      .limit(20);
+      .limit(30);
 
     if (data) {
       setNotifications(data);
@@ -45,16 +44,42 @@ export function NotificationBell() {
   }
 
   async function markAllRead() {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    if (!userId) return;
 
     await supabase
       .from("notifications")
       .update({ read: true })
-      .eq("user_id", user.id)
+      .eq("user_id", userId)
       .eq("read", false);
 
     setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+    setUnreadCount(0);
+  }
+
+  async function deleteNotification(id: string) {
+    await supabase.from("notifications").delete().eq("id", id);
+    setNotifications((prev) => {
+      const updated = prev.filter((n) => n.id !== id);
+      setUnreadCount(updated.filter((n) => !n.read).length);
+      return updated;
+    });
+  }
+
+  async function clearReadNotifications() {
+    if (!userId) return;
+
+    const readIds = notifications.filter((n) => n.read).map((n) => n.id);
+    if (readIds.length === 0) return;
+
+    await supabase.from("notifications").delete().in("id", readIds);
+    setNotifications((prev) => prev.filter((n) => !n.read));
+  }
+
+  async function clearAllNotifications() {
+    if (!userId) return;
+
+    await supabase.from("notifications").delete().eq("user_id", userId);
+    setNotifications([]);
     setUnreadCount(0);
   }
 
@@ -66,6 +91,8 @@ export function NotificationBell() {
       default: return "🔔";
     }
   }
+
+  const hasRead = notifications.some((n) => n.read);
 
   return (
     <div className="relative">
@@ -92,17 +119,20 @@ export function NotificationBell() {
 
           {/* Dropdown */}
           <div className="fixed left-4 right-4 sm:absolute sm:left-auto sm:right-0 top-[60px] sm:top-full sm:mt-2 sm:w-80 max-h-[400px] overflow-y-auto bg-white rounded-2xl border border-gray-100 shadow-xl z-50">
+            {/* Header */}
             <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
               <h3 className="font-semibold text-gray-900 text-sm">Notificações</h3>
-              {unreadCount > 0 && (
-                <button
-                  onClick={markAllRead}
-                  className="text-xs text-green-600 font-medium hover:underline flex items-center gap-1"
-                >
-                  <Check size={12} />
-                  Marcar lidas
-                </button>
-              )}
+              <div className="flex items-center gap-2">
+                {unreadCount > 0 && (
+                  <button
+                    onClick={markAllRead}
+                    className="text-xs text-green-600 font-medium hover:underline flex items-center gap-1"
+                  >
+                    <Check size={12} />
+                    Marcar lidas
+                  </button>
+                )}
+              </div>
             </div>
 
             {notifications.length === 0 ? (
@@ -115,7 +145,7 @@ export function NotificationBell() {
                   <div
                     key={notif.id}
                     className={cn(
-                      "px-4 py-3 flex gap-3",
+                      "px-4 py-3 flex gap-3 group",
                       !notif.read && "bg-green-50/50"
                     )}
                   >
@@ -127,11 +157,43 @@ export function NotificationBell() {
                         {formatRelativeTime(notif.created_at)}
                       </p>
                     </div>
-                    {!notif.read && (
-                      <div className="w-2 h-2 bg-green-500 rounded-full shrink-0 mt-2" />
-                    )}
+                    <div className="flex items-start gap-1 shrink-0">
+                      {!notif.read && (
+                        <div className="w-2 h-2 bg-green-500 rounded-full mt-2" />
+                      )}
+                      <button
+                        onClick={() => deleteNotification(notif.id)}
+                        className="opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-400 transition-all p-1"
+                        title="Excluir"
+                      >
+                        <X size={14} />
+                      </button>
+                    </div>
                   </div>
                 ))}
+              </div>
+            )}
+
+            {/* Footer com ações */}
+            {notifications.length > 0 && (
+              <div className="border-t border-gray-100 px-4 py-2.5 flex items-center justify-between">
+                {hasRead ? (
+                  <button
+                    onClick={clearReadNotifications}
+                    className="text-xs text-gray-400 hover:text-red-500 font-medium flex items-center gap-1 transition-colors"
+                  >
+                    <Trash2 size={12} />
+                    Limpar lidas
+                  </button>
+                ) : (
+                  <span />
+                )}
+                <button
+                  onClick={clearAllNotifications}
+                  className="text-xs text-gray-400 hover:text-red-500 font-medium transition-colors"
+                >
+                  Limpar todas
+                </button>
               </div>
             )}
           </div>

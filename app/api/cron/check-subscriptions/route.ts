@@ -95,10 +95,11 @@ export async function GET(request: NextRequest) {
 
     if (expiredHouses && expiredHouses.length > 0) {
       for (const house of expiredHouses) {
-        // Downgrade da casa para free
+        // CONGELA a casa — mantém o plano original (não reseta para free)
+        // Isso preserva o histórico e facilita reativação após pagamento
         const { error: updateError } = await supabase
           .from("houses")
-          .update({ plan: "free", plan_status: "inactive" })
+          .update({ plan_status: "inactive" })
           .eq("id", house.id);
 
         if (updateError) {

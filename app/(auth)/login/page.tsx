@@ -48,7 +48,16 @@ export default function LoginPage() {
   async function handleGoogle() {
     setLoadingGoogle(true);
     setError("");
-    // Preserva token de convite na URL de callback
+
+    // IMPORTANTE: Salva o token de convite em COOKIE + localStorage ANTES do OAuth
+    // O Supabase perde query params na URL de callback
+    // Cookie sobrevive aos redirects e pode ser lido no servidor
+    if (conviteToken) {
+      document.cookie = `acabou_pending_invite=${conviteToken}; path=/; max-age=3600; SameSite=Lax`;
+      localStorage.setItem("acabou_pending_invite", conviteToken);
+    }
+
+    // Preserva token de convite na URL de callback (tentativa primária)
     const callbackUrl = conviteToken
       ? `${window.location.origin}/api/auth/callback?next=${encodeURIComponent(`/convite/${conviteToken}`)}`
       : `${window.location.origin}/api/auth/callback`;

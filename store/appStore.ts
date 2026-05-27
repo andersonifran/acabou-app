@@ -4,6 +4,10 @@ import { create } from "zustand";
 import { House, Item, HouseMember, Category } from "@/types";
 
 interface AppState {
+  // Usuário logado (evita múltiplas chamadas a getUser)
+  userId: string | null;
+  setUserId: (id: string | null) => void;
+
   // Casa atual
   currentHouse: House | null;
   setCurrentHouse: (house: House | null) => void;
@@ -38,6 +42,9 @@ interface AppState {
 }
 
 export const useAppStore = create<AppState>((set) => ({
+  userId: null,
+  setUserId: (id) => set({ userId: id }),
+
   currentHouse: null,
   setCurrentHouse: (house) => set({ currentHouse: house }),
 
@@ -69,6 +76,7 @@ export const useAppStore = create<AppState>((set) => ({
 
   reset: () =>
     set({
+      userId: null,
       currentHouse: null,
       allHouses: [],
       members: [],

@@ -221,27 +221,27 @@ export default function LandingPage() {
             O Acabou? é o jeito mais simples de manter sua casa — ou sua empresa — sempre abastecida. Qualquer pessoa abre o app, marca o que acabou em 1 toque, e pronto — a lista de compras se monta sozinha, em tempo real, pra todo mundo ver.
           </p>
 
-          {/* Equação de Hormozi visual */}
+          {/* 4 pilares de valor — linguagem do dia a dia */}
           <div className="grid grid-cols-2 gap-4 max-w-md mx-auto">
             <div className="bg-white rounded-2xl p-5 border border-green-200 text-center">
               <p className="text-3xl mb-2">🎯</p>
-              <p className="text-xs text-gray-500 font-semibold uppercase tracking-wide mb-1">Resultado</p>
+              <p className="text-xs text-green-700 font-semibold uppercase tracking-wide mb-1">O que muda</p>
               <p className="text-sm font-bold text-gray-900">Casa sempre abastecida, sem briga, sem esquecimento</p>
             </div>
             <div className="bg-white rounded-2xl p-5 border border-green-200 text-center">
-              <p className="text-3xl mb-2">📊</p>
-              <p className="text-xs text-gray-500 font-semibold uppercase tracking-wide mb-1">Probabilidade</p>
+              <p className="text-3xl mb-2">✅</p>
+              <p className="text-xs text-green-700 font-semibold uppercase tracking-wide mb-1">Fácil de usar</p>
               <p className="text-sm font-bold text-gray-900">1 toque resolve. Se usa WhatsApp, já sabe usar.</p>
             </div>
             <div className="bg-white rounded-2xl p-5 border border-green-200 text-center">
               <p className="text-3xl mb-2">⚡</p>
-              <p className="text-xs text-gray-500 font-semibold uppercase tracking-wide mb-1">Tempo</p>
+              <p className="text-xs text-green-700 font-semibold uppercase tracking-wide mb-1">Rápido de começar</p>
               <p className="text-sm font-bold text-gray-900">30 segundos pra configurar, resultado imediato</p>
             </div>
             <div className="bg-white rounded-2xl p-5 border border-green-200 text-center">
-              <p className="text-3xl mb-2">😎</p>
-              <p className="text-xs text-gray-500 font-semibold uppercase tracking-wide mb-1">Esforço</p>
-              <p className="text-sm font-bold text-gray-900">Zero. A lista se monta sozinha conforme alguém marca</p>
+              <p className="text-3xl mb-2">😌</p>
+              <p className="text-xs text-green-700 font-semibold uppercase tracking-wide mb-1">Zero trabalho</p>
+              <p className="text-sm font-bold text-gray-900">A lista se monta sozinha conforme alguém marca</p>
             </div>
           </div>
         </div>

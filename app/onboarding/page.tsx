@@ -139,6 +139,37 @@ function OnboardingContent() {
             .maybeSingle();
           if (paidHouse) setUserIsPaid(true);
         } else {
+          // Verifica se há convite pendente no localStorage (Google OAuth perde query params)
+          const pendingInvite = localStorage.getItem("acabou_pending_invite");
+          if (pendingInvite) {
+            try {
+              const res = await fetch("/api/criar-perfil", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  userId: user.id,
+                  fullName: user.user_metadata?.full_name ?? user.user_metadata?.name ?? "",
+                  phone: null,
+                  conviteToken: pendingInvite,
+                }),
+              });
+
+              localStorage.removeItem("acabou_pending_invite");
+
+              if (res.ok) {
+                const result = await res.json();
+                if (result.houseId) {
+                  console.log("[Onboarding] ✅ Convite pendente aceito:", result.houseId);
+                  router.push("/home");
+                  return;
+                }
+              }
+            } catch (err) {
+              console.error("[Onboarding] Erro ao aceitar convite pendente:", err);
+              localStorage.removeItem("acabou_pending_invite");
+            }
+          }
+
           // Usuário não tem casa (veio pelo Google OAuth)
           setNeedsSetup(true);
         }

@@ -19,6 +19,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const supabase = createClient();
   const {
+    setUserId,
     setCurrentHouse,
     setAllHouses,
     setMembers,
@@ -37,35 +38,17 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const [isReady, setIsReady] = useState(false);
 
   async function loadHouseData(houseId: string) {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    // Carrega casa + membros + itens EM PARALELO (performance)
+    const [houseResult, membersResult, itemsResult] = await Promise.all([
+      supabase.from("houses").select("*").eq("id", houseId).single(),
+      supabase.from("house_members").select("*, profile:profiles(*)").eq("house_id", houseId).eq("status", "active"),
+      supabase.from("items").select("*, category:categories(*)").eq("house_id", houseId).order("name"),
+    ]);
 
-    const { data: houseData } = await supabase
-      .from("houses")
-      .select("*")
-      .eq("id", houseId)
-      .single();
+    if (houseResult.data) setCurrentHouse(houseResult.data as House);
+    if (membersResult.data) setMembers(membersResult.data as any);
+    if (itemsResult.data) setItems(itemsResult.data as any);
 
-    if (!houseData) return;
-    setCurrentHouse(houseData as House);
-
-    // Membros
-    const { data: membersData } = await supabase
-      .from("house_members")
-      .select("*, profile:profiles(*)")
-      .eq("house_id", houseId)
-      .eq("status", "active");
-    if (membersData) setMembers(membersData as any);
-
-    // Itens
-    const { data: itemsData } = await supabase
-      .from("items")
-      .select("*, category:categories(*)")
-      .eq("house_id", houseId)
-      .order("name");
-    if (itemsData) setItems(itemsData as any);
-
-    // Salva preferência
     localStorage.setItem(SELECTED_HOUSE_KEY, houseId);
   }
 
@@ -74,18 +57,51 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { router.push("/login"); return; }
 
-      // Categorias
-      const { data: cats } = await supabase.from("categories").select("*").eq("is_default", true).order("sort_order");
-      if (cats) setCategories(cats);
+      // Salva userId no store (evita chamadas repetidas de getUser em hooks)
+      setUserId(user.id);
 
-      // Todas as casas do usuário
-      const { data: membersData } = await supabase
-        .from("house_members")
-        .select("house_id, houses(*)")
-        .eq("user_id", user.id)
-        .eq("status", "active");
+      // Carrega categorias E casas EM PARALELO (performance)
+      const [catsResult, membersResult] = await Promise.all([
+        supabase.from("categories").select("*").eq("is_default", true).order("sort_order"),
+        supabase.from("house_members").select("house_id, houses(*)").eq("user_id", user.id).eq("status", "active"),
+      ]);
+
+      if (catsResult.data) setCategories(catsResult.data);
+      const membersData = membersResult.data;
 
       if (!membersData || membersData.length === 0) {
+        // Verifica se há convite pendente no localStorage (Google OAuth perde query params)
+        const pendingInvite = localStorage.getItem("acabou_pending_invite");
+        if (pendingInvite) {
+          try {
+            const res = await fetch("/api/criar-perfil", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                userId: user.id,
+                fullName: user.user_metadata?.full_name ?? user.user_metadata?.name ?? "",
+                phone: null,
+                conviteToken: pendingInvite,
+              }),
+            });
+
+            localStorage.removeItem("acabou_pending_invite");
+
+            if (res.ok) {
+              const result = await res.json();
+              if (result.houseId) {
+                // Convite aceito! Recarrega para entrar na casa
+                console.log("[AppLayout] ✅ Convite pendente aceito via localStorage:", result.houseId);
+                window.location.reload();
+                return;
+              }
+            }
+          } catch (err) {
+            console.error("[AppLayout] Erro ao aceitar convite pendente:", err);
+            localStorage.removeItem("acabou_pending_invite");
+          }
+        }
+
         router.push("/onboarding");
         return;
       }

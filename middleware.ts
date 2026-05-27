@@ -50,7 +50,13 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Usuário logado: redireciona landing, login e cadastro para /home
+  // EXCETO se tem convite — preserva o fluxo do convite
   if (user && (pathname === "/" || pathname === "/login" || pathname === "/cadastro")) {
+    const convite = request.nextUrl.searchParams.get("convite");
+    if (convite) {
+      // Tem convite → redireciona para aceitar o convite (já está logado)
+      return NextResponse.redirect(new URL(`/convite/${convite}`, request.url));
+    }
     return NextResponse.redirect(new URL("/home", request.url));
   }
 

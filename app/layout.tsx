@@ -34,10 +34,24 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="pt-BR" className={geist.variable}>
+    <html lang="pt-BR" className={geist.variable} suppressHydrationWarning>
       <head>
-        {/* Script no <head> — executa ANTES de qualquer JS do React/Next.js.
-            Captura beforeinstallprompt no instante mais cedo possível. */}
+        {/* Dark mode — aplica classe antes do primeiro paint para evitar flash.
+            IMPORTANTE: Só ativa dark se o usuário ESCOLHEU explicitamente.
+            Não usa preferência do sistema (matchMedia) — padrão é modo claro. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function(){
+                try {
+                  if (localStorage.getItem('acabou_theme') === 'dark') {
+                    document.documentElement.classList.add('dark');
+                  }
+                } catch(e){}
+              })();
+            `,
+          }}
+        />
         {/* Meta Pixel — Rastreamento de conversões Facebook/Instagram Ads */}
         <script
           dangerouslySetInnerHTML={{

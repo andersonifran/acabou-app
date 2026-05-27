@@ -9,10 +9,13 @@ import { ItemEvent, ItemStatus, RECURRENCE_LABELS, RecurrenceType } from "@/type
 import { useItems } from "@/hooks/useItems";
 import { useSubscription } from "@/hooks/useSubscription";
 import { formatRelativeTime, getNextReminderDate } from "@/lib/utils";
-import { Bell, BellRing, Trash2, Shield, FileText, ChevronRight, MessageSquareHeart, Clock, Smartphone, Plus, Pencil, X, Check as CheckIcon } from "lucide-react";
+import { Bell, BellRing, Trash2, Shield, FileText, ChevronRight, MessageSquareHeart, Clock, Smartphone, Download, Plus, Pencil, X, Check as CheckIcon } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
+import { usePWAInstall } from "@/hooks/usePWAInstall";
+import { ThemeToggle } from "@/components/shared/ThemeToggle";
+import { useRole } from "@/hooks/useRole";
 
 export default function ConfiguracoesPage() {
   const router = useRouter();
@@ -20,6 +23,7 @@ export default function ConfiguracoesPage() {
   const { currentHouse, items, categories, reset, updateItem } = useAppStore();
   const { isPaid, canAddItem } = useSubscription();
   const { renameItem, deleteItem, createItem } = useItems();
+  const { isOwner, isMember, canAccessPlans } = useRole();
   const [activeTab, setActiveTab] = useState<"geral" | "historico" | "lembretes" | "notificacoes">("geral");
   const [history, setHistory] = useState<(ItemEvent & { profile?: any; item?: any })[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
@@ -28,6 +32,7 @@ export default function ConfiguracoesPage() {
   const [reminderTime, setReminderTime] = useState(currentHouse?.reminder_time ?? "18:00");
   const [savingReminder, setSavingReminder] = useState(false);
   const push = usePushNotifications();
+  const pwa = usePWAInstall();
 
   // Lembretes: estados de edição
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
@@ -129,6 +134,13 @@ export default function ConfiguracoesPage() {
     router.refresh();
   }
 
+  async function handleLogout() {
+    await supabase.auth.signOut();
+    reset();
+    router.push("/login");
+    router.refresh();
+  }
+
   function eventLabel(event: any): string {
     const name = event.profile?.full_name?.split(" ")[0] ?? "Alguém";
     const item = event.item?.name ?? "item";
@@ -158,8 +170,8 @@ export default function ConfiguracoesPage() {
           {[
             { key: "geral", label: "Geral" },
             { key: "notificacoes", label: "Notificações" },
-            { key: "historico", label: "Histórico" },
-            { key: "lembretes", label: "Lembretes" },
+            ...(isPaid ? [{ key: "historico", label: "Histórico" }] : []),
+            ...(isPaid ? [{ key: "lembretes", label: "Lembretes" }] : []),
           ].map(({ key, label }) => (
             <button
               key={key}
@@ -184,11 +196,37 @@ export default function ConfiguracoesPage() {
         {/* Aba: Geral */}
         {activeTab === "geral" && (
           <div className="space-y-3">
+            {/* Instalar App (quando no navegador e ainda não instalou) */}
+            {!pwa.isInstalled && (
+              <button
+                onClick={() => {
+                  if (pwa.isInstallable) {
+                    pwa.showInstallPrompt();
+                  } else {
+                    // iOS — mostra dica
+                    alert("Para instalar: toque no ícone de Compartilhar (↑) no Safari e selecione \"Adicionar à Tela de Início\".");
+                  }
+                }}
+                className="w-full flex items-center gap-3 bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 rounded-2xl px-5 py-4 hover:from-green-100 hover:to-emerald-100 transition-all mb-3"
+              >
+                <div className="w-10 h-10 bg-green-600 rounded-xl flex items-center justify-center shrink-0">
+                  <Download size={20} className="text-white" />
+                </div>
+                <div className="text-left">
+                  <p className="font-bold text-green-800 text-sm">Instalar o Acabou?</p>
+                  <p className="text-xs text-green-600 mt-0.5">Acesse direto da tela inicial, como um app nativo</p>
+                </div>
+              </button>
+            )}
+
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-              <Link href="/planos" className="flex items-center justify-between px-5 py-4 border-b border-gray-50 hover:bg-gray-50">
-                <p className="font-medium text-gray-900 text-sm">Ver planos</p>
-                <ChevronRight size={18} className="text-gray-400" />
-              </Link>
+              <ThemeToggle className="border-b border-gray-50" />
+              {canAccessPlans && (
+                <Link href="/planos" className="flex items-center justify-between px-5 py-4 border-b border-gray-50 hover:bg-gray-50">
+                  <p className="font-medium text-gray-900 text-sm">Ver planos</p>
+                  <ChevronRight size={18} className="text-gray-400" />
+                </Link>
+              )}
               <Link href="/feedback" className="flex items-center justify-between px-5 py-4 border-b border-gray-50 hover:bg-gray-50">
                 <div className="flex items-center gap-2">
                   <MessageSquareHeart size={16} className="text-green-500" />
@@ -212,16 +250,32 @@ export default function ConfiguracoesPage() {
               </Link>
             </div>
 
-            <button
-              onClick={handleDeleteAccount}
-              className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl border border-red-100 text-red-500 hover:bg-red-50 transition-colors font-medium text-sm"
-            >
-              <Trash2 size={16} />
-              Excluir minha conta
-            </button>
-            <p className="text-xs text-gray-400 text-center">
-              Ao excluir sua conta, todos os seus dados serão removidos permanentemente.
-            </p>
+            {/* Dono: pode excluir conta */}
+            {isOwner && (
+              <>
+                <button
+                  onClick={handleDeleteAccount}
+                  className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl border border-red-100 text-red-500 hover:bg-red-50 transition-colors font-medium text-sm"
+                >
+                  <Trash2 size={16} />
+                  Excluir minha conta
+                </button>
+                <p className="text-xs text-gray-400 text-center">
+                  Ao excluir sua conta, todos os seus dados serão removidos permanentemente.
+                </p>
+              </>
+            )}
+
+            {/* Membro convidado: pode sair da conta (não excluir) */}
+            {isMember && (
+              <button
+                onClick={handleLogout}
+                className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl bg-red-50 border border-red-200 text-red-600 hover:bg-red-100 transition-colors font-semibold text-sm"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                Sair da conta
+              </button>
+            )}
           </div>
         )}
 

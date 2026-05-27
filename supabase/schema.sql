@@ -17,6 +17,7 @@ CREATE TABLE IF NOT EXISTS profiles (
   full_name TEXT NOT NULL,
   email TEXT NOT NULL,
   phone TEXT,
+  avatar_url TEXT,
   city TEXT,
   state TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
@@ -42,6 +43,9 @@ CREATE TABLE IF NOT EXISTS house_members (
   role TEXT DEFAULT 'member' CHECK (role IN ('owner', 'admin', 'member')) NOT NULL,
   status TEXT DEFAULT 'active' CHECK (status IN ('active', 'invited', 'removed')) NOT NULL,
   invited_by UUID REFERENCES auth.users(id),
+  display_name TEXT,
+  member_type TEXT DEFAULT 'familiar',
+  relation_label TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
   UNIQUE(house_id, user_id)
 );
@@ -128,6 +132,28 @@ CREATE TABLE IF NOT EXISTS invite_tokens (
   created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
 );
 
+-- Notificações in-app
+CREATE TABLE IF NOT EXISTS notifications (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+  house_id UUID REFERENCES houses(id) ON DELETE CASCADE,
+  type TEXT NOT NULL DEFAULT 'general',
+  title TEXT NOT NULL,
+  body TEXT NOT NULL,
+  data JSONB,
+  read BOOLEAN DEFAULT FALSE NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
+);
+
+-- Push subscriptions (web push)
+CREATE TABLE IF NOT EXISTS push_subscriptions (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+  endpoint TEXT NOT NULL UNIQUE,
+  keys JSONB NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
+);
+
 -- =============================================
 -- TRIGGERS — atualizar updated_at automaticamente
 -- =============================================
@@ -186,10 +212,24 @@ ALTER TABLE item_events ENABLE ROW LEVEL SECURITY;
 ALTER TABLE shopping_sessions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE subscriptions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE invite_tokens ENABLE ROW LEVEL SECURITY;
+ALTER TABLE notifications ENABLE ROW LEVEL SECURITY;
+ALTER TABLE push_subscriptions ENABLE ROW LEVEL SECURITY;
 
--- Profiles: usuário vê/edita apenas o próprio perfil
+-- Profiles: usuário edita apenas o próprio perfil
 CREATE POLICY "profiles_own" ON profiles
   FOR ALL USING (auth.uid() = user_id);
+
+-- Profiles: DONO da casa pode ver perfis dos membros das suas casas
+CREATE POLICY "profiles_house_owner_view" ON profiles
+  FOR SELECT USING (
+    user_id IN (
+      SELECT hm.user_id FROM house_members hm
+      WHERE hm.house_id IN (
+        SELECT h.id FROM houses h WHERE h.owner_id = auth.uid()
+      )
+      AND hm.status = 'active'
+    )
+  );
 
 -- Houses: usuário vê casas onde é membro
 CREATE POLICY "houses_member_view" ON houses
@@ -293,6 +333,14 @@ CREATE POLICY "invite_tokens_owner_delete" ON invite_tokens
     )
   );
 
+-- Notifications: usuário vê/gerencia apenas suas próprias notificações
+CREATE POLICY "notifications_own" ON notifications
+  FOR ALL USING (user_id = auth.uid());
+
+-- Push subscriptions: usuário gerencia apenas as suas
+CREATE POLICY "push_subscriptions_own" ON push_subscriptions
+  FOR ALL USING (user_id = auth.uid());
+
 -- =============================================
 -- ÍNDICES para performance
 -- =============================================
@@ -304,3 +352,6 @@ CREATE INDEX IF NOT EXISTS idx_items_status ON items(status);
 CREATE INDEX IF NOT EXISTS idx_item_events_house ON item_events(house_id);
 CREATE INDEX IF NOT EXISTS idx_item_events_created ON item_events(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_items_reminder ON items(next_reminder_at) WHERE next_reminder_at IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications(user_id);
+CREATE INDEX IF NOT EXISTS idx_notifications_created ON notifications(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_push_subscriptions_user ON push_subscriptions(user_id);

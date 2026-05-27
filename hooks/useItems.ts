@@ -1,9 +1,13 @@
 "use client";
 
-import { useCallback } from "react";
+import { useCallback, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useAppStore } from "@/store/appStore";
 import { Item, ItemStatus, SHOPPING_LIST_STATUSES } from "@/types";
+
+// Debounce de notificações: evita enviar notificação quando usuário
+// toca acidentalmente e reverte o status rapidamente
+const notifyTimers = new Map<string, ReturnType<typeof setTimeout>>();
 
 export function useItems() {
   const { items, currentHouse, updateItem, addItem, removeItem } = useAppStore();
@@ -55,16 +59,34 @@ export function useItems() {
         });
 
         // Notifica o dono da casa se item ficou "acabou" ou "acabando"
+        // Debounce de 3s: se o usuário mudar o status de novo antes de 3s,
+        // cancela a notificação anterior (evita falsos positivos por toque acidental)
         if (newStatus === "acabou" || newStatus === "acabando") {
-          fetch("/api/push/notify-item", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              itemName: item.name,
-              newStatus,
-              houseId: currentHouse.id,
-            }),
-          }).catch(() => {}); // fire-and-forget
+          const timerKey = itemId;
+          // Cancela timer anterior se existir
+          const prev = notifyTimers.get(timerKey);
+          if (prev) clearTimeout(prev);
+
+          const timer = setTimeout(() => {
+            notifyTimers.delete(timerKey);
+            fetch("/api/push/notify-item", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                itemName: item.name,
+                newStatus,
+                houseId: currentHouse.id,
+              }),
+            }).catch(() => {});
+          }, 3000);
+          notifyTimers.set(timerKey, timer);
+        } else {
+          // Se voltou para "tem" ou "comprar", cancela notificação pendente
+          const prev = notifyTimers.get(itemId);
+          if (prev) {
+            clearTimeout(prev);
+            notifyTimers.delete(itemId);
+          }
         }
       }
     },

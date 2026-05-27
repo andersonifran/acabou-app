@@ -14,6 +14,7 @@ import { NotificationBell } from "@/components/shared/NotificationBell";
 import { PlanLimitModal } from "@/components/shared/PlanLimitModal";
 import { WhatsAppIcon } from "@/components/shared/WhatsAppIcon";
 import { useSubscription } from "@/hooks/useSubscription";
+import { useRole } from "@/hooks/useRole";
 import { cn } from "@/lib/utils";
 
 const SELECTED_HOUSE_KEY = "acabou_selected_house";
@@ -93,7 +94,8 @@ export default function HomePage() {
   const [switchingHouse, setSwitchingHouse] = useState(false);
   const [showPlanLimit, setShowPlanLimit] = useState(false);
   const pickerRef = useRef<HTMLDivElement>(null);
-  const { canAddItem, isTrialing, trialDaysLeft, trialExpired } = useSubscription();
+  const { canAddItem, isTrialing, trialDaysLeft, trialExpired, isFrozen } = useSubscription();
+  const { canManageItems, isOwner: isRoleOwner } = useRole();
 
   const shoppingItems = items.filter((i) => SHOPPING_LIST_STATUSES.includes(i.status as any));
   const shoppingCount = shoppingItems.length;
@@ -171,12 +173,22 @@ export default function HomePage() {
   }
 
   function openModal(status: string) {
-    if (!canAddItem) {
-      setShowPlanLimit(true);
+    // "Comprei!" → vai direto para a lista de compras (para marcar itens como comprados)
+    if (status === "tem") {
+      router.push("/lista");
       return;
     }
-    setInitialStatus(status);
-    setAddItemModalOpen(true);
+
+    if (canManageItems) {
+      // Dono/admin: abre modal de buscar item existente OU criar novo
+      // O limite de itens é verificado DENTRO do modal ao criar novo item (layout.tsx onAddItem)
+      // Aqui não bloqueamos porque o dono pode mudar status de itens existentes mesmo no plano grátis
+      setInitialStatus(status);
+      setAddItemModalOpen(true);
+    } else {
+      // Membro: vai para a despensa para marcar status dos itens existentes
+      router.push("/despensa");
+    }
   }
 
   function eventLabel(event: any): string {
@@ -276,26 +288,28 @@ export default function HomePage() {
                     </button>
                   );
                 })}
-                <div className="border-t border-gray-50 p-2">
-                  <Link
-                    href="/casa/nova"
-                    onClick={() => setShowHousePicker(false)}
-                    className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl hover:bg-green-50 transition-colors"
-                  >
-                    <div className="w-7 h-7 bg-green-100 rounded-full flex items-center justify-center">
-                      <Plus size={14} className="text-green-600" />
-                    </div>
-                    <span className="text-sm font-semibold text-green-700">Adicionar novo local</span>
-                  </Link>
-                </div>
+                {isRoleOwner && (
+                  <div className="border-t border-gray-50 p-2">
+                    <Link
+                      href="/casa/nova"
+                      onClick={() => setShowHousePicker(false)}
+                      className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl hover:bg-green-50 transition-colors"
+                    >
+                      <div className="w-7 h-7 bg-green-100 rounded-full flex items-center justify-center">
+                        <Plus size={14} className="text-green-600" />
+                      </div>
+                      <span className="text-sm font-semibold text-green-700">Adicionar novo local</span>
+                    </Link>
+                  </div>
+                )}
               </div>
             )}
           </div>
 
           <div className="flex items-center gap-1.5 shrink-0">
             <NotificationBell />
-            {/* Botão adicionar casa (quando tem só uma) */}
-            {allHouses.length <= 1 && (
+            {/* Botão adicionar casa (quando tem só uma) — só para dono */}
+            {isRoleOwner && allHouses.length <= 1 && (
               <Link
                 href="/casa/nova"
                 className="flex items-center gap-1.5 bg-green-50 border border-green-100 text-green-700 text-xs font-semibold px-3 py-1.5 rounded-xl hover:bg-green-100 transition-colors"
@@ -338,38 +352,52 @@ export default function HomePage() {
               </Link>
             )}
 
-            {/* Banner de trial expirado */}
-            {trialExpired && (currentHouse as any)?.owner_id === currentUserId && (
+            {/* Banner de trial expirado para MEMBROS (dono já vê via isFrozen) */}
+            {trialExpired && !isFrozen && (currentHouse as any)?.owner_id !== currentUserId && (
+              <div className="flex items-center gap-3 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-2xl px-4 py-3.5">
+                <div className="w-9 h-9 bg-amber-400 rounded-full flex items-center justify-center shrink-0">
+                  <span className="text-lg">⏰</span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-bold text-amber-900 text-sm">Teste grátis encerrado</p>
+                  <p className="text-xs text-amber-700 mt-0.5">Peça ao dono da casa para assinar o Plano Família.</p>
+                </div>
+              </div>
+            )}
+
+            {/* Banner de plano congelado — DONO vê com botão de assinar */}
+            {isFrozen && (currentHouse as any)?.owner_id === currentUserId && (
               <Link
                 href="/planos"
                 className="flex items-center gap-3 bg-gradient-to-r from-red-50 to-orange-50 border border-red-200 rounded-2xl px-4 py-3.5 hover:from-red-100 hover:to-orange-100 transition-all"
               >
                 <div className="w-9 h-9 bg-red-400 rounded-full flex items-center justify-center shrink-0">
-                  <Zap size={18} className="text-white fill-white" />
+                  <span className="text-lg">🔒</span>
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="font-bold text-red-900 text-sm">Seu teste grátis acabou</p>
-                  <p className="text-xs text-red-700 mt-0.5">Assine o Plano Família para manter itens ilimitados, convites e mais</p>
+                  <p className="font-bold text-red-900 text-sm">Conta congelada</p>
+                  <p className="text-xs text-red-700 mt-0.5">
+                    {trialExpired
+                      ? "Seu teste grátis acabou. Assine para desbloquear tudo."
+                      : "Seu plano expirou. Renove para desbloquear itens, convites e mais."
+                    }
+                  </p>
                 </div>
                 <ChevronDown size={16} className="text-red-500 shrink-0 -rotate-90" />
               </Link>
             )}
 
-            {/* Banner de plano expirado (pago real, não trial) */}
-            {!trialExpired && currentHouse?.plan !== "free" && currentHouse?.plan_status === "inactive" && (
-              <Link
-                href="/planos"
-                className="flex items-center gap-3 bg-gradient-to-r from-red-50 to-orange-50 border border-red-200 rounded-2xl px-4 py-3.5 hover:from-red-100 hover:to-orange-100 transition-all"
-              >
-                <div className="w-9 h-9 bg-red-400 rounded-full flex items-center justify-center shrink-0">
-                  <Zap size={18} className="text-white fill-white" />
+            {/* Banner de plano congelado — MEMBRO convidado vê aviso diferente */}
+            {isFrozen && (currentHouse as any)?.owner_id !== currentUserId && (
+              <div className="flex items-center gap-3 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-2xl px-4 py-3.5">
+                <div className="w-9 h-9 bg-amber-400 rounded-full flex items-center justify-center shrink-0">
+                  <span className="text-lg">🔒</span>
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="font-bold text-red-900 text-sm">Seu plano Família expirou</p>
-                  <p className="text-xs text-red-700 mt-0.5">Renove para continuar com itens e membros ilimitados</p>
+                  <p className="font-bold text-amber-900 text-sm">Recursos limitados</p>
+                  <p className="text-xs text-amber-700 mt-0.5">O plano desta casa expirou. Peça ao dono para renovar a assinatura e desbloquear todos os recursos.</p>
                 </div>
-                <ChevronDown size={16} className="text-red-500 shrink-0 -rotate-90" />
-              </Link>
+              </div>
             )}
 
             {/* Banner de upgrade — plano grátis sem trial (só mostra para o dono) */}
@@ -418,7 +446,7 @@ export default function HomePage() {
                 <p className="text-3xl font-bold text-green-600">{shoppingCount}</p>
                 <p className="text-sm text-gray-600 mt-1">Para comprar</p>
               </Link>
-              <Link href="/despensa" className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 hover:border-amber-200 transition-colors">
+              <Link href="/despensa?filtro=acabando" className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 hover:border-amber-200 transition-colors">
                 <p className="text-3xl font-bold text-amber-500">{endingCount}</p>
                 <p className="text-sm text-gray-600 mt-1">Acabando</p>
               </Link>

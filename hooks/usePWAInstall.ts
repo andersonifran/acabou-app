@@ -8,15 +8,32 @@ interface BeforeInstallPromptEvent extends Event {
   prompt(): Promise<void>;
 }
 
+function checkIsStandalone(): boolean {
+  if (typeof window === "undefined") return false;
+  // Android / Desktop Chrome
+  if (window.matchMedia("(display-mode: standalone)").matches) return true;
+  // iOS Safari
+  if ((window.navigator as any).standalone === true) return true;
+  // TWA (Trusted Web Activity)
+  if (document.referrer.includes("android-app://")) return true;
+  return false;
+}
+
 export function usePWAInstall() {
   const [installPrompt, setInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [isInstallable, setIsInstallable] = useState(false);
   const [isDismissed, setIsDismissed] = useState(false);
+  const [isInstalled, setIsInstalled] = useState(false);
 
   useEffect(() => {
+    // Se já está no modo standalone, o app está instalado
+    if (checkIsStandalone()) {
+      setIsInstalled(true);
+      return;
+    }
+
     const dismissed = localStorage.getItem("pwa-banner-dismissed");
     if (dismissed) { setIsDismissed(true); return; }
-    if (window.matchMedia("(display-mode: standalone)").matches) return;
 
     // Lê o prompt capturado globalmente antes do React montar
     const globalPrompt = (window as any).__pwaPrompt as BeforeInstallPromptEvent | null;
@@ -28,7 +45,34 @@ export function usePWAInstall() {
       if (p) { setInstallPrompt(p); setIsInstallable(true); }
     };
     window.addEventListener("pwa-prompt-ready", handler);
-    return () => window.removeEventListener("pwa-prompt-ready", handler);
+
+    // Escuta o evento de app instalado (Chrome dispara quando o usuário instala)
+    const onInstalled = () => {
+      setIsInstalled(true);
+      setIsInstallable(false);
+      setInstallPrompt(null);
+      // Salva flag para não mostrar mais
+      localStorage.setItem("pwa-installed", "1");
+    };
+    window.addEventListener("appinstalled", onInstalled);
+
+    // Escuta mudança no display-mode (quando o app é aberto como standalone depois de instalar)
+    const mql = window.matchMedia("(display-mode: standalone)");
+    const onDisplayChange = (e: MediaQueryListEvent) => {
+      if (e.matches) onInstalled();
+    };
+    mql.addEventListener("change", onDisplayChange);
+
+    // Verifica se já foi marcado como instalado antes
+    if (localStorage.getItem("pwa-installed") === "1") {
+      setIsInstalled(true);
+    }
+
+    return () => {
+      window.removeEventListener("pwa-prompt-ready", handler);
+      window.removeEventListener("appinstalled", onInstalled);
+      mql.removeEventListener("change", onDisplayChange);
+    };
   }, []);
 
   const showInstallPrompt = async () => {
@@ -39,6 +83,8 @@ export function usePWAInstall() {
     if (outcome === "accepted") {
       setInstallPrompt(null);
       setIsInstallable(false);
+      setIsInstalled(true);
+      localStorage.setItem("pwa-installed", "1");
     }
   };
 
@@ -48,5 +94,10 @@ export function usePWAInstall() {
     setIsInstallable(false);
   };
 
-  return { isInstallable: isInstallable && !isDismissed, showInstallPrompt, dismiss };
+  return {
+    isInstallable: isInstallable && !isDismissed && !isInstalled,
+    isInstalled,
+    showInstallPrompt,
+    dismiss,
+  };
 }

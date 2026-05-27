@@ -15,8 +15,17 @@ export function useSubscription() {
     ? new Date(currentHouse.plan_expires_at) < new Date()
     : false;
 
-  // Se o plano expirou (status inactive ou trial expirado), trata como free nos limites
-  const isExpired = trialExpired || (rawPlan !== "free" && planStatus === "inactive");
+  // Plano pago expirado (não trial) — status "inactive" com plano diferente de free
+  const paidExpired = !isTrialing && rawPlan !== "free" && planStatus === "inactive";
+
+  // Se o plano expirou (trial ou pago), trata como free nos limites
+  const isExpired = trialExpired || paidExpired;
+
+  // CONGELADO = tinha plano pago/trial mas expirou. Dados existem mas ficam travados.
+  // O usuário vê tudo, mas não pode adicionar além dos limites free.
+  // Quando pagar, tudo volta ao normal instantaneamente.
+  const isFrozen = isExpired && (rawPlan === "monthly" || rawPlan === "yearly");
+
   const plan = isExpired ? "free" : rawPlan;
   const limits = PLAN_LIMITS[plan];
 
@@ -38,8 +47,10 @@ export function useSubscription() {
 
   return {
     plan,
+    rawPlan,       // plano original (monthly/yearly) mesmo quando congelado
     isPaid,
     isExpired,
+    isFrozen,      // true = dados congelados, precisa pagar para desbloquear
     isTrialing: isTrialing && !trialExpired,
     trialExpired,
     trialDaysLeft,

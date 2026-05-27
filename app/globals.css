@@ -5,6 +5,12 @@
   --foreground: #1a1a1a;
 }
 
+.dark {
+  --background: #0f172a;
+  --foreground: #e2e8f0;
+  color-scheme: dark;
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -32,3 +38,112 @@ html {
 input, select, textarea {
   font-size: 16px;
 }
+
+/* ═══════════════════════════════════════════════════════
+   DARK MODE — Visual profissional inspirado em apps grandes
+   Paleta: Slate tones (sofisticado, descansado para os olhos)
+   ═══════════════════════════════════════════════════════ */
+
+/* Base backgrounds */
+.dark .bg-white { background-color: #1a1f2e !important; }
+.dark .bg-gray-50 { background-color: #111827 !important; }
+.dark .bg-gray-100 { background-color: #1f2937 !important; }
+.dark .bg-gray-200 { background-color: #374151 !important; }
+
+/* Accent backgrounds — suaves, sem saturação excessiva */
+.dark .bg-green-50 { background-color: rgba(22, 163, 74, 0.1) !important; }
+.dark .bg-green-100 { background-color: rgba(22, 163, 74, 0.15) !important; }
+.dark .bg-amber-50 { background-color: rgba(245, 158, 11, 0.1) !important; }
+.dark .bg-amber-100 { background-color: rgba(245, 158, 11, 0.15) !important; }
+.dark .bg-red-50 { background-color: rgba(239, 68, 68, 0.1) !important; }
+.dark .bg-blue-50 { background-color: rgba(59, 130, 246, 0.1) !important; }
+.dark .bg-indigo-100 { background-color: rgba(99, 102, 241, 0.15) !important; }
+.dark .bg-purple-50 { background-color: rgba(168, 85, 247, 0.1) !important; }
+
+/* Text — hierarquia clara */
+.dark .text-gray-900 { color: #f1f5f9 !important; }
+.dark .text-gray-800 { color: #e2e8f0 !important; }
+.dark .text-gray-700 { color: #cbd5e1 !important; }
+.dark .text-gray-600 { color: #94a3b8 !important; }
+.dark .text-gray-500 { color: #7c8ca4 !important; }
+.dark .text-gray-400 { color: #64748b !important; }
+
+/* Accent text — legível em fundo escuro */
+.dark .text-green-800, .dark .text-green-700 { color: #4ade80 !important; }
+.dark .text-green-600 { color: #22c55e !important; }
+.dark .text-amber-800, .dark .text-amber-700, .dark .text-amber-600 { color: #fbbf24 !important; }
+.dark .text-amber-500 { color: #f59e0b !important; }
+.dark .text-red-700, .dark .text-red-600, .dark .text-red-500 { color: #f87171 !important; }
+.dark .text-violet-700 { color: #a78bfa !important; }
+.dark .text-teal-700 { color: #5eead4 !important; }
+
+/* Borders — sutis */
+.dark .border-gray-50 { border-color: #1f2937 !important; }
+.dark .border-gray-100 { border-color: #2d3748 !important; }
+.dark .border-gray-200 { border-color: #3f4f63 !important; }
+.dark .border-gray-300 { border-color: #4b5e73 !important; }
+.dark .border-green-200 { border-color: rgba(22, 163, 74, 0.3) !important; }
+.dark .border-green-300 { border-color: rgba(22, 163, 74, 0.4) !important; }
+.dark .border-green-400 { border-color: #16a34a !important; }
+.dark .border-green-500 { border-color: #22c55e !important; }
+.dark .border-amber-200 { border-color: rgba(245, 158, 11, 0.3) !important; }
+.dark .border-red-100 { border-color: rgba(239, 68, 68, 0.2) !important; }
+.dark .border-red-200 { border-color: rgba(239, 68, 68, 0.3) !important; }
+
+/* Inputs & forms — integrados ao tema */
+.dark input, .dark select, .dark textarea {
+  background-color: #1f2937 !important;
+  color: #e2e8f0 !important;
+  border-color: #3f4f63 !important;
+}
+.dark input::placeholder, .dark textarea::placeholder {
+  color: #64748b !important;
+}
+.dark input:focus, .dark select:focus, .dark textarea:focus {
+  border-color: #22c55e !important;
+  background-color: #111827 !important;
+}
+
+/* Dividers */
+.dark .divide-gray-50 > :not(:first-child) { border-color: #1f2937 !important; }
+.dark .divide-gray-100 > :not(:first-child) { border-color: #2d3748 !important; }
+
+/* Hover states */
+.dark .hover\:bg-gray-50:hover { background-color: #2d3748 !important; }
+.dark .hover\:bg-gray-100:hover { background-color: #374151 !important; }
+.dark .hover\:bg-red-50:hover { background-color: rgba(239, 68, 68, 0.1) !important; }
+
+/* Shadows — mais profundas */
+.dark .shadow-sm { box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4) !important; }
+.dark .shadow-lg { box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5) !important; }
+.dark .shadow-xl { box-shadow: 0 8px 25px rgba(0, 0, 0, 0.6) !important; }
+.dark .shadow-2xl { box-shadow: 0 12px 35px rgba(0, 0, 0, 0.7) !important; }
+
+/* Bottom nav — sólido, sem transparência */
+.dark nav.border-t { border-color: #2d3748 !important; background-color: #1a1f2e !important; }
+.dark nav { background-color: #1a1f2e !important; }
+
+/* Sticky headers */
+.dark .sticky.bg-white { background-color: #1a1f2e !important; }
+
+/* Scrollbar (Webkit) */
+.dark ::-webkit-scrollbar { width: 6px; }
+.dark ::-webkit-scrollbar-track { background: #111827; }
+.dark ::-webkit-scrollbar-thumb { background: #374151; border-radius: 3px; }
+
+/* Gradients dark mode */
+.dark .from-gray-50 { --tw-gradient-from: #111827 !important; }
+.dark .from-green-50 { --tw-gradient-from: rgba(22, 163, 74, 0.1) !important; }
+.dark .to-emerald-50 { --tw-gradient-to: rgba(16, 185, 129, 0.1) !important; }
+
+/* Header verde principal — mantém cores da marca */
+.dark .bg-green-600 { background-color: #16a34a !important; }
+.dark .bg-green-700 { background-color: #15803d !important; }
+
+/* Modal overlay */
+.dark .bg-black\/40 { background-color: rgba(0, 0, 0, 0.6) !important; }
+.dark .bg-black\/50 { background-color: rgba(0, 0, 0, 0.7) !important; }
+
+/* Scrollbar hide utility */
+.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+.scrollbar-hide::-webkit-scrollbar { display: none; }

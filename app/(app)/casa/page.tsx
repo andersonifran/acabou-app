@@ -16,6 +16,7 @@ import { MemberRole } from "@/types";
 import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
 import { WhatsAppIcon } from "@/components/shared/WhatsAppIcon";
+import { ThemeToggle } from "@/components/shared/ThemeToggle";
 
 const roleIcons: Record<MemberRole, React.ReactNode> = {
   owner: <Crown size={14} className="text-amber-500" />,
@@ -44,7 +45,7 @@ export default function CasaPage() {
   const router = useRouter();
   const supabase = createClient();
   const { currentHouse, members, isPaid, generateInviteToken, getInviteUrl, removeMember } = useHouse();
-  const { reset, setCurrentHouse, allHouses, setAllHouses } = useAppStore();
+  const { reset, setCurrentHouse, allHouses, setAllHouses, setMembers } = useAppStore();
 
   const [inviteUrl, setInviteUrl] = useState("");
   const [loadingInvite, setLoadingInvite] = useState(false);
@@ -117,8 +118,69 @@ export default function CasaPage() {
   }, [editingProfileName]);
 
   const propertyType = PROPERTY_TYPES.find(p => p.id === (currentHouse as any)?.property_type) ?? PROPERTY_TYPES[0];
-  const activeMembers = members.filter((m) => m.status === "active");
   const isOwner = (currentHouse as any)?.owner_id === currentUserId;
+
+  // Carrega membros diretamente do DB (mais confiável que store)
+  const [dbMembers, setDbMembers] = useState<any[]>([]);
+  const [loadingMembers, setLoadingMembers] = useState(true);
+
+  // Edição de membro (modal completo)
+  const [editingMember, setEditingMember] = useState<any>(null);
+  const [editMemberName, setEditMemberName] = useState("");
+  const [editMemberType, setEditMemberType] = useState<"familiar" | "funcionario">("familiar");
+  const [editMemberRelation, setEditMemberRelation] = useState("");
+  const [savingMember, setSavingMember] = useState(false);
+
+  // Membros existentes para convite rápido (Issue 2)
+  const [existingMembers, setExistingMembers] = useState<any[]>([]);
+
+  useEffect(() => {
+    async function loadMembers() {
+      if (!currentHouse) return;
+      setLoadingMembers(true);
+      try {
+        // Query simples sem join problemático — busca membros ativos
+        const { data, error } = await supabase
+          .from("house_members")
+          .select("*")
+          .eq("house_id", currentHouse.id)
+          .eq("status", "active");
+
+        if (error) {
+          console.error("[Casa] Erro ao buscar membros:", error);
+          setLoadingMembers(false);
+          return;
+        }
+
+        if (data && data.length > 0) {
+          // Busca perfis separadamente (evita problema de RLS no join)
+          const userIds = data.map((m: any) => m.user_id);
+          const { data: profiles } = await supabase
+            .from("profiles")
+            .select("user_id, full_name, email, avatar_url")
+            .in("user_id", userIds);
+
+          // Mescla perfis com membros
+          const profileMap = new Map((profiles ?? []).map((p: any) => [p.user_id, p]));
+          const enriched = data.map((m: any) => ({
+            ...m,
+            profile: profileMap.get(m.user_id) ?? null,
+          }));
+
+          setDbMembers(enriched);
+          setMembers(data as any);
+        } else {
+          setDbMembers(data ?? []);
+        }
+      } catch (err) {
+        console.error("[Casa] Erro inesperado ao carregar membros:", err);
+      }
+      setLoadingMembers(false);
+    }
+    loadMembers();
+  }, [currentHouse?.id]);
+
+  const activeMembers = dbMembers;
 
   // ── UPLOAD DE FOTO ──────────────────────────────────────
   async function handleAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -224,11 +286,147 @@ export default function CasaPage() {
 
   // ── REMOVER MEMBRO (somente dono) ─────────────────────
   async function handleRemoveMember(memberId: string, memberName: string) {
-    if (!confirm(`Remover ${memberName} deste local?`)) return;
+    if (!confirm(`Remover ${memberName} deste local?\n\nEle perderá acesso a este local imediatamente.`)) return;
     try {
       await removeMember(memberId);
+      // Atualiza lista local
+      setDbMembers(prev => prev.filter(m => m.id !== memberId));
     } catch {
       alert("Erro ao remover membro.");
+    }
+  }
+
+  // ── ABRIR EDITOR DE MEMBRO ──────────────────────────────
+  function openMemberEditor(member: any) {
+    setEditingMember(member);
+    setEditMemberName(member.display_name || member.profile?.full_name || "");
+    setEditMemberType((member.member_type as any) || "familiar");
+    setEditMemberRelation(member.relation_label || "");
+  }
+
+  // ── SALVAR EDIÇÃO DO MEMBRO ──────────────────────────────
+  async function handleSaveMember() {
+    if (!editingMember) return;
+    setSavingMember(true);
+    try {
+      const updates: any = {
+        display_name: editMemberName.trim() || null,
+        member_type: editMemberType,
+        relation_label: editMemberRelation || null,
+      };
+      const { error } = await supabase
+        .from("house_members")
+        .update(updates)
+        .eq("id", editingMember.id);
+
+      if (error) throw error;
+
+      // Atualiza lista local
+      setDbMembers(prev => prev.map(m =>
+        m.id === editingMember.id ? { ...m, ...updates } : m
+      ));
+      setEditingMember(null);
+    } catch (err) {
+      console.error("Erro ao salvar membro:", err);
+      alert("Erro ao salvar alterações. Tente novamente.");
+    } finally {
+      setSavingMember(false);
+    }
+  }
+
+  // ── CARREGAR MEMBROS EXISTENTES (para convite rápido) ────
+  async function loadExistingMembersForInvite() {
+    if (!currentHouse || !isOwner) return;
+    try {
+      // Busca todos os membros de TODAS as casas do dono
+      const ownerHouseIds = allHouses.map(h => h.id);
+      const { data: allMembers } = await supabase
+        .from("house_members")
+        .select("user_id, display_name, member_type, relation_label")
+        .in("house_id", ownerHouseIds)
+        .eq("status", "active")
+        .neq("user_id", currentUserId);
+
+      if (!allMembers || allMembers.length === 0) { setExistingMembers([]); return; }
+
+      // Remove duplicatas e filtra quem JÁ está nesta casa
+      const currentMemberIds = new Set(dbMembers.map(m => m.user_id));
+      const uniqueMap = new Map<string, any>();
+      for (const m of allMembers) {
+        if (!currentMemberIds.has(m.user_id) && !uniqueMap.has(m.user_id)) {
+          uniqueMap.set(m.user_id, m);
+        }
+      }
+
+      // Busca nomes/perfis
+      const userIds = Array.from(uniqueMap.keys());
+      if (userIds.length === 0) { setExistingMembers([]); return; }
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("user_id, full_name, email, avatar_url")
+        .in("user_id", userIds);
+
+      const profileMap = new Map((profiles ?? []).map(p => [p.user_id, p]));
+      const enriched = userIds.map(uid => ({
+        ...uniqueMap.get(uid),
+        profile: profileMap.get(uid),
+      }));
+      setExistingMembers(enriched);
+    } catch (err) {
+      console.error("Erro ao carregar membros existentes:", err);
+    }
+  }
+
+  // ── ADICIONAR MEMBRO EXISTENTE A ESTA CASA ──────────────
+  async function handleAddExistingMember(userId: string, memberData: any) {
+    if (!currentHouse) return;
+    try {
+      const { error } = await supabase
+        .from("house_members")
+        .insert({
+          house_id: currentHouse.id,
+          user_id: userId,
+          role: "member",
+          status: "active",
+          invited_by: currentUserId,
+          display_name: memberData.display_name,
+          member_type: memberData.member_type,
+          relation_label: memberData.relation_label,
+        });
+
+      if (error) throw error;
+
+      // Recarrega membros
+      setExistingMembers(prev => prev.filter(m => m.user_id !== userId));
+
+      // Busca profile para adicionar à lista local
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("user_id, full_name, email, avatar_url")
+        .eq("user_id", userId)
+        .single();
+
+      const newMember = {
+        id: crypto.randomUUID(),
+        house_id: currentHouse.id,
+        user_id: userId,
+        role: "member",
+        status: "active",
+        display_name: memberData.display_name,
+        member_type: memberData.member_type,
+        relation_label: memberData.relation_label,
+        profile: profile,
+      };
+      setDbMembers(prev => [...prev, newMember]);
+
+      alert(`${memberData.profile?.full_name || "Membro"} foi adicionado a ${currentHouse.name}!`);
+    } catch (err: any) {
+      if (err?.code === "23505") {
+        alert("Este membro já está neste local.");
+      } else {
+        console.error("Erro ao adicionar membro:", err);
+        alert("Erro ao adicionar membro. Tente novamente.");
+      }
     }
   }
 
@@ -270,6 +468,12 @@ export default function CasaPage() {
 
       setInviteUrl(url);
       setShowInviteModal(false);
+
+      // Abre WhatsApp direto com a mensagem personalizada
+      if (currentHouse) {
+        const msg = `Oi ${inviteeName.trim()}! Entre no Acabou? para acompanhar a lista de ${currentHouse.name} comigo.\n\n${url}`;
+        window.open(buildWhatsAppShareUrl(msg), "_blank");
+      }
     } catch {
       alert("Erro ao gerar convite.");
     } finally {
@@ -323,29 +527,25 @@ export default function CasaPage() {
                 )}
               </div>
 
-              {/* Botão câmera — só o dono vê */}
-              {isOwner && (
-                <>
-                  <button
-                    onClick={() => fileInputRef.current?.click()}
-                    disabled={uploadingAvatar}
-                    className="absolute -bottom-1 -right-1 w-7 h-7 bg-green-600 hover:bg-green-700 text-white rounded-full flex items-center justify-center shadow-md transition-colors disabled:opacity-60"
-                    title="Alterar foto"
-                  >
-                    {uploadingAvatar
-                      ? <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      : <Camera size={13} />
-                    }
-                  </button>
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={handleAvatarChange}
-                  />
-                </>
-              )}
+              {/* Botão câmera — qualquer usuário pode alterar sua foto */}
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploadingAvatar}
+                className="absolute -bottom-1 -right-1 w-7 h-7 bg-green-600 hover:bg-green-700 text-white rounded-full flex items-center justify-center shadow-md transition-colors disabled:opacity-60"
+                title="Alterar foto"
+              >
+                {uploadingAvatar
+                  ? <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  : <Camera size={13} />
+                }
+              </button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleAvatarChange}
+              />
             </div>
 
             {/* Nome e papel */}
@@ -467,42 +667,74 @@ export default function CasaPage() {
               <h2 className="font-semibold text-gray-900">Membros ({activeMembers.length})</h2>
             </div>
           </div>
-          <div className="divide-y divide-gray-50">
-            {activeMembers.map((member) => (
-              <div key={member.id} className="flex items-center justify-between px-5 py-3.5">
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 bg-green-100 rounded-full flex items-center justify-center text-green-700 font-semibold text-sm overflow-hidden">
-                    {member.user_id === currentUserId && avatarUrl
-                      ? <img src={avatarUrl} alt="" className="w-full h-full object-cover" />
-                      : <span>{(member.profile?.full_name ?? "?")[0].toUpperCase()}</span>
-                    }
-                  </div>
-                  <div>
-                    <p className="font-medium text-gray-900 text-sm">
-                      {member.profile?.full_name ?? "Membro"}
-                      {member.user_id === currentUserId && (
-                        <span className="ml-1.5 text-xs text-gray-400">(você)</span>
+
+          {loadingMembers ? (
+            <div className="px-5 py-6 flex justify-center">
+              <div className="w-6 h-6 border-2 border-gray-200 border-t-green-600 rounded-full animate-spin" />
+            </div>
+          ) : activeMembers.length === 0 ? (
+            <div className="px-5 py-6 text-center">
+              <p className="text-sm text-gray-400">Nenhum membro ainda. Convide alguém!</p>
+            </div>
+          ) : (
+            <div className="divide-y divide-gray-50">
+              {activeMembers.map((member: any) => {
+                const displayName = member.display_name || member.profile?.full_name || "Membro";
+                const typeLabel = member.member_type === "funcionario" ? "🧑‍🔧 Funcionário" : "👨‍👩‍👧 Familiar";
+                return (
+                  <div key={member.id} className="px-5 py-3.5">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3 flex-1 min-w-0">
+                        <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center text-green-700 font-semibold text-sm overflow-hidden shrink-0">
+                          {member.user_id === currentUserId && avatarUrl
+                            ? <img src={avatarUrl} alt="" className="w-full h-full object-cover" />
+                            : member.profile?.avatar_url
+                              ? <img src={member.profile.avatar_url} alt="" className="w-full h-full object-cover" />
+                              : <span>{displayName[0].toUpperCase()}</span>
+                          }
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-gray-900 text-sm truncate">
+                            {displayName}
+                            {member.user_id === currentUserId && (
+                              <span className="ml-1.5 text-xs text-gray-400">(você)</span>
+                            )}
+                          </p>
+                          <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                            {roleIcons[member.role as MemberRole]}
+                            <span className="text-xs text-gray-500">{roleLabels[member.role as MemberRole]}</span>
+                            {member.relation_label && (
+                              <span className="text-xs text-gray-400">· {member.relation_label}</span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Ações do dono sobre membros (não sobre si mesmo) */}
+                      {isOwner && member.user_id !== currentUserId && (
+                        <div className="flex items-center gap-1 shrink-0 ml-2">
+                          <button
+                            onClick={() => openMemberEditor(member)}
+                            className="text-gray-300 hover:text-green-600 transition-colors p-1.5"
+                            title="Editar membro"
+                          >
+                            <Pencil size={14} />
+                          </button>
+                          <button
+                            onClick={() => handleRemoveMember(member.id, displayName)}
+                            className="text-gray-300 hover:text-red-500 transition-colors p-1.5"
+                            title="Remover membro"
+                          >
+                            <UserMinus size={16} />
+                          </button>
+                        </div>
                       )}
-                    </p>
-                    <div className="flex items-center gap-1 mt-0.5">
-                      {roleIcons[member.role]}
-                      <span className="text-xs text-gray-500">{roleLabels[member.role]}</span>
                     </div>
                   </div>
-                </div>
-                {/* Botão remover — somente dono pode remover, e não pode remover a si mesmo */}
-                {isOwner && member.user_id !== currentUserId && (
-                  <button
-                    onClick={() => handleRemoveMember(member.id, member.profile?.full_name ?? "este membro")}
-                    className="text-gray-300 hover:text-red-500 transition-colors p-1.5"
-                    title="Remover membro"
-                  >
-                    <UserMinus size={16} />
-                  </button>
-                )}
-              </div>
-            ))}
-          </div>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         {/* ── CONVIDAR (somente dono + plano pago) ── */}
@@ -523,7 +755,7 @@ export default function CasaPage() {
 
             {!inviteUrl ? (
               <button
-                onClick={() => setShowInviteModal(true)}
+                onClick={() => { loadExistingMembersForInvite(); setShowInviteModal(true); }}
                 className="w-full bg-green-600 text-white font-semibold py-3.5 rounded-xl hover:bg-green-700 transition-colors"
               >
                 Gerar link de convite
@@ -652,6 +884,7 @@ export default function CasaPage() {
               </div>
               <ChevronRight size={18} className="text-gray-400" />
             </Link>
+            <ThemeToggle className="border-b border-gray-50" />
             <Link href="/configuracoes" className="flex items-center justify-between px-5 py-4 hover:bg-gray-50 transition-colors">
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
@@ -684,6 +917,42 @@ export default function CasaPage() {
                 <X size={20} />
               </button>
             </div>
+
+            {/* Membros já cadastrados em outros locais */}
+            {existingMembers.length > 0 && (
+              <div className="mb-5">
+                <p className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-2">Adicionar membro existente</p>
+                <div className="bg-blue-50 border border-blue-100 rounded-xl p-3 space-y-2">
+                  {existingMembers.map((m: any) => (
+                    <div key={m.user_id} className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2.5 flex-1 min-w-0">
+                        <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center text-blue-700 text-xs font-semibold overflow-hidden shrink-0">
+                          {m.profile?.avatar_url
+                            ? <img src={m.profile.avatar_url} alt="" className="w-full h-full object-cover" />
+                            : <span>{(m.profile?.full_name ?? m.display_name ?? "?")[0].toUpperCase()}</span>
+                          }
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium text-gray-900 truncate">{m.display_name || m.profile?.full_name || "Membro"}</p>
+                          <p className="text-xs text-gray-500 truncate">{m.relation_label || (m.member_type === "funcionario" ? "Funcionário" : "Familiar")}</p>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => handleAddExistingMember(m.user_id, m)}
+                        className="shrink-0 bg-blue-600 text-white text-xs font-semibold px-3 py-1.5 rounded-lg hover:bg-blue-700 transition-colors"
+                      >
+                        Adicionar
+                      </button>
+                    </div>
+                  ))}
+                </div>
+                <div className="flex items-center gap-3 my-4">
+                  <div className="flex-1 h-px bg-gray-200" />
+                  <span className="text-xs text-gray-400 font-medium">ou convide alguém novo</span>
+                  <div className="flex-1 h-px bg-gray-200" />
+                </div>
+              </div>
+            )}
 
             <div className="grid grid-cols-2 gap-2 mb-5">
               <button
@@ -750,6 +1019,120 @@ export default function CasaPage() {
             >
               {loadingInvite ? <><LoadingSpinner size="sm" /> Gerando...</> : "Gerar convite e compartilhar"}
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* ── MODAL DE EDIÇÃO DE MEMBRO ── */}
+      {editingMember && (
+        <div className="fixed inset-0 z-[60] bg-black/50 flex items-center justify-center px-4 py-6">
+          <div className="w-full max-w-md bg-white rounded-3xl p-6 shadow-2xl overflow-y-auto max-h-[85vh]">
+            <div className="flex items-center justify-between mb-5">
+              <h3 className="font-bold text-gray-900 text-lg">Editar membro</h3>
+              <button onClick={() => setEditingMember(null)} className="text-gray-400 hover:text-gray-600 p-1">
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Avatar do membro */}
+            <div className="flex items-center gap-3 mb-5 bg-gray-50 rounded-xl p-3">
+              <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center text-green-700 font-semibold overflow-hidden shrink-0">
+                {editingMember.profile?.avatar_url
+                  ? <img src={editingMember.profile.avatar_url} alt="" className="w-full h-full object-cover" />
+                  : <span className="text-lg">{(editingMember.profile?.full_name ?? "?")[0].toUpperCase()}</span>
+                }
+              </div>
+              <div className="min-w-0">
+                <p className="font-medium text-gray-900 text-sm truncate">{editingMember.profile?.full_name ?? "Membro"}</p>
+                <p className="text-xs text-gray-500 truncate">{editingMember.profile?.email ?? ""}</p>
+              </div>
+            </div>
+
+            {/* Nome de exibição */}
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">Nome de exibição</label>
+              <input
+                type="text"
+                value={editMemberName}
+                onChange={(e) => setEditMemberName(e.target.value)}
+                placeholder="Ex: Maria"
+                maxLength={80}
+                className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 focus:outline-none focus:border-green-400 text-gray-900 text-sm"
+              />
+              <p className="text-xs text-gray-400 mt-1">Deixe vazio para usar o nome original do cadastro</p>
+            </div>
+
+            {/* Tipo: Familiar ou Funcionário */}
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">Tipo</label>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  onClick={() => { setEditMemberType("familiar"); setEditMemberRelation(""); }}
+                  className={cn(
+                    "p-3 rounded-2xl border-2 font-semibold text-sm transition-all",
+                    editMemberType === "familiar" ? "border-green-500 bg-green-50 text-green-700" : "border-gray-200 text-gray-500"
+                  )}
+                >
+                  👨‍👩‍👧 Familiar
+                </button>
+                <button
+                  onClick={() => { setEditMemberType("funcionario"); setEditMemberRelation(""); }}
+                  className={cn(
+                    "p-3 rounded-2xl border-2 font-semibold text-sm transition-all",
+                    editMemberType === "funcionario" ? "border-green-500 bg-green-50 text-green-700" : "border-gray-200 text-gray-500"
+                  )}
+                >
+                  🧑‍🔧 Funcionário
+                </button>
+              </div>
+            </div>
+
+            {/* Parentesco ou Cargo */}
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                {editMemberType === "familiar" ? "Grau de parentesco" : "Cargo / Função"}
+              </label>
+              {editMemberType === "familiar" ? (
+                <select
+                  value={editMemberRelation}
+                  onChange={(e) => setEditMemberRelation(e.target.value)}
+                  className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 focus:outline-none focus:border-green-400 text-gray-900 text-sm"
+                >
+                  <option value="">Selecione...</option>
+                  {RELATIONS_FAMILIAR.map(r => <option key={r} value={r}>{r}</option>)}
+                </select>
+              ) : (
+                <input
+                  type="text"
+                  value={editMemberRelation}
+                  onChange={(e) => setEditMemberRelation(e.target.value)}
+                  placeholder="Ex: Diarista, Caseiro, Babá..."
+                  maxLength={80}
+                  className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 focus:outline-none focus:border-green-400 text-gray-900 text-sm"
+                />
+              )}
+            </div>
+
+            {/* Botões de ação */}
+            <div className="space-y-2">
+              <button
+                onClick={handleSaveMember}
+                disabled={savingMember}
+                className="w-full bg-green-600 text-white font-bold py-3.5 rounded-xl hover:bg-green-700 transition-colors disabled:opacity-60 flex items-center justify-center gap-2"
+              >
+                {savingMember ? <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> Salvando...</> : "Salvar alterações"}
+              </button>
+              <button
+                onClick={() => {
+                  handleRemoveMember(editingMember.id, editMemberName || editingMember.profile?.full_name || "este membro");
+                  setEditingMember(null);
+                }}
+                className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-red-200 text-red-500 hover:bg-red-50 transition-colors font-medium text-sm"
+              >
+                <UserMinus size={16} />
+                Remover deste local
+              </button>
+            </div>
           </div>
         </div>
       )}

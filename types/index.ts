@@ -127,18 +127,21 @@ export const PLAN_LIMITS = {
   free: {
     max_members: 1,
     max_items: 20,
+    max_houses: 1,
     recurring_reminders: false,
     full_history: false,
   },
   monthly: {
     max_members: Infinity,
     max_items: Infinity,
+    max_houses: Infinity,
     recurring_reminders: true,
     full_history: true,
   },
   yearly: {
     max_members: Infinity,
     max_items: Infinity,
+    max_houses: Infinity,
     recurring_reminders: true,
     full_history: true,
   },

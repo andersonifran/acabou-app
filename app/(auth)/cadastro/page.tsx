@@ -88,11 +88,11 @@ export default function CadastroPage() {
       const userId = authData.user.id;
 
       if (hasInvite) {
-        // Usuário convidado: só cria perfil, sem casa
+        // Usuário convidado: cria perfil + aceita convite server-side
         const res = await fetch("/api/criar-perfil", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ userId, fullName, phone }),
+          body: JSON.stringify({ userId, fullName, phone, conviteToken }),
         });
 
         if (!res.ok) {
@@ -120,7 +120,8 @@ export default function CadastroPage() {
 
       // Redireciona
       if (conviteToken) {
-        router.push(`/convite/${conviteToken}`);
+        // Convite já foi aceito server-side → vai direto para o app
+        router.push("/home");
       } else {
         router.push("/onboarding");
       }
@@ -140,7 +141,15 @@ export default function CadastroPage() {
     setLoadingGoogle(true);
     setError("");
 
-    // Preserva o token de convite na URL de callback
+    // IMPORTANTE: Salva o token de convite em COOKIE + localStorage ANTES do OAuth
+    // O Supabase perde query params na URL de callback
+    // Cookie sobrevive aos redirects e pode ser lido no servidor
+    if (conviteToken) {
+      document.cookie = `acabou_pending_invite=${conviteToken}; path=/; max-age=3600; SameSite=Lax`;
+      localStorage.setItem("acabou_pending_invite", conviteToken);
+    }
+
+    // Preserva o token de convite na URL de callback (tentativa primária)
     const callbackUrl = conviteToken
       ? `${window.location.origin}/api/auth/callback?next=${encodeURIComponent(`/convite/${conviteToken}`)}`
       : `${window.location.origin}/api/auth/callback`;
