@@ -2,6 +2,17 @@
 -- ACABOU? — Schema completo do banco de dados
 -- Execute no SQL Editor do Supabase
 -- =============================================
+--
+-- ⚠️ IMPORTANTE (a partir de Out/2026):
+-- O Supabase deixará de expor tabelas novas no schema "public" por padrão.
+-- Ao criar QUALQUER tabela nova, adicionar obrigatoriamente:
+--
+--   GRANT ALL ON nome_da_tabela TO anon, authenticated, service_role;
+--   GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO anon, authenticated, service_role;
+--
+-- Sem isso, a tabela não será acessível via supabase-js / API.
+-- Ref: email Supabase maio/2026 — rollout obrigatório outubro/2026.
+-- =============================================
 
 -- Habilitar extensão UUID
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
