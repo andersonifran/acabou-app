@@ -146,12 +146,29 @@ export default function ConfiguracoesPage() {
     setAddingItem(false);
   }
 
+  const [deletingAccount, setDeletingAccount] = useState(false);
+
   async function handleDeleteAccount() {
-    if (!confirm("Tem certeza? Isso vai excluir sua conta permanentemente.")) return;
-    await supabase.auth.signOut();
-    reset();
-    router.push("/");
-    router.refresh();
+    if (!confirm("Tem certeza que deseja excluir sua conta?\n\nTodos os seus dados, casas, itens e membros convidados serão removidos PERMANENTEMENTE.\n\nEssa ação não pode ser desfeita.")) return;
+    if (!confirm("ÚLTIMA CONFIRMAÇÃO: Excluir conta e todos os dados?")) return;
+
+    setDeletingAccount(true);
+    try {
+      const res = await fetch("/api/excluir-conta", { method: "DELETE" });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error ?? "Erro ao excluir conta");
+      }
+
+      // Limpa tudo e redireciona
+      await supabase.auth.signOut();
+      reset();
+      router.push("/");
+      router.refresh();
+    } catch (err: any) {
+      alert(err.message ?? "Erro ao excluir conta. Tente novamente.");
+      setDeletingAccount(false);
+    }
   }
 
   async function handleLogout() {
@@ -301,10 +318,14 @@ export default function ConfiguracoesPage() {
               <>
                 <button
                   onClick={handleDeleteAccount}
-                  className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl border border-red-100 text-red-500 hover:bg-red-50 transition-colors font-medium text-sm"
+                  disabled={deletingAccount}
+                  className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl border border-red-100 text-red-500 hover:bg-red-50 transition-colors font-medium text-sm disabled:opacity-50"
                 >
-                  <Trash2 size={16} />
-                  Excluir minha conta
+                  {deletingAccount ? (
+                    <><div className="w-4 h-4 border-2 border-red-400 border-t-transparent rounded-full animate-spin" /> Excluindo...</>
+                  ) : (
+                    <><Trash2 size={16} /> Excluir minha conta</>
+                  )}
                 </button>
                 <p className="text-xs text-gray-400 text-center">
                   Ao excluir sua conta, todos os seus dados serão removidos permanentemente.

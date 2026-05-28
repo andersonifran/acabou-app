@@ -135,6 +135,23 @@ export function useItems() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Não autenticado");
 
+      // Verificação server-side do limite de itens (anti-bypass)
+      try {
+        const checkRes = await fetch("/api/verificar-limite", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ houseId: currentHouse.id }),
+        });
+        const checkData = await checkRes.json();
+        if (!checkData.allowed) {
+          throw new Error(checkData.reason ?? "Limite de itens atingido. Faça upgrade para o Plano Família.");
+        }
+      } catch (err: any) {
+        if (err.message?.includes("Limite")) throw err;
+        // Se a API falhar (rede), continua (fallback para client-side check que já existe)
+        console.warn("[createItem] Verificação server-side falhou, usando client-side:", err);
+      }
+
       const { data: item, error } = await supabase
         .from("items")
         .insert({
