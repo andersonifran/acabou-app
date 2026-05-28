@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 
 async function getMetrics(supabase: any) {
   const now = new Date();
@@ -71,7 +71,9 @@ export default async function PainelPage() {
   const adminEmails = (process.env.ADMIN_EMAILS ?? "").split(",").map((e) => e.trim());
   if (!adminEmails.includes(user.email ?? "")) redirect("/home");
 
-  const metrics = await getMetrics(supabase);
+  // Usa cliente admin (service role) para as métricas — bypassa RLS
+  const adminSupabase = createAdminClient();
+  const metrics = await getMetrics(adminSupabase);
 
   const statCards = [
     { label: "Usuários cadastrados", value: metrics.totalUsers, color: "bg-blue-50 text-blue-700" },
