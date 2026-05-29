@@ -1,28 +1,42 @@
 "use client";
 
 import { useEffect } from "react";
+import { usePathname } from "next/navigation";
+
+const APP_ROUTES = [
+  "/home",
+  "/despensa",
+  "/lista",
+  "/casa",
+  "/configuracoes",
+  "/planos",
+  "/feedback",
+];
 
 /**
- * Garante que o tema (claro/escuro) escolhido pelo usuário esteja
- * sempre aplicado, mesmo se o React sobrescrever a classe do <html>
- * durante a hidratação.
+ * Gerencia o tema (claro/escuro) em TODAS as rotas:
+ * - Dentro do app (rotas APP_ROUTES): aplica .dark se o usuario escolheu
+ * - Fora do app (landing, login, cadastro, termos, privacidade): sempre claro
  *
- * O script inline no root layout aplica .dark antes do paint, mas
- * em alguns casos o React pode substituir o className durante hydrate.
- * Este componente roda um useEffect que reaplica a classe sempre.
+ * Reage a mudancas de pathname para navegacao client-side.
  */
 export function ThemeApplier() {
+  const pathname = usePathname();
+
   useEffect(() => {
     try {
-      const theme = localStorage.getItem("acabou_theme");
       const html = document.documentElement;
-      if (theme === "dark") {
+      const isAppRoute = APP_ROUTES.some(
+        (r) => pathname === r || pathname.startsWith(r + "/")
+      );
+
+      if (isAppRoute && localStorage.getItem("acabou_theme") === "dark") {
         if (!html.classList.contains("dark")) html.classList.add("dark");
       } else {
         if (html.classList.contains("dark")) html.classList.remove("dark");
       }
     } catch { /* localStorage bloqueado */ }
-  }, []);
+  }, [pathname]);
 
   return null;
 }

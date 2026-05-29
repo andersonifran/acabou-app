@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Geist } from "next/font/google";
 import "./globals.css";
+import { ThemeApplier } from "@/components/shared/ThemeApplier";
 
 const geist = Geist({ subsets: ["latin"], variable: "--font-geist-sans" });
 
@@ -36,16 +37,22 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="pt-BR" className={geist.variable} suppressHydrationWarning>
       <head>
-        {/* Dark mode — aplica classe antes do primeiro paint para evitar flash.
-            IMPORTANTE: Só ativa dark se o usuário ESCOLHEU explicitamente.
-            Não usa preferência do sistema (matchMedia) — padrão é modo claro. */}
+        {/* Dark mode — aplica APENAS dentro das rotas do app (area logada).
+            Landing, login, cadastro e termos sempre ficam no modo claro
+            para garantir leitura e branding consistente.
+            IMPORTANTE: Só ativa dark se o usuário ESCOLHEU explicitamente. */}
         <script
           dangerouslySetInnerHTML={{
             __html: `
               (function(){
                 try {
-                  if (localStorage.getItem('acabou_theme') === 'dark') {
+                  var path = window.location.pathname;
+                  var appRoutes = ['/home','/despensa','/lista','/casa','/configuracoes','/planos','/feedback'];
+                  var isAppRoute = appRoutes.some(function(r){ return path === r || path.indexOf(r + '/') === 0; });
+                  if (isAppRoute && localStorage.getItem('acabou_theme') === 'dark') {
                     document.documentElement.classList.add('dark');
+                  } else {
+                    document.documentElement.classList.remove('dark');
                   }
                 } catch(e){}
               })();
@@ -99,6 +106,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
       </head>
       <body className="min-h-screen bg-gray-50 antialiased">
+        <ThemeApplier />
         {children}
 
         {/* SW registration no body — pode rodar depois, sem pressa */}
