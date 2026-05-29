@@ -20,16 +20,32 @@ function readCache(): Partial<AppState> {
 
 function writeCache(state: AppState) {
   if (typeof window === "undefined") return;
+
+  const payload = {
+    userId: state.userId,
+    currentHouse: state.currentHouse,
+    allHouses: state.allHouses,
+    members: state.members,
+    items: state.items,
+    categories: state.categories,
+  };
+
   try {
-    localStorage.setItem(CACHE_KEY, JSON.stringify({
-      userId: state.userId,
-      currentHouse: state.currentHouse,
-      allHouses: state.allHouses,
-      members: state.members,
-      items: state.items,
-      categories: state.categories,
-    }));
-  } catch { /* quota cheia ou bloqueado */ }
+    localStorage.setItem(CACHE_KEY, JSON.stringify(payload));
+  } catch {
+    // Quota cheia. Limpa o cache antigo e salva versao reduzida
+    // (so o essencial pra UI renderizar sem flash) — itens/eventos
+    // podem ser recarregados em background.
+    try {
+      localStorage.removeItem(CACHE_KEY);
+      localStorage.setItem(CACHE_KEY, JSON.stringify({
+        userId: state.userId,
+        currentHouse: state.currentHouse,
+        allHouses: state.allHouses,
+        categories: state.categories,
+      }));
+    } catch { /* desiste silenciosamente */ }
+  }
 }
 
 interface AppState {
