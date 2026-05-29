@@ -9,6 +9,7 @@ import { AddItemModal } from "@/components/items/AddItemModal";
 import { PlanLimitModal } from "@/components/shared/PlanLimitModal";
 import { PWAInstallBanner } from "@/components/shared/PWAInstallBanner";
 import { PushPermissionBanner } from "@/components/shared/PushPermissionBanner";
+import { ThemeApplier } from "@/components/shared/ThemeApplier";
 import { useItems } from "@/hooks/useItems";
 import { useSubscription } from "@/hooks/useSubscription";
 import { ItemStatus, House } from "@/types";
@@ -148,6 +149,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="min-h-screen bg-gray-50 pb-16">
+      <ThemeApplier />
       <PushPermissionBanner />
       {children}
 
