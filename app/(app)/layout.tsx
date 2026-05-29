@@ -30,12 +30,15 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     initialStatus,
     items,
     categories,
+    currentHouse,
   } = useAppStore();
 
   const { createItem, changeStatus } = useItems();
   const { canAddItem } = useSubscription();
   const [showPlanLimit, setShowPlanLimit] = useState(false);
-  const [isReady, setIsReady] = useState(false);
+  // Se o store já tem casa carregada, considera pronto imediatamente.
+  // Isso evita o flash de "Carregando..." ao trocar entre abas.
+  const [isReady, setIsReady] = useState(!!currentHouse);
 
   async function loadHouseData(houseId: string) {
     // Carrega casa + membros + itens EM PARALELO (performance)
@@ -53,6 +56,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   }
 
   useEffect(() => {
+    // Se o store já tem casa carregada, pula o load completo.
+    // Os dados já estão em memória, não precisa buscar de novo a cada navegação.
+    if (currentHouse) return;
+
     async function loadData() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { router.push("/login"); return; }
