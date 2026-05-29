@@ -123,9 +123,10 @@ export default function CasaPage() {
   const effectiveUserId = storeUserId || currentUserId;
   const isOwner = !!(effectiveUserId && (currentHouse as any)?.owner_id === effectiveUserId);
 
-  // Carrega membros diretamente do DB (mais confiável que store)
-  const [dbMembers, setDbMembers] = useState<any[]>([]);
-  const [loadingMembers, setLoadingMembers] = useState(true);
+  // Inicia com members do store (vem do cache localStorage) — sem flash de spinner.
+  // Se store ja tem dados, mostra eles imediatamente e atualiza em background.
+  const [dbMembers, setDbMembers] = useState<any[]>(members ?? []);
+  const [loadingMembers, setLoadingMembers] = useState((members?.length ?? 0) === 0);
 
   // Edição de membro (modal completo)
   const [editingMember, setEditingMember] = useState<any>(null);
@@ -140,7 +141,8 @@ export default function CasaPage() {
   useEffect(() => {
     async function loadMembers() {
       if (!currentHouse) return;
-      setLoadingMembers(true);
+      // So mostra spinner se nao tem dados em cache ainda
+      if (dbMembers.length === 0) setLoadingMembers(true);
       try {
         // Query simples sem join problemático — busca membros ativos
         const { data, error } = await supabase
