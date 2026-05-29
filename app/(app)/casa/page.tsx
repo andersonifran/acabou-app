@@ -45,7 +45,7 @@ export default function CasaPage() {
   const router = useRouter();
   const supabase = createClient();
   const { currentHouse, members, isPaid, generateInviteToken, getInviteUrl, removeMember } = useHouse();
-  const { reset, setCurrentHouse, allHouses, setAllHouses, setMembers } = useAppStore();
+  const { reset, setCurrentHouse, allHouses, setAllHouses, setMembers, dataSyncComplete } = useAppStore();
 
   const [inviteUrl, setInviteUrl] = useState("");
   const [loadingInvite, setLoadingInvite] = useState(false);
@@ -738,7 +738,8 @@ export default function CasaPage() {
         </div>
 
         {/* ── CONVIDAR (somente dono + plano pago) ── */}
-        {isOwner && !isPaid && (
+        {/* Banner de upgrade so aparece apos sincronizar com servidor (evita flash) */}
+        {dataSyncComplete && isOwner && !isPaid && (
           <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4">
             <p className="text-sm text-amber-800 text-center">
               Para convidar membros, faça upgrade para o{" "}

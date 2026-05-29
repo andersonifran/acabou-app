@@ -91,7 +91,7 @@ const ACTION_BUTTONS = [
 export default function HomePage() {
   const router = useRouter();
   const supabase = createClient();
-  const { items, currentHouse, allHouses, setCurrentHouse, setAllHouses, setMembers, setItems, setAddItemModalOpen, setInitialStatus } = useAppStore();
+  const { items, currentHouse, allHouses, setCurrentHouse, setAllHouses, setMembers, setItems, setAddItemModalOpen, setInitialStatus, dataSyncComplete } = useAppStore();
 
   const [currentUserId, setCurrentUserId] = useState<string>("");
   const [recentEvents, setRecentEvents] = useState<(ItemEvent & { profile?: any; item?: any })[]>([]);
@@ -394,6 +394,10 @@ export default function HomePage() {
 
         {!switchingHouse && (
           <>
+            {/* Banners de plano: só renderiza apos dados confirmados com o servidor.
+                Isso evita flash de banner com info desatualizada do cache */}
+            {dataSyncComplete && (
+              <>
             {/* Banner de trial ativo */}
             {isTrialing && (currentHouse as any)?.owner_id === currentUserId && (
               <Link
@@ -476,6 +480,8 @@ export default function HomePage() {
                 </div>
                 <ChevronDown size={16} className="text-amber-500 shrink-0 -rotate-90" />
               </Link>
+            )}
+              </>
             )}
 
             {/* Lembretes recorrentes */}

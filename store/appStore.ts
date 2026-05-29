@@ -53,6 +53,11 @@ interface AppState {
   userId: string | null;
   setUserId: (id: string | null) => void;
 
+  // Indica se os dados ja foram confirmados com o servidor nesta sessao
+  // (usado para esconder banners de plano enquanto dados sao do cache stale)
+  dataSyncComplete: boolean;
+  setDataSyncComplete: (v: boolean) => void;
+
   // Casa atual
   currentHouse: House | null;
   setCurrentHouse: (house: House | null) => void;
@@ -97,6 +102,11 @@ export const useAppStore = create<AppState>((set, get) => {
   return {
     userId: cached.userId ?? null,
     setUserId: (id) => persistThenSet({ userId: id }),
+
+    // dataSyncComplete inicia false: enquanto nao confirmar com o servidor,
+    // banners de plano ficam escondidos para evitar flash de info errada
+    dataSyncComplete: false,
+    setDataSyncComplete: (v) => set({ dataSyncComplete: v }),
 
     currentHouse: cached.currentHouse ?? null,
     setCurrentHouse: (house) => persistThenSet({ currentHouse: house }),
@@ -144,6 +154,7 @@ export const useAppStore = create<AppState>((set, get) => {
         categories: [],
         isAddItemModalOpen: false,
         initialStatus: null,
+        dataSyncComplete: false,
       });
       if (typeof window !== "undefined") {
         try { localStorage.removeItem(CACHE_KEY); } catch {}

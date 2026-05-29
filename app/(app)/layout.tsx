@@ -31,6 +31,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     items,
     categories,
     currentHouse,
+    setDataSyncComplete,
   } = useAppStore();
 
   const { createItem, changeStatus } = useItems();
@@ -68,6 +69,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       if (!user) return;
       // Atualiza a casa atual em segundo plano (sem mexer em isReady)
       await loadHouseData(currentHouse!.id);
+      // Marca que os dados foram confirmados com o servidor
+      // (banners de plano podem agora confiar nos dados)
+      setDataSyncComplete(true);
     }
 
     async function loadData() {
@@ -131,6 +135,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       const selectedHouse = houses.find(h => h.id === savedId) ?? houses[0];
 
       await loadHouseData(selectedHouse.id);
+      setDataSyncComplete(true);
       setIsReady(true);
     }
 
