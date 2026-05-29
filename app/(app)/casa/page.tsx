@@ -45,7 +45,7 @@ export default function CasaPage() {
   const router = useRouter();
   const supabase = createClient();
   const { currentHouse, members, isPaid, generateInviteToken, getInviteUrl, removeMember } = useHouse();
-  const { reset, setCurrentHouse, allHouses, setAllHouses, setMembers, dataSyncComplete } = useAppStore();
+  const { reset, setCurrentHouse, allHouses, setAllHouses, setMembers, dataSyncComplete, userId: storeUserId } = useAppStore();
 
   const [inviteUrl, setInviteUrl] = useState("");
   const [loadingInvite, setLoadingInvite] = useState(false);
@@ -118,7 +118,10 @@ export default function CasaPage() {
   }, [editingProfileName]);
 
   const propertyType = PROPERTY_TYPES.find(p => p.id === (currentHouse as any)?.property_type) ?? PROPERTY_TYPES[0];
-  const isOwner = (currentHouse as any)?.owner_id === currentUserId;
+  // Usa userId do store (vem do cache instantaneo) em vez de currentUserId local
+  // que so e preenchido apos useEffect async — evita flash de "Membro" no primeiro render
+  const effectiveUserId = storeUserId || currentUserId;
+  const isOwner = !!(effectiveUserId && (currentHouse as any)?.owner_id === effectiveUserId);
 
   // Carrega membros diretamente do DB (mais confiável que store)
   const [dbMembers, setDbMembers] = useState<any[]>([]);
