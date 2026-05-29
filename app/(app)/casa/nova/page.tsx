@@ -7,6 +7,14 @@ import { useAppStore } from "@/store/appStore";
 import { Header } from "@/components/layout/Header";
 import { cn } from "@/lib/utils";
 
+function hasPaidHouse(houses: any[]): boolean {
+  return houses.some(
+    (h) =>
+      (h.plan === "monthly" || h.plan === "yearly") &&
+      (h.plan_status === "active" || h.plan_status === "trialing")
+  );
+}
+
 const PROPERTY_TYPES = [
   { id: "casa",        label: "Casa",        icon: "🏠", desc: "Residência principal" },
   { id: "apartamento", label: "Apartamento", icon: "🏢", desc: "Apartamento / apê" },
@@ -21,38 +29,17 @@ export default function NovaCasaPage() {
   const supabase = createClient();
   const { currentHouse, allHouses, setAllHouses } = useAppStore();
 
-  const [isPaid, setIsPaid] = useState(false);
-  const [checkingPlan, setCheckingPlan] = useState(true);
+  const isPaid = hasPaidHouse(allHouses);
   const [houseName, setHouseName] = useState("");
   const [propertyType, setPropertyType] = useState("casa");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
-    // Verifica plano direto no banco (não no store que pode estar desatualizado)
-    async function checkPlan() {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { router.replace("/login"); return; }
-
-      // Verifica se QUALQUER casa do usuário tem plano pago
-      const { data: paidHouse } = await supabase
-        .from("houses")
-        .select("plan")
-        .eq("owner_id", user.id)
-        .in("plan", ["monthly", "yearly"])
-        .limit(1)
-        .maybeSingle();
-
-      const paid = !!paidHouse;
-      setIsPaid(paid);
-      setCheckingPlan(false);
-
-      if (!paid) {
-        router.replace("/planos?motivo=multiplas-casas");
-      }
+    if (!isPaid) {
+      router.replace("/planos?motivo=multiplas-casas");
     }
-    checkPlan();
-  }, []);
+  }, [isPaid, router]);
 
   async function handleCreate() {
     if (!houseName.trim()) { setError("Informe o nome do local."); return; }
@@ -99,13 +86,7 @@ export default function NovaCasaPage() {
     }
   }
 
-  if (checkingPlan || !isPaid) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-gray-200 border-t-green-600 rounded-full animate-spin" />
-      </div>
-    );
-  }
+  if (!isPaid) return null;
 
   return (
     <div>
