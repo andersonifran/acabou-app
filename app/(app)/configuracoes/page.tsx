@@ -9,7 +9,7 @@ import { ItemEvent, ItemStatus, RECURRENCE_LABELS, RecurrenceType, Profile } fro
 import { useItems } from "@/hooks/useItems";
 import { useSubscription } from "@/hooks/useSubscription";
 import { formatRelativeTime, getNextReminderDate } from "@/lib/utils";
-import { Bell, BellRing, Trash2, Shield, FileText, ChevronRight, MessageSquareHeart, Clock, Smartphone, Download, Plus, Pencil, X, Check as CheckIcon } from "lucide-react";
+import { Bell, BellRing, Trash2, Shield, FileText, ChevronRight, MessageSquareHeart, Clock, Smartphone, Download, Plus, Pencil, X, Check as CheckIcon, Share2 } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
@@ -297,6 +297,24 @@ export default function ConfiguracoesPage() {
                 </div>
                 <ChevronRight size={18} className="text-gray-400" />
               </Link>
+              <button
+                onClick={() => {
+                  const text = encodeURIComponent(
+                    "Opa! Queria te indicar o *Acabou?* 🛒\n\n" +
+                    "É um app gratuito pra lista de compras da família. " +
+                    "Todo mundo da casa pode marcar o que acabou e a lista fica pronta automaticamente.\n\n" +
+                    "Testa aí: https://www.acabouapp.com.br"
+                  );
+                  window.open(`https://wa.me/?text=${text}`, "_blank");
+                }}
+                className="w-full flex items-center justify-between px-5 py-4 border-b border-gray-50 hover:bg-gray-50 text-left"
+              >
+                <div className="flex items-center gap-2">
+                  <Share2 size={16} className="text-green-500" />
+                  <p className="font-medium text-gray-900 text-sm">Indicar para um amigo</p>
+                </div>
+                <ChevronRight size={18} className="text-gray-400" />
+              </button>
               <Link href="/privacidade" className="flex items-center justify-between px-5 py-4 border-b border-gray-50 hover:bg-gray-50">
                 <div className="flex items-center gap-2">
                   <Shield size={16} className="text-gray-500" />
