@@ -33,6 +33,25 @@ self.addEventListener("fetch", (event) => {
   // NAVEGAÇÕES (HTML pages): network-first com fallback offline
   // Chrome EXIGE que navegações passem por respondWith para classificar como PWA válida
   if (event.request.mode === "navigate") {
+    // Páginas de convite: NUNCA cachear (devem sempre buscar do servidor)
+    var isConvite = url.pathname.startsWith("/convite");
+    if (isConvite) {
+      event.respondWith(
+        fetch(event.request).catch(function() {
+          return new Response(
+            '<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Sem conexão</title></head>' +
+            '<body style="font-family:system-ui;text-align:center;padding:60px 20px">' +
+            '<div style="font-size:64px">📶</div><h1>Sem conexão</h1>' +
+            '<p style="color:#666">Verifique sua internet e tente novamente.</p>' +
+            '<button onclick="location.reload()" style="background:#16a34a;color:#fff;border:none;padding:12px 32px;border-radius:12px;font-size:16px;cursor:pointer;margin-top:16px">Tentar novamente</button>' +
+            '</body></html>',
+            { status: 503, headers: { "Content-Type": "text/html" } }
+          );
+        })
+      );
+      return;
+    }
+
     event.respondWith(
       fetch(event.request)
         .then(function(response) {

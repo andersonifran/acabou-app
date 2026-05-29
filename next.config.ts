@@ -15,6 +15,14 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       {
+        // Convite: NUNCA cachear — link deve funcionar sempre que clicado
+        source: "/convite/:token*",
+        headers: [
+          { key: "Cache-Control", value: "no-store, no-cache, must-revalidate" },
+          { key: "Pragma", value: "no-cache" },
+        ],
+      },
+      {
         // Service Worker: nunca cachear — garante que atualizações chegam imediatamente
         source: "/sw.js",
         headers: [

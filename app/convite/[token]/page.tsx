@@ -36,30 +36,60 @@ export default function ConvitePage({ params }: Props) {
     });
   }, []);
 
+  // Re-verifica quando o usuário volta para a aba (ex: saiu e voltou)
+  useEffect(() => {
+    if (!token) return;
+    function onVisibilityChange() {
+      if (document.visibilityState === "visible" && status === "error") {
+        checkInvite(token);
+      }
+    }
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    return () => document.removeEventListener("visibilitychange", onVisibilityChange);
+  }, [token, status]);
+
   async function checkInvite(t: string) {
-    const { data: invite, error } = await supabase
-      .from("invite_tokens")
-      .select("*, house:houses(name, property_type)")
-      .eq("token", t)
-      .is("used_at", null)
-      .single();
+    setStatus("loading");
 
-    if (error || !invite) {
-      setError("Link de convite inválido ou expirado.");
+    try {
+      const { data: invite, error: queryError } = await supabase
+        .from("invite_tokens")
+        .select("*, house:houses(name, property_type)")
+        .eq("token", t)
+        .is("used_at", null)
+        .single();
+
+      if (queryError || !invite) {
+        // Verifica se o token existe mas já foi usado (usuário já aceitou)
+        const { data: usedInvite } = await supabase
+          .from("invite_tokens")
+          .select("used_at")
+          .eq("token", t)
+          .single();
+
+        if (usedInvite?.used_at) {
+          setError("Este convite já foi utilizado. Se foi você, acesse o app normalmente.");
+        } else {
+          setError("Link de convite inválido ou expirado.");
+        }
+        setStatus("error");
+        return;
+      }
+
+      if (new Date(invite.expires_at) < new Date()) {
+        setError("Este link de convite expirou. Peça um novo convite ao dono da casa.");
+        setStatus("error");
+        return;
+      }
+
+      const house = invite.house as any;
+      setHouseName(house?.name ?? "");
+      setPropertyType(house?.property_type ?? "casa");
+      setStatus("ready");
+    } catch (err) {
+      setError("Erro de conexão. Verifique sua internet e tente novamente.");
       setStatus("error");
-      return;
     }
-
-    if (new Date(invite.expires_at) < new Date()) {
-      setError("Este link de convite expirou.");
-      setStatus("error");
-      return;
-    }
-
-    const house = invite.house as any;
-    setHouseName(house?.name ?? "");
-    setPropertyType(house?.property_type ?? "casa");
-    setStatus("ready");
   }
 
   async function handleAccept() {
@@ -207,9 +237,15 @@ export default function ConvitePage({ params }: Props) {
           <div className="text-5xl mb-4">😕</div>
           <h2 className="text-xl font-bold text-gray-900 mb-2">Ops!</h2>
           <p className="text-gray-500 mb-6">{error}</p>
+          <button
+            onClick={() => token && checkInvite(token)}
+            className="w-full bg-green-600 text-white font-bold py-4 rounded-2xl hover:bg-green-700 transition-colors text-base mb-3"
+          >
+            Tentar novamente
+          </button>
           <Link
             href="/"
-            className="block bg-green-600 text-white font-bold py-4 rounded-2xl hover:bg-green-700 transition-colors text-base"
+            className="block text-gray-400 text-sm hover:text-gray-600"
           >
             Ir para o início
           </Link>
