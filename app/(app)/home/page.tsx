@@ -7,12 +7,10 @@ import { createClient } from "@/lib/supabase/client";
 import { useAppStore } from "@/store/appStore";
 import { ItemEvent, SHOPPING_LIST_STATUSES, House } from "@/types";
 import { formatRelativeTime } from "@/lib/utils";
-import { buildShoppingListText, buildWhatsAppShareUrl } from "@/lib/utils";
 import { ShoppingCart, Bell, ChevronDown, Plus, Check, Zap, Trash2 } from "lucide-react";
 import { Header } from "@/components/layout/Header";
 import { NotificationBell } from "@/components/shared/NotificationBell";
 import { PlanLimitModal } from "@/components/shared/PlanLimitModal";
-import { WhatsAppIcon } from "@/components/shared/WhatsAppIcon";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useRole } from "@/hooks/useRole";
 import { cn } from "@/lib/utils";
@@ -535,32 +533,20 @@ export default function HomePage() {
               </div>
             </div>
 
-            {/* Ver lista + WhatsApp */}
+            {/* Ver lista de compras */}
             {shoppingCount > 0 && (
-              <div className="space-y-2">
-                <Link
-                  href="/lista"
-                  className="flex items-center justify-between bg-green-600 text-white rounded-2xl px-5 py-4 hover:bg-green-700 transition-colors"
-                >
-                  <div>
-                    <p className="font-semibold">Ver lista de compras</p>
-                    <p className="text-green-100 text-sm">
-                      {shoppingCount} {shoppingCount === 1 ? "item" : "itens"} para comprar
-                    </p>
-                  </div>
-                  <ShoppingCart size={24} className="text-green-200" />
-                </Link>
-                <button
-                  onClick={() => {
-                    const list = shoppingItems.map(i => ({ name: i.name, category: i.category?.name ?? "Outros", note: i.note }));
-                    window.open(buildWhatsAppShareUrl(buildShoppingListText(list)), "_blank");
-                  }}
-                  className="w-full flex items-center justify-center gap-2.5 bg-[#25D366] hover:bg-[#1fba59] active:scale-[0.98] text-white font-semibold py-3.5 rounded-2xl transition-all text-sm"
-                >
-                  <WhatsAppIcon />
-                  Mandar lista no WhatsApp
-                </button>
-              </div>
+              <Link
+                href="/lista"
+                className="flex items-center justify-between bg-green-600 text-white rounded-2xl px-5 py-4 hover:bg-green-700 transition-colors"
+              >
+                <div>
+                  <p className="font-semibold">Ver lista de compras</p>
+                  <p className="text-green-100 text-sm">
+                    {shoppingCount} {shoppingCount === 1 ? "item" : "itens"} para comprar
+                  </p>
+                </div>
+                <ShoppingCart size={24} className="text-green-200" />
+              </Link>
             )}
 
             {/* Atividade recente */}
