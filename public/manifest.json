@@ -1,7 +1,8 @@
 {
+  "id": "br.com.acabouapp",
   "name": "Acabou?",
   "short_name": "Acabou?",
-  "description": "Sua casa sempre sabe o que precisa comprar.",
+  "description": "Sua casa sempre sabe o que precisa comprar. Marque o que acabou em segundos e vá ao mercado com a lista certa.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
@@ -29,7 +30,17 @@
       "purpose": "maskable"
     }
   ],
-  "categories": ["utilities", "lifestyle"],
+  "screenshots": [
+    {
+      "src": "/web-app-manifest-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Tela inicial do Acabou?"
+    }
+  ],
+  "categories": ["utilities", "lifestyle", "shopping"],
+  "iarc_rating_id": "",
   "lang": "pt-BR",
   "dir": "ltr"
 }
