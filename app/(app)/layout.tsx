@@ -56,9 +56,19 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   }
 
   useEffect(() => {
-    // Se o store já tem casa carregada, pula o load completo.
-    // Os dados já estão em memória, não precisa buscar de novo a cada navegação.
-    if (currentHouse) return;
+    // Se já tem casa no cache (localStorage), renderiza imediatamente
+    // e atualiza dados em BACKGROUND — sem bloquear a UI.
+    if (currentHouse) {
+      refreshInBackground();
+      return;
+    }
+
+    async function refreshInBackground() {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      // Atualiza a casa atual em segundo plano (sem mexer em isReady)
+      await loadHouseData(currentHouse!.id);
+    }
 
     async function loadData() {
       const { data: { user } } = await supabase.auth.getUser();
