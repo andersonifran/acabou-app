@@ -691,7 +691,7 @@ export default function CasaPage() {
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3 flex-1 min-w-0">
                         <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center text-green-700 font-semibold text-sm overflow-hidden shrink-0">
-                          {member.user_id === currentUserId && avatarUrl
+                          {member.user_id === effectiveUserId && avatarUrl
                             ? <img src={avatarUrl} alt="" className="w-full h-full object-cover" />
                             : member.profile?.avatar_url
                               ? <img src={member.profile.avatar_url} alt="" className="w-full h-full object-cover" />
@@ -701,7 +701,7 @@ export default function CasaPage() {
                         <div className="flex-1 min-w-0">
                           <p className="font-medium text-gray-900 text-sm truncate">
                             {displayName}
-                            {member.user_id === currentUserId && (
+                            {member.user_id === effectiveUserId && (
                               <span className="ml-1.5 text-xs text-gray-400">(você)</span>
                             )}
                           </p>
@@ -715,8 +715,10 @@ export default function CasaPage() {
                         </div>
                       </div>
 
-                      {/* Ações do dono sobre membros (não sobre si mesmo) */}
-                      {isOwner && member.user_id !== currentUserId && (
+                      {/* Ações do dono sobre membros (não sobre si mesmo).
+                          Usa effectiveUserId (store) para evitar flash de botoes
+                          aparecendo no proprio dono no primeiro render. */}
+                      {isOwner && effectiveUserId && member.user_id !== effectiveUserId && (
                         <div className="flex items-center gap-1 shrink-0 ml-2">
                           <button
                             onClick={() => openMemberEditor(member)}
