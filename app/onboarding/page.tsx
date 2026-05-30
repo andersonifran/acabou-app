@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import { Check, ChevronRight, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { PLAN_LIMITS } from "@/types";
+import { trackCadastroCompleto } from "@/lib/analytics";
 
 // Itens por tipo de imóvel
 const ITEMS_BY_TYPE: Record<string, { category: string; items: string[] }[]> = {
@@ -215,6 +216,12 @@ function OnboardingContent() {
       }
 
       const data = await res.json();
+
+      // Rastreia conversão de cadastro (Google Ads + Meta Pixel)
+      // Disparado aqui pois cobre o fluxo de cadastro via Google OAuth,
+      // onde o usuário cria a primeira casa nesta tela.
+      trackCadastroCompleto();
+
       setHouseId(data.houseId);
       setPropertyType(setupPropertyType);
       setActiveCategory((ITEMS_BY_TYPE[setupPropertyType] ?? ITEMS_BY_TYPE.casa)[0].category);
