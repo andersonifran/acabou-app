@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Logo } from "@/components/shared/Logo";
 import { Eye, EyeOff, ArrowLeft } from "lucide-react";
+import { trackCadastroCompleto } from "@/lib/analytics";
 
 export default function CadastroPage() {
   const router = useRouter();
@@ -113,10 +114,8 @@ export default function CadastroPage() {
         }
       }
 
-      // Meta Pixel — rastreia conversão de cadastro
-      if (typeof window !== "undefined" && typeof (window as any).fbq === "function") {
-        (window as any).fbq("track", "CompleteRegistration");
-      }
+      // Rastreia conversão de cadastro (Google Ads + Meta Pixel)
+      trackCadastroCompleto();
 
       // Redireciona
       if (conviteToken) {
