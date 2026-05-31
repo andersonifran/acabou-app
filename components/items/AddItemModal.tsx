@@ -180,6 +180,22 @@ export function AddItemModal({
     }
   }, [isOpen, initialStatus, categories]);
 
+  // Botão "voltar" do celular fecha o modal (em vez de sair do app).
+  // Empurra um estado no histórico ao abrir; o back dispara popstate → fecha.
+  useEffect(() => {
+    if (!isOpen) return;
+    const onPopState = () => onClose();
+    window.history.pushState({ acabouModal: "addItem" }, "");
+    window.addEventListener("popstate", onPopState);
+    return () => {
+      window.removeEventListener("popstate", onPopState);
+      // Se foi fechado manualmente (X/seleção), remove o estado extra do histórico
+      if ((window.history.state as any)?.acabouModal === "addItem") {
+        window.history.back();
+      }
+    };
+  }, [isOpen, onClose]);
+
   const filteredExisting = existingItems.filter((item) =>
     item.name.toLowerCase().includes(search.toLowerCase())
   );
@@ -301,6 +317,19 @@ export function AddItemModal({
               </div>
             </div>
 
+            {/* Criar novo item — fixo no topo, sempre visível e intuitivo */}
+            <div className="px-5 pb-2">
+              <button
+                onClick={() => { setNewName(search); setMode("create"); }}
+                className="w-full flex items-center gap-3 bg-green-600 hover:bg-green-700 text-white rounded-xl px-4 py-3.5 transition-colors shadow-sm shadow-green-200"
+              >
+                <Plus size={20} className="shrink-0" />
+                <span className="font-bold">
+                  {search.trim() ? `Criar "${search.trim()}"` : "Criar novo item"}
+                </span>
+              </button>
+            </div>
+
             {/* Lista */}
             <div className="flex-1 overflow-y-auto px-5 pb-5 space-y-4">
               {/* Existentes */}
@@ -351,16 +380,12 @@ export function AddItemModal({
                 </div>
               )}
 
-              {/* Criar novo */}
-              <button
-                onClick={() => { setNewName(search); setMode("create"); }}
-                className="w-full flex items-center gap-3 bg-green-50 hover:bg-green-100 border border-green-200 rounded-xl px-4 py-3 transition-colors"
-              >
-                <Plus size={20} className="text-green-600 shrink-0" />
-                <span className="font-medium text-green-700">
-                  {search ? `Criar "${search}"` : "Criar novo item"}
-                </span>
-              </button>
+              {/* Mensagem quando não há resultados na busca */}
+              {search.trim() && filteredExisting.length === 0 && filteredSuggested.length === 0 && (
+                <p className="text-sm text-gray-400 text-center py-4">
+                  Nenhum item encontrado. Use o botão <strong className="text-green-600">Criar "{search.trim()}"</strong> acima. 👆
+                </p>
+              )}
             </div>
           </>
         ) : (
