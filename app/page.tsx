@@ -670,7 +670,7 @@ export default function LandingPage() {
             <LogoIcon size={72} />
           </div>
           <h2 className="text-3xl md:text-4xl font-black mb-4 leading-tight">
-            Sua família merece uma<br className="md:hidden" /> casa&nbsp;onde&nbsp;nada&nbsp;falta.
+            Sua família merece uma{" "}<br className="md:hidden" />casa&nbsp;onde&nbsp;nada&nbsp;falta.
           </h2>
           <p className="text-green-100 mb-4 text-lg leading-relaxed">
             Chega de esquecer. Chega de comprar repetido. Chega de perguntar "tem arroz?". Em 30 segundos você organiza sua casa pra sempre.
