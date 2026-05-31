@@ -3,6 +3,7 @@ import { Check } from "lucide-react";
 import { LogoIcon } from "@/components/shared/Logo";
 import { ScenarioShowcase } from "@/components/landing/ScenarioShowcase";
 import { NotificationShowcase } from "@/components/landing/NotificationShowcase";
+import { VideoHero } from "@/components/landing/VideoHero";
 import { InstallButton, InstallPWA } from "@/components/shared/InstallPWA";
 import { WhatsAppIcon } from "@/components/shared/WhatsAppIcon";
 
@@ -127,6 +128,23 @@ export default function LandingPage() {
               </div>
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* ══════════════════════════════════════════
+          BLOCO 1.5 — VÍDEO DEMONSTRAÇÃO (10s)
+          Prova visual em movimento — dor → solução → app
+          ══════════════════════════════════════════ */}
+      <section className="px-6 py-14 md:py-16" style={{ background: "linear-gradient(180deg, #ffffff 0%, #f0fdf4 100%)" }}>
+        <div className="max-w-md mx-auto text-center">
+          <span className="inline-flex items-center gap-2 bg-green-100 text-green-700 text-xs font-bold px-3 py-1.5 rounded-full mb-5">
+            ▶ Veja em 10 segundos
+          </span>
+          {/* Moldura de celular com o vídeo 9:16 + botão de som opcional */}
+          <VideoHero />
+          <p className="text-gray-500 text-sm mt-6 max-w-xs mx-auto leading-relaxed">
+            Quem viu que acabou, <strong className="text-gray-700">marca</strong>. Quem compra, <strong className="text-gray-700">já sabe</strong>.
+          </p>
         </div>
       </section>
 

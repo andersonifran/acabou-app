@@ -75,6 +75,6 @@ export const config = {
      * - _next/image (otimização de imagem)
      * - Arquivos estáticos do public/ (favicon, ícones, SW, manifest, etc.)
      */
-    "/((?!_next/static|_next/image|favicon\\.ico|manifest\\.json|sw\\.js|.*\\.png|.*\\.svg|.*\\.html|.*\\.ico|.*\\.xml|.*\\.txt|api/).*)",
+    "/((?!_next/static|_next/image|favicon\\.ico|manifest\\.json|sw\\.js|.*\\.png|.*\\.svg|.*\\.mp4|.*\\.webm|.*\\.jpg|.*\\.jpeg|.*\\.webp|.*\\.html|.*\\.ico|.*\\.xml|.*\\.txt|api/).*)",
   ],
 };
