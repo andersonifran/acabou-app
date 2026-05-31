@@ -8,6 +8,16 @@ import { Logo } from "@/components/shared/Logo";
 import { Eye, EyeOff, ArrowLeft } from "lucide-react";
 import { trackCadastroCompleto } from "@/lib/analytics";
 
+// Formata telefone brasileiro: aceita só dígitos e aplica (XX) XXXXX-XXXX
+function formatPhone(value: string): string {
+  const digits = value.replace(/\D/g, "").slice(0, 11);
+  if (digits.length === 0) return "";
+  if (digits.length <= 2) return `(${digits}`;
+  if (digits.length <= 6) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
+  if (digits.length <= 10) return `(${digits.slice(0, 2)}) ${digits.slice(2, 6)}-${digits.slice(6)}`;
+  return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
+}
+
 export default function CadastroPage() {
   const router = useRouter();
   const supabase = createClient();
@@ -56,6 +66,10 @@ export default function CadastroPage() {
         setError("A senha deve ter pelo menos 6 caracteres.");
         return;
       }
+      if (phone.replace(/\D/g, "").length < 10) {
+        setError("Informe um WhatsApp válido com DDD.");
+        return;
+      }
       setError("");
       setStep(2);
       return;
@@ -67,9 +81,14 @@ export default function CadastroPage() {
     setError("");
 
     try {
-      // Valida senha no step 1 quando tem convite
+      // Valida senha e telefone no step 1 quando tem convite
       if (hasInvite && password.length < 6) {
         setError("A senha deve ter pelo menos 6 caracteres.");
+        setLoading(false);
+        return;
+      }
+      if (hasInvite && phone.replace(/\D/g, "").length < 10) {
+        setError("Informe um WhatsApp válido com DDD.");
         setLoading(false);
         return;
       }
@@ -288,8 +307,9 @@ export default function CadastroPage() {
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">WhatsApp *</label>
                 <input
                   type="tel"
+                  inputMode="numeric"
                   value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
+                  onChange={(e) => setPhone(formatPhone(e.target.value))}
                   required
                   placeholder="(11) 99999-9999"
                   className="w-full px-4 py-3.5 rounded-xl border border-gray-200 bg-gray-50 focus:outline-none focus:border-green-400 focus:bg-white transition-colors text-gray-900"
