@@ -44,6 +44,11 @@ input, select, textarea {
    Paleta: Slate tones (sofisticado, descansado para os olhos)
    ═══════════════════════════════════════════════════════ */
 
+/* Fundo do app — verde-creme suave no tema claro, slate escuro no dark.
+   Aplicado no container principal das telas logadas (aba Início, etc.). */
+.app-bg { background-color: #e8f7ee; }
+.dark .app-bg { background-color: #0f172a !important; }
+
 /* Base backgrounds */
 .dark .bg-white { background-color: #1a1f2e !important; }
 .dark .bg-gray-50 { background-color: #111827 !important; }

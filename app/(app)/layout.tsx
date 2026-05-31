@@ -153,7 +153,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   if (!isReady) {
     return (
-      <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center gap-3">
+      <div className="min-h-screen app-bg flex flex-col items-center justify-center gap-3">
         <div className="w-10 h-10 border-3 border-gray-200 border-t-green-600 rounded-full animate-spin" />
         <p className="text-sm text-gray-400 font-medium">Carregando...</p>
       </div>
@@ -161,7 +161,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-16">
+    <div className="min-h-screen app-bg pb-16">
       <PushPermissionBanner />
       {children}
 
