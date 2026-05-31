@@ -51,6 +51,19 @@ export function DecorIcons({ variant = "light" }: { variant?: "light" | "dark" }
         <path d="M7 8h10" {...stroke} />
         <path d="M11 12h2v3h-2z" {...stroke} />
       </svg>
+
+      {/* Maçã — meio esquerda */}
+      <svg className="absolute left-2 top-1/2 w-12 h-12 md:w-16 md:h-16 rotate-12" viewBox="0 0 24 24">
+        <path d="M12 7c-1-2-3-2.5-4.5-1.5C6 6.5 6 9 7 11.5c.8 2 1.8 4 3 5 .8.7 1.8.7 2.6 0" {...stroke} />
+        <path d="M12 7c1-2 3-2.5 4.5-1.5C18 6.5 18 9 17 11.5c-.8 2-1.8 4-3 5-.8.7-1.8.7-2.6 0" {...stroke} />
+        <path d="M12 7V4M12 4c0-1 1-2 2-2" {...stroke} />
+      </svg>
+
+      {/* Sacola de compras — meio direita */}
+      <svg className="absolute right-3 top-1/3 w-12 h-12 md:w-16 md:h-16 -rotate-6" viewBox="0 0 24 24">
+        <path d="M6 8h12l-1 12H7L6 8z" {...stroke} />
+        <path d="M9 8V6a3 3 0 0 1 6 0v2" {...stroke} />
+      </svg>
     </div>
   );
 }

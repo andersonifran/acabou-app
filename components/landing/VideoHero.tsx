@@ -1,26 +1,33 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { Volume2, VolumeX } from "lucide-react";
+import { Play, Volume2, VolumeX } from "lucide-react";
 
 /**
  * Vídeo de demonstração na landing — 9:16 em moldura de celular.
- * Autoplay mudo em loop (exigência dos navegadores) com botão
- * opcional para ativar o som, já que parte dos usuários gosta de ouvir.
+ * NÃO toca sozinho: mostra a capa com botão ▶️ e só inicia ao clicar
+ * (com som, já que o usuário escolheu assistir).
+ * Bloqueia o menu de download (clique longo / botão direito).
  */
 export function VideoHero() {
   const videoRef = useRef<HTMLVideoElement>(null);
-  const [muted, setMuted] = useState(true);
+  const [started, setStarted] = useState(false);
+  const [muted, setMuted] = useState(false);
+
+  function handlePlay() {
+    const v = videoRef.current;
+    if (!v) return;
+    v.muted = false;
+    setMuted(false);
+    v.play().catch(() => {});
+    setStarted(true);
+  }
 
   function toggleSound() {
     const v = videoRef.current;
     if (!v) return;
     const next = !muted;
     v.muted = next;
-    if (!next) {
-      // Ao ativar o som, garante que está tocando
-      v.play().catch(() => {});
-    }
     setMuted(next);
   }
 
@@ -30,23 +37,42 @@ export function VideoHero() {
         <video
           ref={videoRef}
           className="w-full rounded-[1.5rem] block"
-          autoPlay
-          muted
           loop
           playsInline
           preload="metadata"
+          poster="/web-app-manifest-512x512.png"
+          controlsList="nodownload noplaybackrate"
+          disablePictureInPicture
+          onContextMenu={(e) => e.preventDefault()}
         >
           <source src="/video-hero.mp4" type="video/mp4" />
         </video>
 
-        {/* Botão de som opcional */}
-        <button
-          onClick={toggleSound}
-          aria-label={muted ? "Ativar som" : "Desativar som"}
-          className="absolute bottom-4 right-4 w-10 h-10 rounded-full bg-black/55 backdrop-blur-sm flex items-center justify-center text-white hover:bg-black/70 active:scale-95 transition-all"
-        >
-          {muted ? <VolumeX size={18} /> : <Volume2 size={18} />}
-        </button>
+        {/* Capa com botão de play — antes de iniciar */}
+        {!started && (
+          <button
+            onClick={handlePlay}
+            aria-label="Assistir vídeo"
+            className="absolute inset-2 rounded-[1.5rem] flex flex-col items-center justify-center gap-3 bg-gradient-to-b from-green-700/85 to-green-900/90 text-white transition-opacity hover:opacity-95"
+          >
+            <span className="w-16 h-16 rounded-full bg-white flex items-center justify-center shadow-lg">
+              <Play size={28} className="text-green-600 fill-green-600 ml-1" />
+            </span>
+            <span className="font-bold text-sm">Assistir (10s)</span>
+            <span className="text-green-100 text-xs">Toque para ver como funciona</span>
+          </button>
+        )}
+
+        {/* Botão de som — só aparece depois de iniciar */}
+        {started && (
+          <button
+            onClick={toggleSound}
+            aria-label={muted ? "Ativar som" : "Desativar som"}
+            className="absolute bottom-4 right-4 w-10 h-10 rounded-full bg-black/55 backdrop-blur-sm flex items-center justify-center text-white hover:bg-black/70 active:scale-95 transition-all"
+          >
+            {muted ? <VolumeX size={18} /> : <Volume2 size={18} />}
+          </button>
+        )}
       </div>
     </div>
   );

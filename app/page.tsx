@@ -310,7 +310,7 @@ export default function LandingPage() {
           Sullivan: benefícios > features, SEMPRE
           Whitman: Life Force 5, 6, 7
           ══════════════════════════════════════════ */}
-      <section className="px-6 py-16 bg-[#f7fdf9]">
+      <section className="px-6 py-16 bg-[#e8f7ee]">
         <div className="max-w-4xl mx-auto">
           <h2 className="text-2xl md:text-4xl font-black text-gray-900 text-center mb-3">
             O que muda na sua vida<br className="hidden md:block" /> com o Acabou?
@@ -383,7 +383,7 @@ export default function LandingPage() {
           Cialdini: prova social + autoridade
           Whitman: credibilidade via números
           ══════════════════════════════════════════ */}
-      <section className="px-6 py-16 bg-white">
+      <section className="px-6 py-16 bg-[#e8f7ee]">
         <div className="max-w-3xl mx-auto text-center">
           <h2 className="text-3xl md:text-4xl font-black text-gray-900 mb-4">
             Quem usa, não volta<br className="md:hidden" /> pro&nbsp;papel
@@ -519,7 +519,7 @@ export default function LandingPage() {
           Cialdini: escassez (trial) + reciprocidade (grátis)
           Whitman: reversão de risco forte
           ══════════════════════════════════════════ */}
-      <section id="planos" className="px-6 py-16 bg-[#f7fdf9]">
+      <section id="planos" className="px-6 py-16 bg-[#e8f7ee]">
         <div className="max-w-4xl mx-auto">
           <h2 className="text-3xl md:text-4xl font-black text-gray-900 text-center mb-3">
             Quanto custa parar de esquecer?
@@ -628,7 +628,7 @@ export default function LandingPage() {
           Schwartz: empurrar a decisão
           Cialdini: compromisso (cada resposta é um micro-sim)
           ══════════════════════════════════════════ */}
-      <section className="px-6 py-16 bg-white">
+      <section className="px-6 py-16 bg-[#e8f7ee]">
         <div className="max-w-2xl mx-auto">
           <h2 className="text-3xl md:text-4xl font-black text-gray-900 text-center mb-10">
             Perguntas frequentes
@@ -664,8 +664,8 @@ export default function LandingPage() {
                 a: "Pix, cartão de crédito e boleto — via Mercado Pago. Tudo seguro e rápido. No cartão, você pode parcelar o plano anual.",
               },
             ].map(({ q, a }) => (
-              <details key={q} className="group bg-gray-50 rounded-2xl border border-gray-100 overflow-hidden">
-                <summary className="flex items-center justify-between p-5 cursor-pointer hover:bg-gray-100 transition-colors">
+              <details key={q} className="group bg-white rounded-2xl border border-gray-100 overflow-hidden">
+                <summary className="flex items-center justify-between p-5 cursor-pointer hover:bg-gray-50 transition-colors">
                   <p className="font-bold text-gray-900 text-sm md:text-base pr-4">{q}</p>
                   <span className="text-green-600 text-xl shrink-0 group-open:rotate-45 transition-transform font-bold">+</span>
                 </summary>
