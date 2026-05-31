@@ -32,6 +32,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     categories,
     currentHouse,
     setDataSyncComplete,
+    setProfile,
   } = useAppStore();
 
   const { createItem, changeStatus } = useItems();
@@ -42,16 +43,24 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const [isReady, setIsReady] = useState(!!currentHouse);
 
   async function loadHouseData(houseId: string) {
-    // Carrega casa + membros + itens EM PARALELO (performance)
-    const [houseResult, membersResult, itemsResult] = await Promise.all([
+    const { data: { user } } = await supabase.auth.getUser();
+
+    // Carrega casa + membros + itens + perfil EM PARALELO (performance)
+    const [houseResult, membersResult, itemsResult, profileResult] = await Promise.all([
       supabase.from("houses").select("*").eq("id", houseId).single(),
       supabase.from("house_members").select("*, profile:profiles(*)").eq("house_id", houseId).eq("status", "active"),
       supabase.from("items").select("*, category:categories(*)").eq("house_id", houseId).order("name"),
+      user
+        ? supabase.from("profiles").select("full_name, avatar_url").eq("user_id", user.id).maybeSingle()
+        : Promise.resolve({ data: null }),
     ]);
 
     if (houseResult.data) setCurrentHouse(houseResult.data as House);
     if (membersResult.data) setMembers(membersResult.data as any);
     if (itemsResult.data) setItems(itemsResult.data as any);
+    if (profileResult.data) {
+      setProfile((profileResult.data as any).full_name ?? "", (profileResult.data as any).avatar_url ?? "");
+    }
 
     localStorage.setItem(SELECTED_HOUSE_KEY, houseId);
   }

@@ -23,6 +23,8 @@ function writeCache(state: AppState) {
 
   const payload = {
     userId: state.userId,
+    profileName: state.profileName,
+    profileAvatar: state.profileAvatar,
     currentHouse: state.currentHouse,
     allHouses: state.allHouses,
     members: state.members,
@@ -40,6 +42,8 @@ function writeCache(state: AppState) {
       localStorage.removeItem(CACHE_KEY);
       localStorage.setItem(CACHE_KEY, JSON.stringify({
         userId: state.userId,
+        profileName: state.profileName,
+        profileAvatar: state.profileAvatar,
         currentHouse: state.currentHouse,
         allHouses: state.allHouses,
         categories: state.categories,
@@ -52,6 +56,11 @@ interface AppState {
   // Usuário logado (evita múltiplas chamadas a getUser)
   userId: string | null;
   setUserId: (id: string | null) => void;
+
+  // Perfil do usuário (cacheado para exibir nome/avatar instantaneamente)
+  profileName: string;
+  profileAvatar: string;
+  setProfile: (name: string, avatar: string) => void;
 
   // Indica se os dados ja foram confirmados com o servidor nesta sessao
   // (usado para esconder banners de plano enquanto dados sao do cache stale)
@@ -103,6 +112,10 @@ export const useAppStore = create<AppState>((set, get) => {
     userId: cached.userId ?? null,
     setUserId: (id) => persistThenSet({ userId: id }),
 
+    profileName: cached.profileName ?? "",
+    profileAvatar: cached.profileAvatar ?? "",
+    setProfile: (name, avatar) => persistThenSet({ profileName: name, profileAvatar: avatar }),
+
     // dataSyncComplete inicia false: enquanto nao confirmar com o servidor,
     // banners de plano ficam escondidos para evitar flash de info errada
     dataSyncComplete: false,
@@ -147,6 +160,8 @@ export const useAppStore = create<AppState>((set, get) => {
     reset: () => {
       set({
         userId: null,
+        profileName: "",
+        profileAvatar: "",
         currentHouse: null,
         allHouses: [],
         members: [],

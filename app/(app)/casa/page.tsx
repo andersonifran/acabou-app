@@ -45,16 +45,16 @@ export default function CasaPage() {
   const router = useRouter();
   const supabase = createClient();
   const { currentHouse, members, isPaid, generateInviteToken, getInviteUrl, removeMember } = useHouse();
-  const { reset, setCurrentHouse, allHouses, setAllHouses, setMembers, dataSyncComplete, userId: storeUserId } = useAppStore();
+  const { reset, setCurrentHouse, allHouses, setAllHouses, setMembers, dataSyncComplete, userId: storeUserId, profileName: storeProfileName, profileAvatar: storeProfileAvatar, setProfile } = useAppStore();
 
   const [inviteUrl, setInviteUrl] = useState("");
   const [loadingInvite, setLoadingInvite] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [currentUserId, setCurrentUserId] = useState<string>("");
+  const [currentUserId, setCurrentUserId] = useState<string>(storeUserId ?? "");
 
-  // Perfil do usuário atual
-  const [avatarUrl, setAvatarUrl] = useState<string>("");
-  const [profileName, setProfileName] = useState<string>("");
+  // Perfil do usuário atual — inicia do store (cache instantâneo, sem flash de "Sem nome")
+  const [avatarUrl, setAvatarUrl] = useState<string>(storeProfileAvatar);
+  const [profileName, setProfileName] = useState<string>(storeProfileName);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -92,8 +92,12 @@ export default function CasaPage() {
         .single();
 
       if (profile) {
-        setProfileName(profile.full_name ?? "");
-        setAvatarUrl((profile as any).avatar_url ?? "");
+        const name = profile.full_name ?? "";
+        const avatar = (profile as any).avatar_url ?? "";
+        setProfileName(name);
+        setAvatarUrl(avatar);
+        // Atualiza o store/cache para próximas aberturas serem instantâneas
+        setProfile(name, avatar);
       }
     }
     loadUser();
@@ -225,6 +229,7 @@ export default function CasaPage() {
         .eq("user_id", currentUserId);
 
       setAvatarUrl(urlWithTs);
+      setProfile(profileName, urlWithTs);
     } catch (err: any) {
       console.error(err);
       alert("Erro ao enviar foto. Tente novamente.");
@@ -246,6 +251,7 @@ export default function CasaPage() {
         .update({ full_name: trimmed })
         .eq("user_id", currentUserId);
       if (error) throw error;
+      setProfile(trimmed, avatarUrl);
       setEditingProfileName(false);
     } catch {
       alert("Erro ao salvar nome.");
