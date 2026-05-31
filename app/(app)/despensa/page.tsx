@@ -103,7 +103,9 @@ function DespensaContent() {
       setShowPlanLimit(true);
       return;
     }
-    setInitialStatus("acabou");
+    // Adicionando pela Despensa → padrão "Tem em casa" (está abastecendo).
+    // O usuário pode trocar o status no formulário.
+    setInitialStatus("tem");
     setAddItemModalOpen(true);
   }
 

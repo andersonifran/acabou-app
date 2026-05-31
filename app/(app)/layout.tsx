@@ -35,7 +35,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     setProfile,
   } = useAppStore();
 
-  const { createItem, changeStatus } = useItems();
+  const { createItem, changeStatus, editItem } = useItems();
   const { canAddItem } = useSubscription();
   const [showPlanLimit, setShowPlanLimit] = useState(false);
   // Se o store já tem casa carregada, considera pronto imediatamente.
@@ -183,6 +183,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           return createItem(data);
         }}
         onUpdateStatus={changeStatus}
+        onUpdateItem={editItem}
       />
 
       <PlanLimitModal

@@ -148,6 +148,7 @@ interface AddItemModalProps {
     quantity_text?: string;
   }) => Promise<unknown>;
   onUpdateStatus: (itemId: string, status: ItemStatus) => Promise<void>;
+  onUpdateItem?: (itemId: string, data: { name: string; note?: string; quantity_text?: string }) => Promise<void>;
 }
 
 export function AddItemModal({
@@ -158,6 +159,7 @@ export function AddItemModal({
   existingItems,
   onAddItem,
   onUpdateStatus,
+  onUpdateItem,
 }: AddItemModalProps) {
   const [search, setSearch] = useState("");
   const [mode, setMode] = useState<"search" | "create">("search");
@@ -167,6 +169,8 @@ export function AddItemModal({
   const [newNote, setNewNote] = useState("");
   const [newQty, setNewQty] = useState("");
   const [loading, setLoading] = useState(false);
+  // Item existente sendo editado (null = criando item novo)
+  const [editingItem, setEditingItem] = useState<Item | null>(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -176,6 +180,7 @@ export function AddItemModal({
       setNewStatus(initialStatus);
       setNewNote("");
       setNewQty("");
+      setEditingItem(null);
       if (categories.length > 0) setNewCategoryId(categories[0].id);
     }
   }, [isOpen, initialStatus, categories]);
@@ -206,14 +211,16 @@ export function AddItemModal({
       !existingItems.some((e) => e.name.toLowerCase() === s.name.toLowerCase())
   );
 
-  async function handleSelectExisting(item: Item) {
-    setLoading(true);
-    try {
-      await onUpdateStatus(item.id, initialStatus);
-      onClose();
-    } finally {
-      setLoading(false);
-    }
+  // Clicar num item existente abre o formulário pré-preenchido,
+  // para o usuário revisar/ajustar status e observação antes de confirmar.
+  function handleSelectExisting(item: Item) {
+    setEditingItem(item);
+    setNewName(item.name);
+    setNewCategoryId(item.category_id);
+    setNewStatus(initialStatus);
+    setNewNote(item.note ?? "");
+    setNewQty(item.quantity_text ?? "");
+    setMode("create");
   }
 
   async function handleCreateFromSuggested(suggested: { name: string; category: string }) {
@@ -259,13 +266,26 @@ export function AddItemModal({
     if (!newName.trim() || !newCategoryId) return;
     setLoading(true);
     try {
-      await onAddItem({
-        name: newName.trim(),
-        category_id: newCategoryId,
-        status: newStatus,
-        note: newNote || undefined,
-        quantity_text: newQty || undefined,
-      });
+      if (editingItem) {
+        // Item existente: atualiza status + nome/observação/quantidade
+        await onUpdateStatus(editingItem.id, newStatus);
+        if (onUpdateItem) {
+          await onUpdateItem(editingItem.id, {
+            name: newName.trim(),
+            note: newNote || undefined,
+            quantity_text: newQty || undefined,
+          });
+        }
+      } else {
+        // Item novo
+        await onAddItem({
+          name: newName.trim(),
+          category_id: newCategoryId,
+          status: newStatus,
+          note: newNote || undefined,
+          quantity_text: newQty || undefined,
+        });
+      }
       onClose();
     } finally {
       setLoading(false);
@@ -288,7 +308,7 @@ export function AddItemModal({
         <div className="flex items-center justify-between px-5 pt-5 pb-3 border-b border-gray-100">
           <div>
             <h2 className="font-bold text-lg text-gray-900">
-              {mode === "search" ? "Qual item?" : "Novo item"}
+              {mode === "search" ? "Qual item?" : editingItem ? "Editar item" : "Novo item"}
             </h2>
             <p className="text-sm text-gray-500">
               Marcando como:{" "}
@@ -307,7 +327,6 @@ export function AddItemModal({
               <div className="relative">
                 <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                 <input
-                  autoFocus
                   type="text"
                   placeholder="Buscar item..."
                   value={search}
@@ -396,7 +415,6 @@ export function AddItemModal({
                 Nome do item *
               </label>
               <input
-                autoFocus
                 type="text"
                 value={newName}
                 onChange={(e) => setNewName(e.target.value)}
@@ -458,7 +476,7 @@ export function AddItemModal({
 
             <div className="flex gap-3 pb-2">
               <button
-                onClick={() => setMode("search")}
+                onClick={() => { setEditingItem(null); setMode("search"); }}
                 className="flex-1 py-3.5 rounded-xl border border-gray-200 text-gray-700 font-semibold"
               >
                 Voltar
@@ -468,7 +486,7 @@ export function AddItemModal({
                 disabled={!newName.trim() || !newCategoryId || loading}
                 className="flex-1 py-3.5 rounded-xl bg-green-600 text-white font-semibold disabled:opacity-50 hover:bg-green-700 transition-colors"
               >
-                {loading ? "Salvando..." : "Adicionar"}
+                {loading ? "Salvando..." : editingItem ? "Salvar" : "Adicionar"}
               </button>
             </div>
           </div>
