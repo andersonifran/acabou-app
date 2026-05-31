@@ -33,10 +33,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     currentHouse,
     setDataSyncComplete,
     setProfile,
+    userId,
+    dataSyncComplete,
+    reset,
   } = useAppStore();
 
   const { createItem, changeStatus, editItem } = useItems();
-  const { canAddItem } = useSubscription();
+  const { canAddItem, isPaid, isTrialing } = useSubscription();
   const [showPlanLimit, setShowPlanLimit] = useState(false);
   // Se o store já tem casa carregada, considera pronto imediatamente.
   // Isso evita o flash de "Carregando..." ao trocar entre abas.
@@ -156,6 +159,40 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       <div className="min-h-screen app-bg flex flex-col items-center justify-center gap-3">
         <div className="w-10 h-10 border-3 border-gray-200 border-t-green-600 rounded-full animate-spin" />
         <p className="text-sm text-gray-400 font-medium">Carregando...</p>
+      </div>
+    );
+  }
+
+  // ── BLOQUEIO DE MEMBRO CONVIDADO ────────────────────────────
+  // Convites são exclusivos do Plano Família. Se o dono caiu para o
+  // grátis (trial/plano expirou), os membros convidados perdem o acesso
+  // até o dono renovar. Só bloqueia APÓS confirmar dados com o servidor
+  // (dataSyncComplete) para nunca travar um membro de casa paga por engano.
+  const isOwnerOfCurrent = !!(userId && currentHouse && (currentHouse as any).owner_id === userId);
+  const housePremiumActive = isPaid || isTrialing;
+  const blockGuestMember = dataSyncComplete && !!currentHouse && !isOwnerOfCurrent && !housePremiumActive;
+
+  if (blockGuestMember) {
+    return (
+      <div className="min-h-screen app-bg flex flex-col items-center justify-center px-6 text-center gap-4">
+        <div className="w-16 h-16 rounded-full bg-amber-100 flex items-center justify-center text-3xl">🔒</div>
+        <h1 className="text-xl font-bold text-gray-900">Acesso pausado</h1>
+        <p className="text-gray-500 max-w-sm leading-relaxed">
+          O acesso compartilhado é um recurso do <strong className="text-gray-700">Plano Família</strong>.
+          Peça ao dono desta casa para renovar a assinatura — assim que ele renovar,
+          você volta a ter acesso a tudo automaticamente. 💚
+        </p>
+        <button
+          onClick={async () => {
+            await supabase.auth.signOut();
+            reset();
+            router.push("/login");
+            router.refresh();
+          }}
+          className="mt-2 px-6 py-3 rounded-2xl border border-gray-200 text-gray-600 font-medium hover:bg-gray-50 transition-colors"
+        >
+          Sair da conta
+        </button>
       </div>
     );
   }
