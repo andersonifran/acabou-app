@@ -177,7 +177,10 @@ export default function CasaPage() {
           }));
 
           setDbMembers(enriched);
-          setMembers(data as any);
+          // Salva a versão ENRIQUECIDA (com perfil) no store/cache.
+          // Antes salvava 'data' sem o perfil, o que poluía o cache e causava
+          // o flash de "Membro" / nome sumindo na próxima abertura.
+          setMembers(enriched as any);
         } else {
           setDbMembers(data ?? []);
         }
@@ -690,7 +693,10 @@ export default function CasaPage() {
           ) : (
             <div className="divide-y divide-gray-50">
               {activeMembers.map((member: any) => {
-                const displayName = member.display_name || member.profile?.full_name || "Membro";
+                // Para a própria linha do usuário, usa o nome do store (cache instantâneo)
+                // como fallback — evita mostrar "Membro" enquanto o perfil carrega.
+                const isSelf = member.user_id === effectiveUserId;
+                const displayName = member.display_name || member.profile?.full_name || (isSelf ? storeProfileName : "") || "Membro";
                 const typeLabel = member.member_type === "funcionario" ? "🧑‍🔧 Funcionário" : "👨‍👩‍👧 Familiar";
                 return (
                   <div key={member.id} className="px-5 py-3.5">

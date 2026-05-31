@@ -13,7 +13,10 @@ export const metadata: Metadata = {
   icons: {
     icon: [
       { url: "/favicon.svg", type: "image/svg+xml" },
+      { url: "/web-app-manifest-192x192.png", type: "image/png", sizes: "192x192" },
+      { url: "/web-app-manifest-512x512.png", type: "image/png", sizes: "512x512" },
     ],
+    shortcut: "/web-app-manifest-192x192.png",
     apple: "/apple-touch-icon.png",
   },
   appleWebApp: { capable: true, statusBarStyle: "default", title: "Acabou?" },
