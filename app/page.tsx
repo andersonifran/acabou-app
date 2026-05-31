@@ -4,6 +4,7 @@ import { LogoIcon } from "@/components/shared/Logo";
 import { ScenarioShowcase } from "@/components/landing/ScenarioShowcase";
 import { NotificationShowcase } from "@/components/landing/NotificationShowcase";
 import { VideoHero } from "@/components/landing/VideoHero";
+import { DecorIcons } from "@/components/landing/DecorIcons";
 import { InstallButton, InstallPWA } from "@/components/shared/InstallPWA";
 import { WhatsAppIcon } from "@/components/shared/WhatsAppIcon";
 
@@ -52,8 +53,9 @@ export default function LandingPage() {
           Sullivan: headline é 80% do resultado
           Whitman: Life Force 7 (cuidar dos entes queridos)
           ══════════════════════════════════════════ */}
-      <section className="px-6 py-16 md:py-24 text-center" style={{ background: "linear-gradient(160deg, #f0fdf4 0%, #ffffff 60%)" }}>
-        <div className="max-w-2xl mx-auto">
+      <section className="relative overflow-hidden px-6 py-16 md:py-24 text-center" style={{ background: "linear-gradient(160deg, #f0fdf4 0%, #ffffff 60%)" }}>
+        <DecorIcons variant="light" />
+        <div className="relative max-w-2xl mx-auto">
           <div className="flex flex-col sm:flex-row items-center justify-center gap-2 mb-8">
             <span className="inline-flex items-center gap-2 bg-green-100 text-green-700 text-sm font-semibold px-4 py-2 rounded-full">
               🇧🇷 Feito para famílias brasileiras
@@ -94,7 +96,7 @@ export default function LandingPage() {
         </div>
 
         {/* Preview do app — prova visual */}
-        <div className="max-w-sm mx-auto mt-14">
+        <div className="relative max-w-sm mx-auto mt-14">
           <div className="bg-white rounded-3xl shadow-2xl border border-gray-100 overflow-hidden text-left">
             <div className="bg-green-600 px-5 py-4 flex items-center justify-between">
               <div>
@@ -308,7 +310,7 @@ export default function LandingPage() {
           Sullivan: benefícios > features, SEMPRE
           Whitman: Life Force 5, 6, 7
           ══════════════════════════════════════════ */}
-      <section className="px-6 py-16 bg-gray-50">
+      <section className="px-6 py-16 bg-[#f7fdf9]">
         <div className="max-w-4xl mx-auto">
           <h2 className="text-2xl md:text-4xl font-black text-gray-900 text-center mb-3">
             O que muda na sua vida<br className="hidden md:block" /> com o Acabou?
@@ -517,7 +519,7 @@ export default function LandingPage() {
           Cialdini: escassez (trial) + reciprocidade (grátis)
           Whitman: reversão de risco forte
           ══════════════════════════════════════════ */}
-      <section id="planos" className="px-6 py-16 bg-gray-50">
+      <section id="planos" className="px-6 py-16 bg-[#f7fdf9]">
         <div className="max-w-4xl mx-auto">
           <h2 className="text-3xl md:text-4xl font-black text-gray-900 text-center mb-3">
             Quanto custa parar de esquecer?
@@ -682,8 +684,9 @@ export default function LandingPage() {
           Cialdini: escassez (trial) + afinidade
           Whitman: Life Force 7 (cuidar da família)
           ══════════════════════════════════════════ */}
-      <section className="px-6 py-20 text-white text-center" style={{ background: "linear-gradient(135deg, #16a34a 0%, #15803d 100%)" }}>
-        <div className="max-w-xl mx-auto">
+      <section className="relative overflow-hidden px-6 py-20 text-white text-center" style={{ background: "linear-gradient(135deg, #16a34a 0%, #15803d 100%)" }}>
+        <DecorIcons variant="dark" />
+        <div className="relative max-w-xl mx-auto">
           <div className="flex justify-center mb-6">
             <LogoIcon size={72} />
           </div>
