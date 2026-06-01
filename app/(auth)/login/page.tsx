@@ -75,22 +75,38 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-white flex flex-col">
+    <div className="min-h-screen relative flex flex-col items-center justify-center px-4 py-8" style={{ background: "linear-gradient(135deg, #d4f5e0 0%, #a7e8c0 30%, #16a34a 70%, #15803d 100%)" }}>
+      {/* Floating emojis */}
+      <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
+        {[
+          { emoji: "🛒", x: "8%", y: "12%", size: "1.8rem", opacity: 0.2 },
+          { emoji: "☕", x: "88%", y: "8%", size: "1.5rem", opacity: 0.15 },
+          { emoji: "🍞", x: "5%", y: "75%", size: "1.4rem", opacity: 0.12 },
+          { emoji: "🥛", x: "92%", y: "70%", size: "1.6rem", opacity: 0.15 },
+          { emoji: "🍎", x: "15%", y: "45%", size: "1.3rem", opacity: 0.1 },
+          { emoji: "🧴", x: "85%", y: "40%", size: "1.4rem", opacity: 0.12 },
+        ].map((f, i) => (
+          <span key={i} className="absolute animate-float" style={{ left: f.x, top: f.y, fontSize: f.size, opacity: f.opacity, animationDuration: "10s", animationDelay: `${-i * 1.8}s` }}>{f.emoji}</span>
+        ))}
+      </div>
+
       {/* Botão voltar */}
-      <div className="px-6 pt-5">
-        <Link href="/" className="inline-flex items-center gap-1.5 text-gray-400 hover:text-gray-700 text-sm transition-colors">
-          <ArrowLeft size={16} />
-          Voltar ao início
+      <div className="absolute top-4 left-4">
+        <Link href="/" className="inline-flex items-center gap-1.5 text-white/80 hover:text-white text-sm font-medium transition-colors bg-white/10 backdrop-blur-sm px-3 py-1.5 rounded-full">
+          <ArrowLeft size={14} />
+          Início
         </Link>
       </div>
 
-      {/* Header — logo clicável */}
-      <div className="px-6 pt-8 pb-8 flex flex-col items-center text-center">
-        <Logo size="lg" linked />
-        <p className="text-gray-500 text-sm mt-3">Bem-vindo de volta</p>
-      </div>
+      {/* Card principal */}
+      <div className="w-full max-w-md bg-white rounded-3xl shadow-2xl p-7 relative z-10">
+        {/* Logo */}
+        <div className="flex flex-col items-center text-center mb-6">
+          <Logo size="lg" linked />
+          <h1 className="text-xl font-black text-gray-900 mt-3">Bem-vindo de volta</h1>
+          <p className="text-gray-500 text-sm mt-1">Entre na sua conta</p>
+        </div>
 
-      <div className="flex-1 px-6 max-w-md mx-auto w-full">
         {/* Botão Google */}
         <button
           type="button"
@@ -165,17 +181,24 @@ export default function LoginPage() {
           </button>
         </form>
 
-        <div className="mt-6 text-center">
+        <div className="mt-5 text-center">
           <p className="text-gray-500 text-sm">
             Não tem conta?{" "}
             <Link
               href={conviteToken ? `/cadastro?convite=${conviteToken}` : "/cadastro"}
-              className="text-green-600 font-semibold hover:underline"
+              className="text-green-600 font-bold hover:underline"
             >
               Criar conta grátis
             </Link>
           </p>
         </div>
+      </div>
+
+      {/* Badges de confiança */}
+      <div className="flex items-center justify-center gap-4 mt-5 text-white/70 text-xs font-medium flex-wrap">
+        <span>✅ Seguro</span>
+        <span>✅ Sem anúncios</span>
+        <span>✅ 100% LGPD</span>
       </div>
     </div>
   );

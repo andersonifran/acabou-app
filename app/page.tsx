@@ -57,16 +57,16 @@ export default function LandingPage() {
       </nav>
 
       {/* ═══ HERO ═══ */}
-      <section className="relative overflow-hidden px-6 pt-14 pb-16 md:pt-20 md:pb-24" style={{ background: "linear-gradient(160deg, #f0fdf4 0%, #ffffff 60%)" }}>
+      <section className="relative overflow-hidden px-6 pt-14 pb-16 md:pt-20 md:pb-24" style={{ background: "linear-gradient(160deg, #d4f5e0 0%, #f0fdf4 40%, #ffffff 80%)" }}>
         {/* Floating emojis */}
         <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
           {[
-            { emoji: "🛒", x: "5%", y: "15%", size: "2.5rem", opacity: 0.15, dur: "10s" },
-            { emoji: "☕", x: "90%", y: "10%", size: "2rem", opacity: 0.12, dur: "8s" },
-            { emoji: "🥛", x: "3%", y: "68%", size: "1.8rem", opacity: 0.1, dur: "11s" },
-            { emoji: "🍞", x: "93%", y: "58%", size: "2.2rem", opacity: 0.12, dur: "9s" },
-            { emoji: "🧴", x: "12%", y: "88%", size: "1.5rem", opacity: 0.1, dur: "10s" },
-            { emoji: "🍎", x: "80%", y: "82%", size: "1.8rem", opacity: 0.1, dur: "12s" },
+            { emoji: "🛒", x: "5%", y: "15%", size: "2.8rem", opacity: 0.35, dur: "10s" },
+            { emoji: "☕", x: "90%", y: "10%", size: "2.2rem", opacity: 0.3, dur: "8s" },
+            { emoji: "🥛", x: "3%", y: "68%", size: "2rem", opacity: 0.25, dur: "11s" },
+            { emoji: "🍞", x: "93%", y: "58%", size: "2.4rem", opacity: 0.3, dur: "9s" },
+            { emoji: "🧴", x: "12%", y: "88%", size: "1.8rem", opacity: 0.25, dur: "10s" },
+            { emoji: "🍎", x: "80%", y: "82%", size: "2rem", opacity: 0.25, dur: "12s" },
           ].map((f, i) => (
             <span
               key={i}

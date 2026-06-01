@@ -185,48 +185,68 @@ export default function CadastroPage() {
   }
 
   return (
-    <div className="min-h-screen bg-white flex flex-col">
+    <div className="min-h-screen relative flex flex-col items-center justify-center px-4 py-8" style={{ background: "linear-gradient(135deg, #d4f5e0 0%, #a7e8c0 30%, #16a34a 70%, #15803d 100%)" }}>
+      {/* Floating emojis */}
+      <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
+        {[
+          { emoji: "🛒", x: "6%", y: "10%", size: "1.8rem", opacity: 0.2 },
+          { emoji: "☕", x: "90%", y: "6%", size: "1.5rem", opacity: 0.15 },
+          { emoji: "🧴", x: "4%", y: "78%", size: "1.4rem", opacity: 0.12 },
+          { emoji: "🍎", x: "92%", y: "75%", size: "1.6rem", opacity: 0.15 },
+          { emoji: "🥛", x: "12%", y: "42%", size: "1.3rem", opacity: 0.1 },
+          { emoji: "🍞", x: "88%", y: "38%", size: "1.4rem", opacity: 0.12 },
+        ].map((f, i) => (
+          <span key={i} className="absolute animate-float" style={{ left: f.x, top: f.y, fontSize: f.size, opacity: f.opacity, animationDuration: "10s", animationDelay: `${-i * 1.8}s` }}>{f.emoji}</span>
+        ))}
+      </div>
+
       {/* Botão voltar */}
-      <div className="px-6 pt-5">
+      <div className="absolute top-4 left-4 z-20">
         {step === 1 ? (
-          <Link href="/" className="inline-flex items-center gap-1.5 text-gray-400 hover:text-gray-700 text-sm transition-colors">
-            <ArrowLeft size={16} />
-            Voltar ao início
+          <Link href="/" className="inline-flex items-center gap-1.5 text-white/80 hover:text-white text-sm font-medium transition-colors bg-white/10 backdrop-blur-sm px-3 py-1.5 rounded-full">
+            <ArrowLeft size={14} />
+            Início
           </Link>
         ) : (
-          <button onClick={() => setStep(1)} className="inline-flex items-center gap-1.5 text-gray-400 hover:text-gray-700 text-sm transition-colors">
-            <ArrowLeft size={16} />
+          <button onClick={() => setStep(1)} className="inline-flex items-center gap-1.5 text-white/80 hover:text-white text-sm font-medium transition-colors bg-white/10 backdrop-blur-sm px-3 py-1.5 rounded-full">
+            <ArrowLeft size={14} />
             Voltar
           </button>
         )}
       </div>
 
-      {/* Header — logo clicável */}
-      <div className="px-6 pt-6 pb-6 flex flex-col items-center text-center">
-        <Logo size="lg" linked />
-        <p className="text-gray-500 text-sm mt-3">
-          {hasInvite
-            ? "Crie sua conta para aceitar o convite"
-            : step === 1
-              ? "Crie sua conta grátis"
-              : "Como se chama sua casa?"}
-        </p>
-      </div>
-
-      {/* Progress */}
-      <div className="px-6 mb-6">
-        <div className="flex gap-2">
-          <div className="flex-1 h-1.5 rounded-full bg-green-600" />
-          {!hasInvite && (
-            <div className={`flex-1 h-1.5 rounded-full ${step === 2 ? "bg-green-600" : "bg-gray-200"}`} />
+      {/* Card principal */}
+      <div className="w-full max-w-md bg-white rounded-3xl shadow-2xl p-7 relative z-10">
+        {/* Logo + header */}
+        <div className="flex flex-col items-center text-center mb-5">
+          <Logo size="lg" linked />
+          <h1 className="text-xl font-black text-gray-900 mt-3">
+            {hasInvite ? "Aceitar convite" : step === 1 ? "Crie sua conta grátis" : "Como se chama sua casa?"}
+          </h1>
+          <p className="text-gray-500 text-sm mt-1">
+            {hasInvite ? "Crie sua conta para aceitar o convite" : step === 1 ? "Comece agora os 7 dias grátis com acesso total." : "Dê um nome para sua casa"}
+          </p>
+          {step === 1 && (
+            <span className="inline-flex items-center bg-green-100 text-green-700 text-xs font-bold px-3 py-1 rounded-full mt-2">
+              ✨ 7 dias grátis · sem cartão
+            </span>
           )}
         </div>
-        <p className="text-xs text-gray-400 mt-1.5">
-          {hasInvite ? "Cadastro rápido" : `Passo ${step} de ${totalSteps}`}
-        </p>
-      </div>
 
-      <div className="flex-1 px-6 max-w-md mx-auto w-full">
+        {/* Progress */}
+        <div className="mb-5">
+          <div className="flex gap-2">
+            <div className="flex-1 h-1.5 rounded-full bg-green-600" />
+            {!hasInvite && (
+              <div className={`flex-1 h-1.5 rounded-full ${step === 2 ? "bg-green-600" : "bg-gray-200"}`} />
+            )}
+          </div>
+          <p className="text-xs text-gray-400 mt-1.5">
+            {hasInvite ? "Cadastro rápido" : `Passo ${step} de ${totalSteps}`}
+          </p>
+        </div>
+
+        <div className="w-full">
         {/* Google — só no step 1 */}
         {step === 1 && (
           <>
@@ -262,7 +282,6 @@ export default function CadastroPage() {
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
                   required
-                  autoFocus
                   placeholder="Como você se chama?"
                   className="w-full px-4 py-3.5 rounded-xl border border-gray-200 bg-gray-50 focus:outline-none focus:border-green-400 focus:bg-white transition-colors text-gray-900"
                 />
@@ -357,7 +376,6 @@ export default function CadastroPage() {
                   value={houseName}
                   onChange={(e) => setHouseName(e.target.value)}
                   required
-                  autoFocus
                   placeholder="Ex: Casa da Ana, Família Silva, Rancho..."
                   className="w-full px-4 py-3.5 rounded-xl border border-gray-200 bg-gray-50 focus:outline-none focus:border-green-400 focus:bg-white transition-colors text-gray-900"
                 />
@@ -406,11 +424,18 @@ export default function CadastroPage() {
           </div>
         )}
 
-        <p className="text-center text-xs text-gray-400 mt-8 pb-6">
+        <p className="text-center text-xs text-gray-400 mt-6">
           Ao criar sua conta você concorda com nossos{" "}
           <Link href="/termos" className="underline">Termos de Uso</Link> e{" "}
           <Link href="/privacidade" className="underline">Política de Privacidade</Link>.
         </p>
+      </div>
+      </div>
+
+      {/* Badges de confiança */}
+      <div className="flex items-center justify-center gap-4 mt-5 text-white/70 text-xs font-medium flex-wrap relative z-10">
+        <span>✅ Seguro para crianças</span>
+        <span>✅ Sem anúncios</span>
       </div>
     </div>
   );

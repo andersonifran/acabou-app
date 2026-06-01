@@ -10,11 +10,11 @@ const pains = [
 
 export function PainSection() {
   return (
-    <section className="px-6 py-16 bg-[#fafafa]">
+    <section className="px-6 py-16 bg-white">
       <div className="max-w-3xl mx-auto">
         <RevealOnScroll>
           <div className="text-center mb-10">
-            <span className="inline-flex items-center bg-red-100 text-red-600 text-xs font-bold px-3 py-1.5 rounded-full mb-4">Esse roteiro é familiar?</span>
+            <span className="inline-flex items-center bg-red-500 text-white text-xs font-bold px-3 py-1.5 rounded-full mb-4">Esse roteiro é familiar?</span>
             <h2 className="text-3xl md:text-4xl font-black text-gray-900 leading-tight mb-3">
               Você só lembra que esqueceu…<br />quando já voltou do mercado.
             </h2>
@@ -27,9 +27,9 @@ export function PainSection() {
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {pains.map((pain, i) => (
             <RevealOnScroll key={i} delay={i * 80}>
-              <div className="bg-white rounded-2xl p-5 border border-gray-100 hover:border-red-200 hover:shadow-sm transition-all h-full">
-                <span className="text-2xl block mb-3">{pain.icon}</span>
-                <p className="text-gray-700 text-sm leading-relaxed">{pain.text}</p>
+              <div className="bg-red-50 rounded-2xl p-5 border border-red-200/60 hover:border-red-300 hover:shadow-md transition-all h-full">
+                <span className="text-3xl block mb-3">{pain.icon}</span>
+                <p className="text-gray-800 text-sm leading-relaxed font-medium">{pain.text}</p>
               </div>
             </RevealOnScroll>
           ))}
