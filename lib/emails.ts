@@ -262,8 +262,10 @@ export async function sendPlanExpiringEmail(
           <p style="margin: 0 0 12px; font-size: 14px; font-weight: 700; color: #991b1b; text-transform: uppercase; letter-spacing: 0.05em;">
             Sem o plano, voc&ecirc; perde:
           </p>
-          <p style="margin: 0 0 8px; font-size: 14px; color: #991b1b;">&#10007; Pessoas ilimitadas (volta para 2)</p>
+          <p style="margin: 0 0 8px; font-size: 14px; color: #991b1b;">&#10007; Pessoas na casa (volta para 1 &mdash; s&oacute; voc&ecirc;)</p>
+          <p style="margin: 0 0 8px; font-size: 14px; color: #991b1b;">&#10007; M&uacute;ltiplos locais (volta para 1 s&oacute;)</p>
           <p style="margin: 0 0 8px; font-size: 14px; color: #991b1b;">&#10007; Itens ilimitados (volta para 20)</p>
+          <p style="margin: 0 0 8px; font-size: 14px; color: #991b1b;">&#10007; Membros convidados perdem o acesso</p>
           <p style="margin: 0 0 8px; font-size: 14px; color: #991b1b;">&#10007; Lembrete di&aacute;rio no celular</p>
           <p style="margin: 0 0 8px; font-size: 14px; color: #991b1b;">&#10007; Lembretes recorrentes</p>
           <p style="margin: 0; font-size: 14px; color: #991b1b;">&#10007; Hist&oacute;rico completo</p>
