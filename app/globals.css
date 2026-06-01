@@ -152,3 +152,24 @@ input, select, textarea {
 /* Scrollbar hide utility */
 .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
 .scrollbar-hide::-webkit-scrollbar { display: none; }
+
+/* ═══ LANDING PAGE ANIMATIONS ═══ */
+
+/* Marquee — scroll infinito de itens */
+@keyframes marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+.animate-marquee {
+  animation: marquee 30s linear infinite;
+}
+
+/* Float — emojis flutuando suavemente */
+@keyframes float {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  33% { transform: translateY(-12px) rotate(3deg); }
+  66% { transform: translateY(6px) rotate(-2deg); }
+}
+.animate-float {
+  animation: float 10s ease-in-out infinite;
+}
