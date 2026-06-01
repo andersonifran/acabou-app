@@ -203,12 +203,12 @@ export default function CadastroPage() {
       {/* Botão voltar */}
       <div className="absolute top-4 left-4 z-20">
         {step === 1 ? (
-          <Link href="/" className="inline-flex items-center gap-1.5 text-white/80 hover:text-white text-sm font-medium transition-colors bg-white/10 backdrop-blur-sm px-3 py-1.5 rounded-full">
+          <Link href="/" className="inline-flex items-center gap-1.5 text-green-700 text-sm font-semibold transition-all bg-white shadow-md hover:shadow-lg px-4 py-2 rounded-full">
             <ArrowLeft size={14} />
             Início
           </Link>
         ) : (
-          <button onClick={() => setStep(1)} className="inline-flex items-center gap-1.5 text-white/80 hover:text-white text-sm font-medium transition-colors bg-white/10 backdrop-blur-sm px-3 py-1.5 rounded-full">
+          <button onClick={() => setStep(1)} className="inline-flex items-center gap-1.5 text-green-700 text-sm font-semibold transition-all bg-white shadow-md hover:shadow-lg px-4 py-2 rounded-full">
             <ArrowLeft size={14} />
             Voltar
           </button>
