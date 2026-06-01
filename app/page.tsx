@@ -294,7 +294,7 @@ export default function LandingPage() {
           <RevealOnScroll>
             <span className="inline-flex items-center bg-green-100 text-green-700 text-xs font-bold px-3 py-1.5 rounded-full mb-4">Quem usa, aprova</span>
             <h2 className="text-3xl md:text-4xl font-black text-gray-900 mb-4">
-              Quem usa, não volta<br className="md:hidden" /> pro&nbsp;papel
+              Quem usa, não volta<br className="md:hidden" /> pro papel
             </h2>
             <p className="text-gray-500 text-lg mb-10">Veja o que estão dizendo sobre o Acabou?</p>
           </RevealOnScroll>
