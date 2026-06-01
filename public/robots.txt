@@ -1,0 +1,15 @@
+User-agent: *
+Allow: /
+
+# Áreas privadas (exigem login) — não precisam ser indexadas
+Disallow: /api/
+Disallow: /home
+Disallow: /despensa
+Disallow: /lista
+Disallow: /casa
+Disallow: /configuracoes
+Disallow: /onboarding
+Disallow: /planos
+Disallow: /feedback
+
+Sitemap: https://www.acabouapp.com.br/sitemap.xml
