@@ -27,11 +27,7 @@ const filterOptions: { value: FilterStatus; label: string }[] = [
 
 export default function DespensaPage() {
   return (
-    <Suspense fallback={
-      <div className="flex items-center justify-center py-20">
-        <div className="w-8 h-8 border-2 border-gray-200 border-t-green-600 rounded-full animate-spin" />
-      </div>
-    }>
+    <Suspense fallback={null}>
       <DespensaContent />
     </Suspense>
   );
@@ -199,7 +195,7 @@ function DespensaContent() {
               search
                 ? "Nenhum item encontrado"
                 : items.length > 0 && filter === "acabando"
-                ? "Tudo em estoque por aqui!"
+                ? "Tudo em dia por aqui!"
                 : items.length > 0 && filter === "acabou"
                 ? "Nada acabou, parabéns!"
                 : items.length > 0 && filter === "comprar"

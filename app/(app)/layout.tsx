@@ -41,9 +41,18 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { createItem, changeStatus, editItem } = useItems();
   const { canAddItem, isPaid, isTrialing } = useSubscription();
   const [showPlanLimit, setShowPlanLimit] = useState(false);
-  // Se o store já tem casa carregada, considera pronto imediatamente.
-  // Isso evita o flash de "Carregando..." ao trocar entre abas.
-  const [isReady, setIsReady] = useState(!!currentHouse);
+  // Verifica DIRETAMENTE no localStorage se tem casa — evita depender do timing do Zustand.
+  // Isso garante que NUNCA mostramos spinner quando o usuário já estava logado.
+  const [isReady, setIsReady] = useState(() => {
+    if (typeof window === "undefined") return false;
+    if (currentHouse) return true;
+    try {
+      const raw = localStorage.getItem("acabou-app-cache");
+      if (!raw) return false;
+      const cached = JSON.parse(raw);
+      return !!cached.currentHouse;
+    } catch { return false; }
+  });
 
   async function loadHouseData(houseId: string) {
     const { data: { user } } = await supabase.auth.getUser();
