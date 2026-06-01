@@ -26,66 +26,60 @@ const PROPERTY_MAP: Record<string, { icon: string; label: string }> = {
   outro:       { icon: "📍", label: "Outro" },
 };
 
-// Ícones SVG inline para os botões de ação
+// Ícones SVG inline para os botões de ação — modernos com gradiente
 function IconAcabou() {
-  // Caixinha aberta/vazia com X vermelho no canto
   return (
-    <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-      <rect width="32" height="32" rx="10" fill="#fee2e2"/>
-      {/* Corpo da caixa (frente) */}
-      <rect x="7" y="16" width="18" height="11" rx="1.5" fill="#fecaca" fillOpacity="0.5" stroke="#ef4444" strokeWidth="1.8"/>
-      {/* Abas abertas da caixa */}
-      <path d="M7 16L9.5 11H16" stroke="#ef4444" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
-      <path d="M25 16L22.5 11H16" stroke="#ef4444" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
-      {/* Linha central do topo (vinco da caixa) */}
-      <line x1="16" y1="11" x2="16" y2="16" stroke="#ef4444" strokeWidth="1.2" strokeLinecap="round"/>
-      {/* Badge X vermelho no canto superior direito */}
-      <circle cx="25" cy="8" r="5.5" fill="#ef4444"/>
-      <path d="M22.8 5.8L27.2 10.2M27.2 5.8L22.8 10.2" stroke="white" strokeWidth="1.8" strokeLinecap="round"/>
+    <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
+      <rect width="36" height="36" rx="12" fill="#ef4444"/>
+      <rect x="9" y="18" width="18" height="10" rx="2" fill="white" fillOpacity="0.3" stroke="white" strokeWidth="1.5"/>
+      <path d="M9 18L11.5 13H18" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+      <path d="M27 18L24.5 13H18" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+      <line x1="18" y1="13" x2="18" y2="18" stroke="white" strokeWidth="1.2" strokeLinecap="round"/>
+      <path d="M15 22l6 0" stroke="white" strokeWidth="1.5" strokeLinecap="round"/>
     </svg>
   );
 }
 
 function IconAcabando() {
   return (
-    <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-      <rect width="32" height="32" rx="10" fill="#fef3c7"/>
-      <circle cx="16" cy="17" r="7" stroke="#f59e0b" strokeWidth="2"/>
-      <path d="M16 13v4l2.5 2.5" stroke="#f59e0b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-      <path d="M10 8l2 2M22 8l-2 2" stroke="#f59e0b" strokeWidth="2" strokeLinecap="round"/>
+    <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
+      <rect width="36" height="36" rx="12" fill="#f59e0b"/>
+      <circle cx="18" cy="19" r="7.5" stroke="white" strokeWidth="1.8"/>
+      <path d="M18 15v4l2.5 2.5" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+      <path d="M12 10l2 2M24 10l-2 2" stroke="white" strokeWidth="1.8" strokeLinecap="round"/>
     </svg>
   );
 }
 
 function IconQueroComprar() {
   return (
-    <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-      <rect width="32" height="32" rx="10" fill="#dbeafe"/>
-      <path d="M8 9h2l2.5 9h9l2-6H11" stroke="#3b82f6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-      <circle cx="14" cy="21.5" r="1.5" fill="#3b82f6"/>
-      <circle cx="20" cy="21.5" r="1.5" fill="#3b82f6"/>
-      <line x1="20" y1="6" x2="20" y2="12" stroke="#3b82f6" strokeWidth="2" strokeLinecap="round"/>
-      <line x1="17" y1="9" x2="23" y2="9" stroke="#3b82f6" strokeWidth="2" strokeLinecap="round"/>
+    <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
+      <rect width="36" height="36" rx="12" fill="#3b82f6"/>
+      <path d="M10 11h2l2.5 10h9l2.5-7H13" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+      <circle cx="16" cy="24" r="1.5" fill="white"/>
+      <circle cx="22" cy="24" r="1.5" fill="white"/>
+      <line x1="22" y1="8" x2="22" y2="14" stroke="white" strokeWidth="2" strokeLinecap="round"/>
+      <line x1="19" y1="11" x2="25" y2="11" stroke="white" strokeWidth="2" strokeLinecap="round"/>
     </svg>
   );
 }
 
-function IconComprar() {
+function IconComprei() {
   return (
-    <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-      <rect width="32" height="32" rx="10" fill="#dcfce7"/>
-      <circle cx="16" cy="16" r="8" stroke="#22c55e" strokeWidth="2"/>
-      <path d="M12 16l3 3 5-6" stroke="#22c55e" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+    <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
+      <rect width="36" height="36" rx="12" fill="#16a34a"/>
+      <circle cx="18" cy="18" r="8" stroke="white" strokeWidth="1.8"/>
+      <path d="M13.5 18l3.5 3.5 5.5-7" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
     </svg>
   );
 }
 
 // Constante fora do componente — evita re-criação a cada render
 const ACTION_BUTTONS = [
-  { label: "Acabou!", sublabel: "Precisa repor", icon: <IconAcabou />, bg: "bg-red-50 border-red-100", status: "acabou" },
-  { label: "Está acabando!", sublabel: "Já está no fim", icon: <IconAcabando />, bg: "bg-amber-50 border-amber-100", status: "acabando" },
-  { label: "Quero comprar!", sublabel: "Adicionar à lista", icon: <IconQueroComprar />, bg: "bg-blue-50 border-blue-100", status: "comprar" },
-  { label: "Comprei!", sublabel: "Já comprou o item", icon: <IconComprar />, bg: "bg-green-50 border-green-100", status: "tem" },
+  { label: "Acabou!", sublabel: "Precisa repor", icon: <IconAcabou />, bg: "bg-white border-red-200 shadow-sm", status: "acabou" },
+  { label: "Está acabando!", sublabel: "Já está no fim", icon: <IconAcabando />, bg: "bg-white border-amber-200 shadow-sm", status: "acabando" },
+  { label: "Quero comprar!", sublabel: "Adicionar à lista", icon: <IconQueroComprar />, bg: "bg-white border-blue-200 shadow-sm", status: "comprar" },
+  { label: "Comprei!", sublabel: "Já comprou o item", icon: <IconComprei />, bg: "bg-white border-green-300 shadow-sm", status: "tem" },
 ];
 
 export default function HomePage() {
@@ -509,13 +503,21 @@ export default function HomePage() {
 
             {/* Resumo */}
             <div className="grid grid-cols-2 gap-3">
-              <Link href="/lista" className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 hover:border-green-200 transition-colors">
-                <p className="text-3xl font-bold text-green-600">{shoppingCount}</p>
-                <p className="text-sm text-gray-600 mt-1">Para comprar</p>
+              <Link href="/lista" className="bg-white rounded-2xl border border-green-200 shadow-sm p-4 hover:shadow-md transition-all">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-lg">🛒</span>
+                  <span className="text-[10px] font-bold text-green-600 bg-green-50 px-2 py-0.5 rounded-full">Ver lista →</span>
+                </div>
+                <p className="text-3xl font-black text-green-600">{shoppingCount}</p>
+                <p className="text-sm text-gray-500 font-medium">Para comprar</p>
               </Link>
-              <Link href="/despensa?filtro=acabando" className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 hover:border-amber-200 transition-colors">
-                <p className="text-3xl font-bold text-amber-500">{endingCount}</p>
-                <p className="text-sm text-gray-600 mt-1">Acabando</p>
+              <Link href="/despensa?filtro=acabando" className="bg-white rounded-2xl border border-amber-200 shadow-sm p-4 hover:shadow-md transition-all">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-lg">⏰</span>
+                  <span className="text-[10px] font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">Ver itens →</span>
+                </div>
+                <p className="text-3xl font-black text-amber-500">{endingCount}</p>
+                <p className="text-sm text-gray-500 font-medium">Acabando</p>
               </Link>
             </div>
 
@@ -529,11 +531,11 @@ export default function HomePage() {
                   <button
                     key={status}
                     onClick={() => openModal(status)}
-                    className={`flex flex-col items-start p-4 rounded-2xl border-2 transition-all hover:scale-[1.02] active:scale-[0.98] text-left ${bg}`}
+                    className={`flex flex-col items-start p-4 rounded-2xl border transition-all hover:scale-[1.02] hover:shadow-md active:scale-[0.97] text-left ${bg}`}
                   >
-                    <div className="mb-3">{icon}</div>
-                    <span className="font-bold text-gray-900 text-sm leading-tight">{label}</span>
-                    <span className="text-xs text-gray-500 mt-0.5 leading-tight min-h-[32px]">{sublabel}</span>
+                    <div className="mb-2.5">{icon}</div>
+                    <span className="font-black text-gray-900 text-sm leading-tight">{label}</span>
+                    <span className="text-xs text-gray-400 mt-0.5 leading-tight">{sublabel}</span>
                   </button>
                 ))}
               </div>
