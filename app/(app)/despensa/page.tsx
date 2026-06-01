@@ -187,15 +187,42 @@ function DespensaContent() {
         {/* Lista */}
         {filtered.length === 0 ? (
           <EmptyState
-            icon="📦"
-            title={search ? "Nenhum item encontrado" : "Sua despensa está vazia"}
+            icon={
+              search ? "🔍"
+              : items.length > 0 && filter === "acabando" ? "👍"
+              : items.length > 0 && filter === "acabou" ? "🎉"
+              : items.length > 0 && filter === "comprar" ? "🛒"
+              : items.length > 0 && filter === "tem" ? "✅"
+              : "📦"
+            }
+            title={
+              search
+                ? "Nenhum item encontrado"
+                : items.length > 0 && filter === "acabando"
+                ? "Tudo em estoque por aqui!"
+                : items.length > 0 && filter === "acabou"
+                ? "Nada acabou, parabéns!"
+                : items.length > 0 && filter === "comprar"
+                ? "Lista de compras zerada!"
+                : items.length > 0 && filter === "tem"
+                ? "Nenhum item como 'Tem'"
+                : "Sua despensa está vazia"
+            }
             description={
               search
                 ? `Nenhum item com "${search}"`
+                : items.length > 0 && filter === "acabando"
+                ? "Aproveite! Nenhum item está acabando. Mas vale uma revisão rápida na despensa. 😉"
+                : items.length > 0 && filter === "acabou"
+                ? "Ótimo controle! Sua casa está bem abastecida. Continue assim! 💚"
+                : items.length > 0 && filter === "comprar"
+                ? "Não há nada na fila de compras agora. Quando faltar algo, vai aparecer aqui."
+                : items.length > 0 && filter === "tem"
+                ? "Marque um item como 'Tem em casa' para ele aparecer aqui."
                 : "Comece adicionando o que você já tem em casa. Depois é só marcar quando acabar!"
             }
             action={
-              !search ? (
+              !search && items.length === 0 ? (
                 <button
                   onClick={openAdd}
                   className="bg-green-600 text-white font-semibold px-6 py-3 rounded-xl hover:bg-green-700 transition-colors"

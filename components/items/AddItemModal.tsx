@@ -223,43 +223,15 @@ export function AddItemModal({
     setMode("create");
   }
 
-  async function handleCreateFromSuggested(suggested: { name: string; category: string }) {
-    setLoading(true);
-    try {
-      let cat = categories.find((c) => c.name === suggested.category);
-
-      // Se a categoria não existe no banco, cria via API
-      if (!cat) {
-        const CATEGORY_ICONS: Record<string, string> = {
-          "Bebidas": "🍺", "Churrasqueira": "🍖", "Descartáveis": "🍽️",
-          "Praia essencial": "🏖️", "Escritório / Empresa": "🏢",
-          "Utilidades": "🔦", "Sítio / Campo": "🌲",
-        };
-        const res = await fetch("/api/ensure-categories", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            categories: [{ name: suggested.category, icon: CATEGORY_ICONS[suggested.category] ?? "📦" }],
-          }),
-        });
-        if (res.ok) {
-          const data = await res.json();
-          const newCatId = data.categories?.[suggested.category];
-          if (newCatId) {
-            cat = { id: newCatId, name: suggested.category, icon: "📦" } as Category;
-          }
-        }
-      }
-
-      await onAddItem({
-        name: suggested.name,
-        category_id: cat?.id ?? categories[0]?.id ?? "",
-        status: initialStatus,
-      });
-      onClose();
-    } finally {
-      setLoading(false);
-    }
+  function handleSelectFromSuggested(suggested: { name: string; category: string }) {
+    const cat = categories.find((c) => c.name === suggested.category);
+    setEditingItem(null);
+    setNewName(suggested.name);
+    setNewCategoryId(cat?.id ?? categories[0]?.id ?? "");
+    setNewStatus(initialStatus);
+    setNewNote("");
+    setNewQty("");
+    setMode("create");
   }
 
   async function handleCreate() {
@@ -387,7 +359,7 @@ export function AddItemModal({
                     {filteredSuggested.slice(0, 10).map((s) => (
                       <button
                         key={s.name}
-                        onClick={() => handleCreateFromSuggested(s)}
+                        onClick={() => handleSelectFromSuggested(s)}
                         disabled={loading}
                         className="w-full text-left bg-gray-50 hover:bg-green-50 border border-gray-100 hover:border-green-200 rounded-xl px-4 py-3 transition-colors"
                       >
