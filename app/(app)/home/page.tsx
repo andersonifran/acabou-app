@@ -307,12 +307,11 @@ export default function HomePage() {
                               onClick={() => switchHouse(house)}
                               className="flex items-center gap-3 flex-1 min-w-0 text-left"
                             >
-                              <div className={cn(
-                                "shrink-0 rounded-xl",
-                                isActive && "ring-2 ring-green-300"
-                              )}>
-                                <LocationIcon type={(house as any).property_type ?? "casa"} size={40} />
-                              </div>
+                              <LocationIcon
+                                type={(house as any).property_type ?? "casa"}
+                                size={42}
+                                className={cn("shrink-0 transition-transform", isActive && "scale-110")}
+                              />
                               <div className="flex-1 min-w-0">
                                 <p className={cn(
                                   "text-sm truncate leading-snug",

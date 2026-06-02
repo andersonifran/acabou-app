@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import { PLAN_LIMITS } from "@/types";
 import { trackCadastroCompleto } from "@/lib/analytics";
 import { Mascote } from "@/components/shared/Mascote";
+import { LocationIcon } from "@/components/shared/LocationIcon";
 
 // Itens por tipo de imóvel
 const ITEMS_BY_TYPE: Record<string, { category: string; items: string[] }[]> = {
@@ -375,13 +376,13 @@ function OnboardingContent() {
                   key={p.id}
                   onClick={() => setSetupPropertyType(p.id)}
                   className={cn(
-                    "flex flex-col items-center gap-1 py-3.5 rounded-2xl border-2 transition-all",
+                    "flex flex-col items-center gap-1.5 py-3.5 rounded-2xl border-2 transition-all active:scale-95",
                     setupPropertyType === p.id
                       ? "border-green-500 bg-green-50"
                       : "border-gray-200 bg-white hover:border-green-300"
                   )}
                 >
-                  <span className="text-2xl">{p.icon}</span>
+                  <LocationIcon type={p.id} size={52} className={cn("transition-transform", setupPropertyType === p.id && "scale-110")} />
                   <span className={cn(
                     "text-xs font-semibold",
                     setupPropertyType === p.id ? "text-green-700" : "text-gray-600"

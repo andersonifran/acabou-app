@@ -109,7 +109,7 @@ export default function NovaCasaPage() {
                     : "border-gray-200 bg-white hover:border-green-200"
                 )}
               >
-                <LocationIcon type={p.id} size={38} />
+                <LocationIcon type={p.id} size={52} className={cn("transition-transform", propertyType === p.id && "scale-110")} />
                 <span className={cn("text-xs font-semibold", propertyType === p.id ? "text-green-700" : "text-gray-600")}>
                   {p.label}
                 </span>
