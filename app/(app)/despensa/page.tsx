@@ -183,13 +183,10 @@ function DespensaContent() {
         {/* Lista */}
         {filtered.length === 0 ? (
           <EmptyState
-            icon={
-              search ? "🔍"
-              : items.length > 0 && filter === "acabando" ? "👍"
-              : items.length > 0 && filter === "acabou" ? "🎉"
-              : items.length > 0 && filter === "comprar" ? "🛒"
-              : items.length > 0 && filter === "tem" ? "✅"
-              : "📦"
+            mascot={
+              search ? "search"
+              : items.length > 0 ? "done"
+              : "happy"
             }
             title={
               search
