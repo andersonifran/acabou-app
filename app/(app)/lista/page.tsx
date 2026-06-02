@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAppStore } from "@/store/appStore";
 import { useItems } from "@/hooks/useItems";
@@ -39,7 +39,15 @@ export default function ListaPage() {
   const [done, setDone] = useState(false);
   const [showPurchasedModal, setShowPurchasedModal] = useState<string | null>(null);
   const [showPlanLimit, setShowPlanLimit] = useState(false);
+  const [partialMsg, setPartialMsg] = useState<string | null>(null);
   const { canAddItem } = useSubscription();
+
+  // Toast de "compra parcial" some sozinho
+  useEffect(() => {
+    if (!partialMsg) return;
+    const t = setTimeout(() => setPartialMsg(null), 2800);
+    return () => clearTimeout(t);
+  }, [partialMsg]);
 
   // Agrupar por categoria
   const byCategory = shoppingListItems.reduce<Record<string, Item[]>>((acc, item) => {
@@ -127,9 +135,21 @@ export default function ListaPage() {
       );
       setItems(updatedItems);
 
-      hapticSuccess();
-      setDone(true);
+      // Só comemora com confete se a lista ZEROU (tudo comprado).
+      // Compra parcial = toast sutil, sem festa (ainda há itens pendentes).
+      const boughtCount = checkedIds.size;
+      const willBeEmpty = boughtCount >= shoppingListItems.length;
       setCheckedIds(new Set());
+      hapticSuccess();
+
+      if (willBeEmpty) {
+        setDone(true);
+      } else {
+        const remaining = shoppingListItems.length - boughtCount;
+        setPartialMsg(
+          `✓ ${boughtCount} ${boughtCount === 1 ? "item comprado" : "itens comprados"} · faltam ${remaining} na lista`
+        );
+      }
     } finally {
       setFinishing(false);
     }
@@ -287,6 +307,17 @@ export default function ListaPage() {
               >
                 {copy.confirm}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Toast de compra parcial — sutil, some sozinho */}
+      {partialMsg && (
+        <div className="fixed bottom-24 left-0 right-0 px-4 z-[55] pointer-events-none">
+          <div className="max-w-lg mx-auto">
+            <div className="animate-toast-up bg-gray-900 text-white text-sm font-semibold px-5 py-3.5 rounded-2xl shadow-xl flex items-center justify-center gap-2">
+              {partialMsg}
             </div>
           </div>
         </div>
