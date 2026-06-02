@@ -4,6 +4,7 @@ import { useCallback, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useAppStore } from "@/store/appStore";
 import { Item, ItemStatus, SHOPPING_LIST_STATUSES } from "@/types";
+import { hapticSuccess } from "@/lib/haptics";
 
 // Debounce de notificações: evita enviar notificação quando usuário
 // toca acidentalmente e reverte o status rapidamente
@@ -32,8 +33,9 @@ export function useItems() {
       // Pega o usuário uma única vez
       const { data: { user } } = await supabase.auth.getUser();
 
-      // Atualiza otimisticamente
+      // Atualiza otimisticamente + feedback tátil imediato (sensação nativa)
       updateItem(itemId, { status: newStatus });
+      hapticSuccess();
 
       const { error } = await supabase
         .from("items")

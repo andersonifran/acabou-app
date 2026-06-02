@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { useAppStore } from "@/store/appStore";
+import { hapticLight } from "@/lib/haptics";
 
 // ── Ícones SVG customizados com cores ──────────────────────────
 
@@ -168,7 +169,8 @@ export function BottomNav() {
             <Link
               key={href}
               href={href}
-              className="flex-1 flex flex-col items-center justify-center py-2.5 gap-0.5 transition-colors"
+              onClick={() => { if (!active) hapticLight(); }}
+              className="flex-1 flex flex-col items-center justify-center py-2.5 gap-0.5 transition-colors active:scale-95"
             >
               <Icon active={active} />
               <span

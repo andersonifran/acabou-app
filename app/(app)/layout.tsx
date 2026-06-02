@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { useAppStore } from "@/store/appStore";
 import { BottomNav } from "@/components/layout/BottomNav";
+import { SwipeNavigator } from "@/components/layout/SwipeNavigator";
 import { AddItemModal } from "@/components/items/AddItemModal";
 import { PlanLimitModal } from "@/components/shared/PlanLimitModal";
 import { PWAInstallBanner } from "@/components/shared/PWAInstallBanner";
@@ -206,10 +207,18 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     );
   }
 
+  // Ordem das abas para navegação por swipe (mesma do BottomNav).
+  // Membro convidado vê /configuracoes no lugar de /casa.
+  const swipeTabs = isOwnerOfCurrent
+    ? ["/home", "/despensa", "/lista", "/casa"]
+    : ["/home", "/despensa", "/lista", "/configuracoes"];
+
   return (
     <div className="min-h-screen app-bg pb-16">
       <PushPermissionBanner />
-      {children}
+      <SwipeNavigator tabs={swipeTabs} disabled={isAddItemModalOpen}>
+        {children}
+      </SwipeNavigator>
 
       <BottomNav />
       <PWAInstallBanner />
