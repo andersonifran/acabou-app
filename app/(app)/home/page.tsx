@@ -11,7 +11,8 @@ import { ShoppingCart, Bell, ChevronDown, Plus, Check, Zap, Trash2 } from "lucid
 import { Header } from "@/components/layout/Header";
 import { NotificationBell } from "@/components/shared/NotificationBell";
 import { PlanLimitModal } from "@/components/shared/PlanLimitModal";
-import { StreakBadge } from "@/components/shared/StreakBadge";
+import { CasaEmDiaBadge } from "@/components/shared/CasaEmDiaBadge";
+import { LocationIcon } from "@/components/shared/LocationIcon";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useRole } from "@/hooks/useRole";
 import { cn } from "@/lib/utils";
@@ -252,9 +253,7 @@ export default function HomePage() {
                 allHouses.length > 1 && "cursor-pointer"
               )}
             >
-              <div className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center shrink-0">
-                <span className="text-xl leading-none">{propertyInfo.icon}</span>
-              </div>
+              <LocationIcon type={(currentHouse as any)?.property_type ?? "casa"} size={40} className="shrink-0" />
               <div className="min-w-0 text-left">
                 <div className="flex items-center gap-1.5">
                   <h1 className="font-bold text-gray-900 truncate text-[15px] leading-snug max-w-[45vw] sm:max-w-[240px]">
@@ -309,10 +308,10 @@ export default function HomePage() {
                               className="flex items-center gap-3 flex-1 min-w-0 text-left"
                             >
                               <div className={cn(
-                                "w-10 h-10 rounded-xl flex items-center justify-center shrink-0",
-                                isActive ? "bg-green-50 ring-2 ring-green-200" : "bg-gray-50"
+                                "shrink-0 rounded-xl",
+                                isActive && "ring-2 ring-green-300"
                               )}>
-                                <span className="text-lg leading-none">{pt.icon}</span>
+                                <LocationIcon type={(house as any).property_type ?? "casa"} size={40} />
                               </div>
                               <div className="flex-1 min-w-0">
                                 <p className={cn(
@@ -389,8 +388,8 @@ export default function HomePage() {
 
         {!switchingHouse && (
           <>
-            {/* Streak de uso diário — gatilho de retenção (volta todo dia) */}
-            <StreakBadge />
+            {/* "Casa em dia" — premia o resultado (nada faltando) sem cobrar */}
+            <CasaEmDiaBadge emDia={shoppingCount === 0} ready={dataSyncComplete} />
 
             {/* Banners de plano: só renderiza apos dados confirmados com o servidor.
                 Isso evita flash de banner com info desatualizada do cache */}

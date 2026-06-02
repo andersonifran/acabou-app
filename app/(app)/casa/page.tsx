@@ -6,6 +6,7 @@ import { useHouse } from "@/hooks/useHouse";
 import { useAppStore } from "@/store/appStore";
 import { Header } from "@/components/layout/Header";
 import { LoadingSpinner } from "@/components/shared/LoadingSpinner";
+import { LocationIcon } from "@/components/shared/LocationIcon";
 import { generateInviteMessage, buildWhatsAppShareUrl } from "@/lib/utils";
 import {
   Users, Crown, Shield, User, Share2, Copy, LogOut, Settings, Trash2,
@@ -621,7 +622,7 @@ export default function CasaPage() {
         {/* ── NOME E TIPO DA CASA ── */}
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
           <div className="flex items-center gap-3">
-            <span className="text-3xl shrink-0">{propertyType.icon}</span>
+            <LocationIcon type={propertyType.id} size={44} className="shrink-0" />
             <div className="flex-1 min-w-0">
               {/* Nome da casa — editável pelo dono */}
               {isOwner && editingHouseName ? (

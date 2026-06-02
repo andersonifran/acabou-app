@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { useAppStore } from "@/store/appStore";
 import { Header } from "@/components/layout/Header";
+import { LocationIcon } from "@/components/shared/LocationIcon";
 import { cn } from "@/lib/utils";
 
 function hasPaidHouse(houses: any[]): boolean {
@@ -16,12 +17,12 @@ function hasPaidHouse(houses: any[]): boolean {
 }
 
 const PROPERTY_TYPES = [
-  { id: "casa",        label: "Casa",        icon: "🏠", desc: "Residência principal" },
-  { id: "apartamento", label: "Apartamento", icon: "🏢", desc: "Apartamento / apê" },
-  { id: "praia",       label: "Praia",       icon: "🏖️", desc: "Casa de praia" },
-  { id: "veraneio",    label: "Veraneio",    icon: "🌲", desc: "Sítio / campo / chácara" },
-  { id: "empresa",     label: "Empresa",     icon: "💼", desc: "Escritório / negócio" },
-  { id: "outro",       label: "Outro",       icon: "📍", desc: "Outro tipo de local" },
+  { id: "casa",        label: "Casa",        desc: "Residência principal" },
+  { id: "apartamento", label: "Apartamento", desc: "Apartamento / apê" },
+  { id: "praia",       label: "Praia",       desc: "Casa de praia" },
+  { id: "veraneio",    label: "Veraneio",    desc: "Sítio / campo / chácara" },
+  { id: "empresa",     label: "Empresa",     desc: "Escritório / negócio" },
+  { id: "outro",       label: "Outro",       desc: "Outro tipo de local" },
 ];
 
 export default function NovaCasaPage() {
@@ -102,13 +103,13 @@ export default function NovaCasaPage() {
                 key={p.id}
                 onClick={() => setPropertyType(p.id)}
                 className={cn(
-                  "flex flex-col items-center gap-1 py-3.5 rounded-2xl border-2 transition-all",
+                  "flex flex-col items-center gap-1.5 py-3.5 rounded-2xl border-2 transition-all active:scale-95",
                   propertyType === p.id
                     ? "border-green-500 bg-green-50"
                     : "border-gray-200 bg-white hover:border-green-200"
                 )}
               >
-                <span className="text-2xl">{p.icon}</span>
+                <LocationIcon type={p.id} size={38} />
                 <span className={cn("text-xs font-semibold", propertyType === p.id ? "text-green-700" : "text-gray-600")}>
                   {p.label}
                 </span>
