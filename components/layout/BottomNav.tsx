@@ -144,6 +144,15 @@ const activeLabelColors: Record<string, string> = {
   "/configuracoes":  "text-violet-700",
 };
 
+// Fundo da "pílula" atrás do ícone ativo (toque premium, estilo Material You)
+const activePillColors: Record<string, string> = {
+  "/home":           "bg-green-100",
+  "/despensa":       "bg-teal-100",
+  "/lista":          "bg-amber-100",
+  "/casa":           "bg-violet-100",
+  "/configuracoes":  "bg-violet-100",
+};
+
 export function BottomNav() {
   const pathname = usePathname();
   const { userId, currentHouse } = useAppStore();
@@ -170,9 +179,16 @@ export function BottomNav() {
               key={href}
               href={href}
               onClick={() => { if (!active) hapticLight(); }}
-              className="flex-1 flex flex-col items-center justify-center py-2.5 gap-0.5 transition-colors active:scale-90"
+              className="flex-1 flex flex-col items-center justify-center py-2 gap-0.5 transition-colors active:scale-90"
             >
-              <span key={`${href}-${active}`} className={cn("block", active && "animate-tab-bounce")}>
+              <span
+                key={`${href}-${active}`}
+                className={cn(
+                  "flex items-center justify-center rounded-full px-5 py-1 transition-colors",
+                  active && "animate-tab-bounce",
+                  active ? activePillColors[href] : "bg-transparent"
+                )}
+              >
                 <Icon active={active} />
               </span>
               <span
