@@ -396,13 +396,13 @@ export default function LandingPage() {
             {[
               {
                 name: "Grátis", price: "R$ 0", period: "para sempre", highlight: false, badge: null,
-                features: ["1 local", "Apenas você (1 pessoa)", "Até 20 itens", "Lista automática", "WhatsApp"],
-                notIncluded: ["Lembrete diário", "Pessoas ilimitadas", "Locais ilimitados"],
+                features: ["1 local", "Apenas você (1 pessoa)", "Até 10 itens", "Lista automática"],
+                notIncluded: ["Compartilhar no WhatsApp", "Lembrete diário", "Pessoas ilimitadas", "Locais ilimitados"],
                 cta: "Começar grátis", color: "bg-gray-100 text-gray-800 hover:bg-gray-200",
               },
               {
                 name: "Família Mensal", price: "R$ 8,90", period: "/mês", highlight: false, badge: "🎁 7 DIAS GRÁTIS",
-                features: ["Tudo do Grátis +", "Pessoas ilimitadas", "Itens ilimitados", "Locais ilimitados", "Lembrete diário", "Lembretes recorrentes", "Histórico completo"],
+                features: ["Tudo do Grátis +", "Pessoas ilimitadas", "Itens ilimitados", "Locais ilimitados", "Compartilhar no WhatsApp", "Lembrete diário", "Lembretes recorrentes", "Histórico completo"],
                 notIncluded: [],
                 cta: "Testar 7 dias grátis", color: "bg-gray-900 text-white hover:bg-gray-800",
               },

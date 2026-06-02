@@ -264,7 +264,8 @@ export async function sendPlanExpiringEmail(
           </p>
           <p style="margin: 0 0 8px; font-size: 14px; color: #991b1b;">&#10007; Pessoas na casa (volta para 1 &mdash; s&oacute; voc&ecirc;)</p>
           <p style="margin: 0 0 8px; font-size: 14px; color: #991b1b;">&#10007; M&uacute;ltiplos locais (volta para 1 s&oacute;)</p>
-          <p style="margin: 0 0 8px; font-size: 14px; color: #991b1b;">&#10007; Itens ilimitados (volta para 20)</p>
+          <p style="margin: 0 0 8px; font-size: 14px; color: #991b1b;">&#10007; Itens ilimitados (volta para 10)</p>
+          <p style="margin: 0 0 8px; font-size: 14px; color: #991b1b;">&#10007; Compartilhar a lista no WhatsApp</p>
           <p style="margin: 0 0 8px; font-size: 14px; color: #991b1b;">&#10007; Membros convidados perdem o acesso</p>
           <p style="margin: 0 0 8px; font-size: 14px; color: #991b1b;">&#10007; Lembrete di&aacute;rio no celular</p>
           <p style="margin: 0 0 8px; font-size: 14px; color: #991b1b;">&#10007; Lembretes recorrentes</p>

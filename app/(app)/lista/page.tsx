@@ -28,6 +28,7 @@ const LOCATION_COPY: Record<string, { question: string; confirm: string; done: s
 };
 
 export default function ListaPage() {
+  const router = useRouter();
   const { currentHouse, setAddItemModalOpen, setInitialStatus } = useAppStore();
   const propertyType = (currentHouse as any)?.property_type ?? "casa";
   const copy = LOCATION_COPY[propertyType] ?? LOCATION_COPY.casa;
@@ -40,7 +41,7 @@ export default function ListaPage() {
   const [showPurchasedModal, setShowPurchasedModal] = useState<string | null>(null);
   const [showPlanLimit, setShowPlanLimit] = useState(false);
   const [partialMsg, setPartialMsg] = useState<string | null>(null);
-  const { canAddItem } = useSubscription();
+  const { canAddItem, isPaid } = useSubscription();
 
   // Toast de "compra parcial" some sozinho
   useEffect(() => {
@@ -156,6 +157,12 @@ export default function ListaPage() {
   }
 
   function shareOnWhatsApp() {
+    // Compartilhar a lista pelo WhatsApp é recurso do Plano Família.
+    // Usuário grátis vê o botão, mas é direcionado para assinar.
+    if (!isPaid) {
+      router.push("/planos?recurso=whatsapp");
+      return;
+    }
     const itemsForShare = shoppingListItems.map((i) => ({
       name: i.name,
       category: i.category?.name ?? "Outros",
@@ -210,13 +217,23 @@ export default function ListaPage() {
           />
         ) : (
           <>
-            {/* Botão WhatsApp destacado */}
+            {/* Botão WhatsApp — recurso do Plano Família */}
             <button
               onClick={shareOnWhatsApp}
-              className="w-full flex items-center justify-center gap-2.5 bg-[#25D366] hover:bg-[#1fba59] active:scale-[0.98] text-white font-bold py-4 rounded-2xl shadow-md shadow-green-200 transition-all mb-5 text-base"
+              className={cn(
+                "w-full flex items-center justify-center gap-2.5 active:scale-[0.98] text-white font-bold py-4 rounded-2xl shadow-md transition-all mb-5 text-base",
+                isPaid
+                  ? "bg-[#25D366] hover:bg-[#1fba59] shadow-green-200"
+                  : "bg-[#25D366]/80 shadow-green-100"
+              )}
             >
               <WhatsAppIcon size={22} />
               Compartilhar lista no WhatsApp
+              {!isPaid && (
+                <span className="inline-flex items-center gap-1 bg-white/25 text-white text-[11px] font-bold px-2 py-0.5 rounded-full">
+                  🔒 Família
+                </span>
+              )}
             </button>
 
             <div className="space-y-5">

@@ -1,7 +1,8 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { X, Zap, Users, Package, Bell, Clock } from "lucide-react";
+import { X, Zap, Users, Package, Bell, Clock, MapPin, Share2 } from "lucide-react";
+import { PLAN_LIMITS } from "@/types";
 
 interface PlanLimitModalProps {
   isOpen: boolean;
@@ -9,10 +10,12 @@ interface PlanLimitModalProps {
   reason: "items" | "members";
 }
 
+const FREE_ITEMS = PLAN_LIMITS.free.max_items;
+
 const messages = {
   items: {
-    title: "Limite de 20 itens atingido",
-    description: "No plano grátis você pode ter até 20 itens na despensa.",
+    title: `Limite de ${FREE_ITEMS} itens atingido`,
+    description: `No plano grátis você pode ter até ${FREE_ITEMS} itens na despensa.`,
     emoji: "📦",
   },
   members: {
@@ -58,7 +61,9 @@ export function PlanLimitModal({ isOpen, onClose, reason }: PlanLimitModalProps)
             {[
               { icon: Package, text: "Itens ilimitados" },
               { icon: Users, text: "Pessoas ilimitadas" },
-              { icon: Bell, text: "Lembretes recorrentes" },
+              { icon: MapPin, text: "Múltiplos locais" },
+              { icon: Bell, text: "Lembrete diário" },
+              { icon: Share2, text: "Lista no WhatsApp" },
               { icon: Clock, text: "Histórico completo" },
             ].map(({ icon: Icon, text }) => (
               <div key={text} className="flex items-center gap-2 bg-white/60 rounded-lg px-2.5 py-2">

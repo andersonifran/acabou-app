@@ -126,10 +126,11 @@ export interface InviteToken {
 export const PLAN_LIMITS = {
   free: {
     max_members: 1,
-    max_items: 20,
+    max_items: 10,
     max_houses: 1,
     recurring_reminders: false,
     full_history: false,
+    whatsapp_share: false,
   },
   monthly: {
     max_members: Infinity,
@@ -137,6 +138,7 @@ export const PLAN_LIMITS = {
     max_houses: Infinity,
     recurring_reminders: true,
     full_history: true,
+    whatsapp_share: true,
   },
   yearly: {
     max_members: Infinity,
@@ -144,6 +146,7 @@ export const PLAN_LIMITS = {
     max_houses: Infinity,
     recurring_reminders: true,
     full_history: true,
+    whatsapp_share: true,
   },
 } as const;
 

@@ -192,7 +192,7 @@ export function NotificationShowcase() {
                   bg: "bg-green-50",
                   title: "Itens ilimitados",
                   desc: "Cadastre todos os itens da sua casa. Sem trava, sem limite, sem ter que escolher o que entra.",
-                  pain: "No grátis: máximo 20 itens",
+                  pain: "No grátis: máximo 10 itens",
                 },
                 {
                   emoji: "🔄",

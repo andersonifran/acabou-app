@@ -19,11 +19,11 @@ const plans = [
     features: [
       "1 casa",
       "Apenas você (1 pessoa)",
-      "Até 20 itens",
+      "Até 10 itens",
       "Lista de compras automática",
-      "Compartilhar pelo WhatsApp",
     ],
     notIncluded: [
+      "Compartilhar lista no WhatsApp",
       "Lembrete diário no celular",
       "Pessoas ilimitadas",
       "Casas ilimitadas",
@@ -46,6 +46,7 @@ const plans = [
       "Pessoas ilimitadas",
       "Itens ilimitados",
       "Casas ilimitadas",
+      "Compartilhar lista no WhatsApp",
       "Lembrete diário no celular",
       "Lembretes recorrentes",
       "Histórico completo",
