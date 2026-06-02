@@ -32,7 +32,7 @@ export function PaymentTrust({
         src={isDark ? "/mercadopago/mp-horizontal-white.png" : "/mercadopago/mp-horizontal.png"}
         alt="Mercado Pago"
         draggable={false}
-        className="h-7 md:h-8 w-auto select-none"
+        className="h-11 md:h-12 w-auto select-none"
       />
       <div className="flex items-center justify-center gap-2 flex-wrap">
         {["Pix", "Cartão", "Boleto"].map((m) => (
