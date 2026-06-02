@@ -13,6 +13,8 @@ import { Item } from "@/types";
 import { buildShoppingListText, buildWhatsAppShareUrl } from "@/lib/utils";
 import { Check, CheckSquare, Square } from "lucide-react";
 import { WhatsAppIcon } from "@/components/shared/WhatsAppIcon";
+import { Confetti } from "@/components/shared/Confetti";
+import { hapticSuccess } from "@/lib/haptics";
 import { cn } from "@/lib/utils";
 
 // Textos dinâmicos por tipo de local
@@ -118,6 +120,7 @@ export default function ListaPage() {
       );
       setItems(updatedItems);
 
+      hapticSuccess();
       setDone(true);
       setCheckedIds(new Set());
     } finally {
@@ -137,14 +140,17 @@ export default function ListaPage() {
 
   if (done) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center px-6 text-center bg-white">
-        <div className="text-6xl mb-4">🛒</div>
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">Compra finalizada! 🛒</h2>
-        <p className="text-gray-500">{copy.done}</p>
+      <div className="min-h-screen flex flex-col items-center justify-center px-6 text-center app-bg">
+        <Confetti />
+        <div className="w-24 h-24 rounded-full bg-green-600 flex items-center justify-center mb-6 shadow-xl shadow-green-300/40 animate-success-pop">
+          <Check size={52} className="text-white" strokeWidth={3} />
+        </div>
+        <h2 className="text-2xl font-black text-gray-900 mb-2">Compra finalizada! 🎉</h2>
+        <p className="text-gray-500 max-w-xs leading-relaxed">{copy.done}</p>
         <p className="text-sm text-gray-400 mt-2">Todos os itens foram atualizados.</p>
         <button
           onClick={() => setDone(false)}
-          className="mt-8 bg-green-600 text-white font-semibold px-8 py-3.5 rounded-xl hover:bg-green-700 transition-colors"
+          className="mt-8 bg-green-600 text-white font-bold px-8 py-3.5 rounded-2xl hover:bg-green-700 active:scale-95 transition-all shadow-lg shadow-green-200"
         >
           Voltar para a despensa
         </button>
@@ -225,7 +231,7 @@ export default function ListaPage() {
                         </div>
                         <button
                           onClick={() => handleItemPurchased(item.id)}
-                          className="shrink-0 text-xs bg-green-100 text-green-700 font-medium px-3 py-1.5 rounded-full hover:bg-green-200 transition-colors"
+                          className="shrink-0 text-xs bg-green-100 text-green-700 font-semibold px-3 py-1.5 rounded-full hover:bg-green-200 active:scale-90 transition-all"
                         >
                           Comprado
                         </button>
