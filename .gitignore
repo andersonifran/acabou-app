@@ -41,3 +41,10 @@ yarn-error.log*
 next-env.d.ts
 
 .vercel
+
+# config local do Claude Code (não versionar)
+.claude/
+
+# assets de trabalho / vídeos brutos guardados na pasta (não versionar)
+/public/Video*.mp4
+/public/video-source*.mp4
