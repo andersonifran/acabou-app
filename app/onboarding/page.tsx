@@ -7,6 +7,7 @@ import { Check, ChevronRight, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { PLAN_LIMITS } from "@/types";
 import { trackCadastroCompleto } from "@/lib/analytics";
+import { Mascote } from "@/components/shared/Mascote";
 
 // Itens por tipo de imóvel
 const ITEMS_BY_TYPE: Record<string, { category: string; items: string[] }[]> = {
@@ -355,10 +356,10 @@ function OnboardingContent() {
     return (
       <div className="min-h-screen bg-white flex flex-col">
         <div className="px-6 pt-10 pb-6 flex flex-col items-center text-center">
-          <div className="text-5xl mb-4">🏠</div>
-          <h1 className="text-2xl font-black text-gray-900 mb-2">Bem-vindo ao Acabou?</h1>
+          <Mascote mood="acenando" size={120} className="mb-3" />
+          <h1 className="text-2xl font-black text-gray-900 mb-2">Oi! Eu sou o Sacolino 👋</h1>
           <p className="text-gray-500 text-sm max-w-xs">
-            Antes de começar, vamos configurar seu local. Você pode mudar tudo isso depois.
+            Vou te ajudar a nunca mais esquecer nada no mercado. Vamos configurar seu local? Você pode mudar tudo depois.
           </p>
         </div>
 

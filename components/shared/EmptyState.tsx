@@ -1,9 +1,9 @@
 import { cn } from "@/lib/utils";
-import { Mascot } from "@/components/shared/Mascot";
+import { Mascote, type MascoteMood } from "@/components/shared/Mascote";
 
 interface EmptyStateProps {
   icon?: string;
-  /** Mostra o mascote (sacola) no lugar do emoji, com o humor escolhido */
+  /** Mostra o Sacolino (mascote) no lugar do emoji */
   mascot?: "happy" | "search" | "done";
   title: string;
   description?: string;
@@ -11,12 +11,19 @@ interface EmptyStateProps {
   className?: string;
 }
 
+// Mapeia o humor "lógico" da tela para a pose do Sacolino
+const MOOD: Record<NonNullable<EmptyStateProps["mascot"]>, MascoteMood> = {
+  happy: "acenando",
+  search: "buscando",
+  done: "feliz",
+};
+
 export function EmptyState({ icon, mascot, title, description, action, className }: EmptyStateProps) {
   return (
     <div className={cn("flex flex-col items-center justify-center py-12 px-6 text-center", className)}>
       {mascot ? (
-        <div className="mb-5">
-          <Mascot mood={mascot} size={128} />
+        <div className="mb-4">
+          <Mascote mood={MOOD[mascot]} size={140} />
         </div>
       ) : (
         icon && <span className="text-5xl mb-4">{icon}</span>

@@ -11,9 +11,10 @@ import { EmptyState } from "@/components/shared/EmptyState";
 import { PlanLimitModal } from "@/components/shared/PlanLimitModal";
 import { Item } from "@/types";
 import { buildShoppingListText, buildWhatsAppShareUrl } from "@/lib/utils";
-import { Check, CheckSquare, Square } from "lucide-react";
+import { CheckSquare, Square } from "lucide-react";
 import { WhatsAppIcon } from "@/components/shared/WhatsAppIcon";
 import { Confetti } from "@/components/shared/Confetti";
+import { Mascote } from "@/components/shared/Mascote";
 import { hapticSuccess } from "@/lib/haptics";
 import { cn } from "@/lib/utils";
 
@@ -176,9 +177,7 @@ export default function ListaPage() {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center px-6 text-center app-bg">
         <Confetti />
-        <div className="w-24 h-24 rounded-full bg-green-600 flex items-center justify-center mb-6 shadow-xl shadow-green-300/40 animate-success-pop">
-          <Check size={52} className="text-white" strokeWidth={3} />
-        </div>
+        <Mascote mood="comemorando" size={168} bob={false} className="mb-4 animate-success-pop drop-shadow-lg" />
         <h2 className="text-2xl font-black text-gray-900 mb-2">Compra finalizada! 🎉</h2>
         <p className="text-gray-500 max-w-xs leading-relaxed">{copy.done}</p>
         <p className="text-sm text-gray-400 mt-2">Todos os itens foram atualizados.</p>
