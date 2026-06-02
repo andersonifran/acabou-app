@@ -49,10 +49,11 @@ export function CheckoutTransition({ planName, price }: { planName: string; pric
         <span className="inline-flex items-center gap-1">↩️ Cancele quando quiser</span>
       </div>
 
-      {/* Badge Mercado Pago + formas de pagamento */}
-      <div className="w-full max-w-xs bg-gray-50 border border-gray-100 rounded-2xl px-4 py-3 mb-6">
+      {/* Badge Mercado Pago oficial + formas de pagamento */}
+      <div className="w-full max-w-xs bg-gray-50 border border-gray-100 rounded-2xl px-4 py-3.5 mb-6">
         <p className="text-[11px] text-gray-400 mb-2">Pagamento processado por</p>
-        <p className="font-black text-[15px] mb-2" style={{ color: "#009ee3" }}>Mercado Pago</p>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/mercadopago/mp-horizontal.png" alt="Mercado Pago" draggable={false} className="h-6 w-auto mx-auto mb-2.5 select-none" />
         <div className="flex items-center justify-center gap-2 flex-wrap">
           {["Pix", "Cartão", "Boleto"].map((m) => (
             <span key={m} className="text-[11px] font-semibold text-gray-600 bg-white border border-gray-200 rounded-lg px-2.5 py-1">

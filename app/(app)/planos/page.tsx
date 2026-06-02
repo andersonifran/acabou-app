@@ -4,6 +4,7 @@ import { useAppStore } from "@/store/appStore";
 import { useSubscription } from "@/hooks/useSubscription";
 import { Header } from "@/components/layout/Header";
 import { CheckoutTransition } from "@/components/shared/CheckoutTransition";
+import { PaymentTrust } from "@/components/shared/PaymentTrust";
 import { Check, Star, Home, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useSearchParams } from "next/navigation";
@@ -322,6 +323,8 @@ function PlanosContent() {
             </div>
           </div>
         ))}
+
+        <PaymentTrust className="pt-2 pb-2" />
 
         <p className="text-center text-xs text-gray-400 pb-4">
           Cancelamento a qualquer momento. Sem multa.

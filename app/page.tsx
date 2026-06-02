@@ -12,6 +12,7 @@ import { FaqSection } from "@/components/landing/FaqSection";
 import { FinalCTA } from "@/components/landing/FinalCTA";
 import { MobileStickyBar } from "@/components/landing/MobileStickyBar";
 import { RevealOnScroll } from "@/components/landing/RevealOnScroll";
+import { PaymentTrust } from "@/components/shared/PaymentTrust";
 import { InstallPWA } from "@/components/shared/InstallPWA";
 import { WhatsAppIcon } from "@/components/shared/WhatsAppIcon";
 
@@ -454,6 +455,11 @@ export default function LandingPage() {
               </p>
             </div>
           </RevealOnScroll>
+
+          {/* Selo de pagamento seguro — Mercado Pago */}
+          <RevealOnScroll>
+            <PaymentTrust className="mt-8" />
+          </RevealOnScroll>
         </div>
       </section>
 
@@ -470,6 +476,10 @@ export default function LandingPage() {
             <LogoIcon size={36} />
             <span className="text-xl font-black text-white">Acabou?</span>
           </div>
+
+          {/* Selo de pagamento seguro (logo branca para fundo escuro) */}
+          <PaymentTrust variant="dark" className="mb-6" />
+
           <div className="flex justify-center gap-6 mb-4 flex-wrap">
             <Link href="/privacidade" className="hover:text-white transition-colors">Privacidade</Link>
             <Link href="/termos" className="hover:text-white transition-colors">Termos</Link>

@@ -51,3 +51,6 @@ next-env.d.ts
 
 # scripts utilitários locais (caminhos absolutos)
 /scripts/
+
+# kit bruto do Mercado Pago (extraído do zip) — usamos só /public/mercadopago/
+/public/logos mercado pago/
