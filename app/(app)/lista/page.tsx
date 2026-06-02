@@ -64,10 +64,17 @@ export default function ListaPage() {
 
   async function confirmPurchased(putAsHas: boolean) {
     if (!showPurchasedModal) return;
+    // Era o último item da lista? Então a compra "zerou" → momento de celebrar.
+    const wasLast =
+      shoppingListItems.length === 1 && shoppingListItems[0].id === showPurchasedModal;
     if (putAsHas) {
       await markPurchased(showPurchasedModal);
     }
     setShowPurchasedModal(null);
+    if (putAsHas && wasLast) {
+      hapticSuccess();
+      setDone(true);
+    }
   }
 
   async function finishShopping() {
