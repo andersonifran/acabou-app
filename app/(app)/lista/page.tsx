@@ -177,7 +177,7 @@ export default function ListaPage() {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center px-6 text-center app-bg">
         <Confetti />
-        <Mascote mood="comemorando" size={168} bob={false} className="mb-4 animate-success-pop drop-shadow-lg" />
+        <Mascote mood="comemorando" size={168} animated={false} className="mb-4 animate-success-pop drop-shadow-lg" />
         <h2 className="text-2xl font-black text-gray-900 mb-2">Compra finalizada! 🎉</h2>
         <p className="text-gray-500 max-w-xs leading-relaxed">{copy.done}</p>
         <p className="text-sm text-gray-400 mt-2">Todos os itens foram atualizados.</p>

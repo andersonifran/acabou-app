@@ -2,13 +2,11 @@ import { cn } from "@/lib/utils";
 
 /**
  * Sacolino — o mascote do Acabou? (imagens 3D em public/mascote/).
- * Dá personalidade às telas vazias, onboarding e celebrações.
- *
- * mood:
- *  - "acenando"    → boas-vindas / tela vazia acolhedora
- *  - "buscando"    → busca sem resultado
- *  - "feliz"       → tudo em dia / sucesso (joinha)
- *  - "comemorando" → compra finalizada (braços pra cima)
+ * Cada pose tem a sua PRÓPRIA animação, combinando com o gesto:
+ *  - "acenando"    → balança como quem dá tchau (boas-vindas / tela vazia)
+ *  - "buscando"    → vai e volta como quem procura (busca sem resultado)
+ *  - "feliz"       → sobe/desce contente (tudo em dia / joinha)
+ *  - "comemorando" → pulinho de alegria (compra finalizada)
  */
 const SRC = {
   acenando: "/mascote/sacolino-acenando.png",
@@ -17,17 +15,25 @@ const SRC = {
   comemorando: "/mascote/sacolino-comemorando.png",
 } as const;
 
+const ANIM = {
+  acenando: "animate-mascot-wave",
+  buscando: "animate-mascot-scan",
+  feliz: "animate-mascot-nod",
+  comemorando: "animate-mascot-celebrate",
+} as const;
+
 export type MascoteMood = keyof typeof SRC;
 
 export function Mascote({
   mood,
   size = 132,
-  bob = true,
+  animated = true,
   className = "",
 }: {
   mood: MascoteMood;
   size?: number;
-  bob?: boolean;
+  /** Liga a animação própria da pose. false = estático (ex: tela com confete). */
+  animated?: boolean;
   className?: string;
 }) {
   return (
@@ -37,7 +43,11 @@ export function Mascote({
       alt="Sacolino, mascote do Acabou?"
       style={{ height: size, width: "auto" }}
       draggable={false}
-      className={cn("select-none pointer-events-none", bob && "animate-bob", className)}
+      className={cn(
+        "select-none pointer-events-none",
+        animated && ANIM[mood],
+        className
+      )}
     />
   );
 }

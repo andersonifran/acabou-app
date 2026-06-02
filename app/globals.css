@@ -228,6 +228,50 @@ input, select, textarea {
   animation: bob 3s ease-in-out infinite;
 }
 
+/* ── Animações do Sacolino por pose ── */
+
+/* Acenar — balança como quem dá tchau (pivô na base) */
+@keyframes mascot-wave {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(-5deg); }
+  75% { transform: rotate(5deg); }
+}
+.animate-mascot-wave {
+  animation: mascot-wave 2.2s ease-in-out infinite;
+  transform-origin: 50% 92%;
+}
+
+/* Buscar — vai e volta como quem procura */
+@keyframes mascot-scan {
+  0%, 100% { transform: translateX(0) rotate(0deg); }
+  25% { transform: translateX(-7px) rotate(-2deg); }
+  75% { transform: translateX(7px) rotate(2deg); }
+}
+.animate-mascot-scan {
+  animation: mascot-scan 3s ease-in-out infinite;
+}
+
+/* Feliz — sobe e desce contente */
+@keyframes mascot-nod {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+.animate-mascot-nod {
+  animation: mascot-nod 2.4s ease-in-out infinite;
+}
+
+/* Comemorar — pulinho de alegria */
+@keyframes mascot-celebrate {
+  0%, 100% { transform: translateY(0) scale(1); }
+  30% { transform: translateY(-13px) scale(1.04); }
+  48% { transform: translateY(0) scale(0.98); }
+  64% { transform: translateY(-6px) scale(1.02); }
+  80% { transform: translateY(0) scale(1); }
+}
+.animate-mascot-celebrate {
+  animation: mascot-celebrate 1.7s ease-in-out infinite;
+}
+
 /* Toast — sobe e aparece */
 @keyframes toast-up {
   from { opacity: 0; transform: translateY(14px); }
@@ -255,6 +299,10 @@ input, select, textarea {
   .animate-tap-pop,
   .animate-bob,
   .animate-tab-bounce,
+  .animate-mascot-wave,
+  .animate-mascot-scan,
+  .animate-mascot-nod,
+  .animate-mascot-celebrate,
   .animate-marquee {
     animation: none !important;
   }
