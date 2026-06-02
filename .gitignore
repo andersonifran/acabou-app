@@ -48,3 +48,9 @@ next-env.d.ts
 # assets de trabalho / vídeos brutos guardados na pasta (não versionar)
 /public/Video*.mp4
 /public/video-source*.mp4
+
+# ícones 3D de local (substituídos por SVG minimalista) — mantidos no disco
+/public/locais/
+
+# scripts utilitários locais (caminhos absolutos)
+/scripts/

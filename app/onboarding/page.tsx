@@ -406,7 +406,6 @@ function OnboardingContent() {
               onKeyDown={(e) => e.key === "Enter" && handleCreateHouse()}
               placeholder="Ex: Casa da Ana, Família Silva, Meu Apê..."
               maxLength={60}
-              autoFocus
               className="w-full px-4 py-3.5 rounded-xl border border-gray-200 bg-gray-50 focus:outline-none focus:border-green-400 focus:bg-white transition-colors text-gray-900"
             />
           </div>
