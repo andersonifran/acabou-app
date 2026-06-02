@@ -11,6 +11,7 @@ import { ShoppingCart, Bell, ChevronDown, Plus, Check, Zap, Trash2 } from "lucid
 import { Header } from "@/components/layout/Header";
 import { NotificationBell } from "@/components/shared/NotificationBell";
 import { PlanLimitModal } from "@/components/shared/PlanLimitModal";
+import { StreakBadge } from "@/components/shared/StreakBadge";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useRole } from "@/hooks/useRole";
 import { cn } from "@/lib/utils";
@@ -388,6 +389,9 @@ export default function HomePage() {
 
         {!switchingHouse && (
           <>
+            {/* Streak de uso diário — gatilho de retenção (volta todo dia) */}
+            <StreakBadge />
+
             {/* Banners de plano: só renderiza apos dados confirmados com o servidor.
                 Isso evita flash de banner com info desatualizada do cache */}
             {dataSyncComplete && (
