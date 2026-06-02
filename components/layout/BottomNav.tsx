@@ -170,9 +170,11 @@ export function BottomNav() {
               key={href}
               href={href}
               onClick={() => { if (!active) hapticLight(); }}
-              className="flex-1 flex flex-col items-center justify-center py-2.5 gap-0.5 transition-colors active:scale-95"
+              className="flex-1 flex flex-col items-center justify-center py-2.5 gap-0.5 transition-colors active:scale-90"
             >
-              <Icon active={active} />
+              <span key={`${href}-${active}`} className={cn("block", active && "animate-tab-bounce")}>
+                <Icon active={active} />
+              </span>
               <span
                 className={cn(
                   "text-[10px] font-semibold mt-0.5",
