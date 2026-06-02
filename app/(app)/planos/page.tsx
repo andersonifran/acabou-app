@@ -3,6 +3,7 @@
 import { useAppStore } from "@/store/appStore";
 import { useSubscription } from "@/hooks/useSubscription";
 import { Header } from "@/components/layout/Header";
+import { CheckoutTransition } from "@/components/shared/CheckoutTransition";
 import { Check, Star, Home, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useSearchParams } from "next/navigation";
@@ -124,6 +125,7 @@ function PlanosContent() {
     if (plan.ctaDisabled || !plan.priceId || loadingPlan) return;
 
     setLoadingPlan(plan.id);
+    const startedAt = Date.now();
 
     try {
       const res = await fetch("/api/pagamento", {
@@ -147,16 +149,23 @@ function PlanosContent() {
         });
       }
 
-      // Redireciona para o checkout do Mercado Pago
-      window.location.href = data.url;
+      // Mantém a tela-ponte de confiança visível por ~1,8s para o usuário
+      // registrar os selos de segurança antes de ir ao Mercado Pago.
+      const elapsed = Date.now() - startedAt;
+      const wait = Math.max(0, 1800 - elapsed);
+      setTimeout(() => { window.location.href = data.url; }, wait);
     } catch (err: any) {
       alert(err.message ?? "Erro ao iniciar pagamento. Tente novamente.");
       setLoadingPlan(null);
     }
   }
 
+  const checkoutPlan = plans.find((p) => p.id === loadingPlan);
+
   return (
     <div>
+      {checkoutPlan && <CheckoutTransition planName={checkoutPlan.name} price={checkoutPlan.price} />}
+
       <Header title="Planos" subtitle="Escolha o melhor para sua casa" showBack />
 
       <div className="max-w-lg mx-auto px-4 py-4 space-y-4">
