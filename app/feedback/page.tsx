@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Logo } from "@/components/shared/Logo";
+import { PublicBottomNav } from "@/components/layout/PublicBottomNav";
 import { Send, MessageSquareHeart, ChevronLeft, Loader2 } from "lucide-react";
 
 export default function FeedbackPage() {
@@ -132,6 +133,10 @@ export default function FeedbackPage() {
           Todas as sugestões são lidas pela nossa equipe e ajudam a decidir o que construir a seguir.
         </p>
       </div>
+
+      {/* Rodapé do app (só aparece com sessão válida) — sente que continua no Acabou */}
+      <div className="pb-16" />
+      <PublicBottomNav />
     </div>
   );
 }
