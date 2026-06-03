@@ -9,12 +9,13 @@ import { ItemEvent, ItemStatus, RECURRENCE_LABELS, RecurrenceType, Profile } fro
 import { useItems } from "@/hooks/useItems";
 import { useSubscription } from "@/hooks/useSubscription";
 import { formatRelativeTime, getNextReminderDate } from "@/lib/utils";
-import { Bell, BellRing, Trash2, Shield, FileText, ChevronRight, MessageSquareHeart, Clock, Smartphone, Download, Plus, Pencil, X, Check as CheckIcon, Share2 } from "lucide-react";
+import { Bell, BellRing, Trash2, Shield, FileText, ChevronRight, MessageSquareHeart, Clock, Smartphone, Download, Plus, Pencil, X, Check as CheckIcon, Share2, Lock } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { usePWAInstall } from "@/hooks/usePWAInstall";
 import { ThemeToggle } from "@/components/shared/ThemeToggle";
+import { PremiumTeaser } from "@/components/shared/PremiumTeaser";
 import { useRole } from "@/hooks/useRole";
 import { ProfileAvatar } from "@/components/shared/ProfileAvatar";
 
@@ -205,25 +206,27 @@ export default function ConfiguracoesPage() {
       <div className="sticky top-[57px] z-30 bg-white border-b border-gray-100">
         <div className="max-w-lg mx-auto flex">
           {[
-            { key: "geral", label: "Geral" },
-            { key: "notificacoes", label: "Notificações" },
-            ...(isPaid ? [{ key: "historico", label: "Histórico" }] : []),
-            ...(isPaid ? [{ key: "lembretes", label: "Lembretes" }] : []),
-          ].map(({ key, label }) => (
+            { key: "geral", label: "Geral", locked: false },
+            { key: "notificacoes", label: "Notificações", locked: false },
+            { key: "historico", label: "Histórico", locked: !isPaid },
+            { key: "lembretes", label: "Lembretes", locked: !isPaid },
+          ].map(({ key, label, locked }) => (
             <button
               key={key}
               onClick={() => {
                 setActiveTab(key as any);
-                if (key === "historico") loadHistory();
+                // Só carrega o histórico real para quem é pago (free vê o teaser)
+                if (key === "historico" && isPaid) loadHistory();
               }}
               className={cn(
-                "flex-1 py-3 text-sm font-medium border-b-2 transition-colors",
+                "flex-1 py-3 text-xs sm:text-sm font-medium border-b-2 transition-colors flex items-center justify-center gap-1",
                 activeTab === key
                   ? "border-green-600 text-green-600"
                   : "border-transparent text-gray-500"
               )}
             >
               {label}
+              {locked && <Lock size={11} className="text-amber-500 shrink-0" />}
             </button>
           ))}
         </div>
@@ -436,12 +439,17 @@ export default function ConfiguracoesPage() {
               </div>
 
               {!isPaid ? (
-                <div className="bg-amber-50 border border-amber-100 rounded-xl p-3">
-                  <p className="text-xs text-amber-800">
-                    Disponível no <strong>Plano Família</strong>.{" "}
-                    <Link href="/planos" className="underline font-semibold">Assinar</Link>
+                <Link
+                  href="/planos"
+                  className="block bg-gradient-to-br from-green-50 to-emerald-50 border border-green-100 rounded-xl p-3.5 hover:from-green-100 hover:to-emerald-100 transition-colors"
+                >
+                  <p className="text-xs text-green-800 leading-relaxed">
+                    🔒 Receba um empurrãozinho no horário certo de ir às compras — só no <strong>Plano Família</strong>.
                   </p>
-                </div>
+                  <span className="inline-flex items-center gap-1 mt-2 text-xs font-bold text-green-700">
+                    Assinar Plano Família →
+                  </span>
+                </Link>
               ) : (
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
@@ -490,49 +498,56 @@ export default function ConfiguracoesPage() {
 
         {/* Aba: Histórico */}
         {activeTab === "historico" && (
-          <div>
-            {!isPaid && (
-              <div className="bg-amber-50 border border-amber-100 rounded-2xl p-4 mb-4">
-                <p className="text-sm text-amber-800">
-                  O histórico completo está disponível no <strong>Plano Família</strong>.{" "}
-                  <Link href="/planos" className="underline font-semibold">Ver planos</Link>
-                </p>
-              </div>
-            )}
-
-            {loadingHistory ? (
-              <div className="py-12 flex justify-center">
-                <div className="w-8 h-8 animate-spin rounded-full border-2 border-gray-200 border-t-green-600" />
-              </div>
-            ) : history.length === 0 ? (
-              <div className="text-center py-12 text-gray-400">
-                <p>Nenhuma atividade registrada.</p>
-              </div>
-            ) : (
-              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm divide-y divide-gray-50">
-                {history.map((event) => (
-                  <div key={event.id} className="px-4 py-3.5 flex items-center justify-between gap-3">
-                    <p className="text-sm text-gray-700">{eventLabel(event)}</p>
-                    <span className="text-xs text-gray-400 shrink-0">{formatRelativeTime(event.created_at)}</span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+          !isPaid ? (
+            <PremiumTeaser
+              emoji="📜"
+              title="Histórico completo"
+              subtitle="Veja tudo que já mudou na sua casa: quem marcou, quem comprou e quando. Nada se perde."
+              benefits={[
+                "Linha do tempo de tudo que acontece",
+                "Saiba quem comprou cada item",
+                "Veja o que mais acaba na sua casa",
+              ]}
+            />
+          ) : (
+            <div>
+              {loadingHistory ? (
+                <div className="py-12 flex justify-center">
+                  <div className="w-8 h-8 animate-spin rounded-full border-2 border-gray-200 border-t-green-600" />
+                </div>
+              ) : history.length === 0 ? (
+                <div className="text-center py-12 text-gray-400">
+                  <p>Nenhuma atividade registrada.</p>
+                </div>
+              ) : (
+                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm divide-y divide-gray-50">
+                  {history.map((event) => (
+                    <div key={event.id} className="px-4 py-3.5 flex items-center justify-between gap-3">
+                      <p className="text-sm text-gray-700">{eventLabel(event)}</p>
+                      <span className="text-xs text-gray-400 shrink-0">{formatRelativeTime(event.created_at)}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )
         )}
 
         {/* Aba: Lembretes */}
         {activeTab === "lembretes" && (
-          <div>
-            {!isPaid && (
-              <div className="bg-amber-50 border border-amber-100 rounded-2xl p-4 mb-4">
-                <p className="text-sm text-amber-800">
-                  Lembretes recorrentes são do <strong>Plano Família</strong>.{" "}
-                  <Link href="/planos" className="underline font-semibold">Assinar</Link>
-                </p>
-              </div>
-            )}
-
+          !isPaid ? (
+            <PremiumTeaser
+              emoji="🔁"
+              title="Lembretes recorrentes"
+              subtitle="Marque o que você repõe sempre (arroz, café, ração...) e o app te avisa na hora certa — antes de acabar."
+              benefits={[
+                "Nunca mais esqueça de repor o essencial",
+                "Escolha a frequência: semanal, mensal e mais",
+                "Avisos automáticos no seu celular",
+              ]}
+            />
+          ) : (
+            <div>
             <div className="flex items-center justify-between mb-3">
               <p className="text-sm text-gray-500">
                 Marque itens como recorrentes para receber lembretes automáticos.
@@ -729,7 +744,8 @@ export default function ConfiguracoesPage() {
                 <p className="text-xs mt-1">Adicione itens pela Despensa ou pelo botão + acima.</p>
               </div>
             )}
-          </div>
+            </div>
+          )
         )}
       </div>
     </div>

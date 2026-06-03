@@ -18,6 +18,7 @@ import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
 import { WhatsAppIcon } from "@/components/shared/WhatsAppIcon";
 import { ThemeToggle } from "@/components/shared/ThemeToggle";
+import { PremiumTeaser } from "@/components/shared/PremiumTeaser";
 
 const roleIcons: Record<MemberRole, React.ReactNode> = {
   owner: <Crown size={14} className="text-amber-500" />,
@@ -760,12 +761,16 @@ export default function CasaPage() {
         {/* ── CONVIDAR (somente dono + plano pago) ── */}
         {/* Banner de upgrade so aparece apos sincronizar com servidor (evita flash) */}
         {dataSyncComplete && isOwner && !isPaid && (
-          <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4">
-            <p className="text-sm text-amber-800 text-center">
-              Para convidar membros, faça upgrade para o{" "}
-              <Link href="/planos" className="font-bold underline">Plano Família</Link>.
-            </p>
-          </div>
+          <PremiumTeaser
+            emoji="👨‍👩‍👧"
+            title="Convide sua família"
+            subtitle="Compartilhe a casa com quem mora com você. Todo mundo marca o que acabou e a lista fica pronta sozinha."
+            benefits={[
+              "Pessoas ilimitadas na mesma casa",
+              "Cada um marca o que falta, em tempo real",
+              "Compartilhe a lista no WhatsApp",
+            ]}
+          />
         )}
         {isOwner && isPaid ? (
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
