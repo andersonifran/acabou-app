@@ -30,11 +30,16 @@ export default function AppTemplate({ children }: { children: React.ReactNode })
     if (idx !== -1) lastTabIndex = idx;
   }, [idx]);
 
-  // key={pathname} força o elemento a remontar a cada navegação →
-  // a animação CSS re-dispara toda vez (sem isso, só tocava na 1ª vez).
+  // Container externo com overflow-x: clip → "recorta" o transbordo
+  // horizontal do slide (a página entrando da direita começa fora da tela).
+  // "clip" NÃO cria contexto de rolagem (não quebra sticky) e, por ser um
+  // container interno (não o body), NÃO afeta a barra fixa do rodapé.
+  // key={pathname} força remontar → a animação re-dispara a cada navegação.
   return (
-    <div key={pathname} className={cls}>
-      {children}
+    <div style={{ overflowX: "clip" }}>
+      <div key={pathname} className={cls}>
+        {children}
+      </div>
     </div>
   );
 }
