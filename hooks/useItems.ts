@@ -11,7 +11,7 @@ import { hapticSuccess } from "@/lib/haptics";
 const notifyTimers = new Map<string, ReturnType<typeof setTimeout>>();
 
 export function useItems() {
-  const { items, currentHouse, updateItem, addItem, removeItem } = useAppStore();
+  const { items, currentHouse, updateItem, addItem, removeItem, userId } = useAppStore();
   const supabase = createClient();
 
   const shoppingListItems = items.filter((i) =>
@@ -30,16 +30,15 @@ export function useItems() {
       const item = items.find((i) => i.id === itemId);
       if (!item) return;
 
-      // Pega o usuário uma única vez
-      const { data: { user } } = await supabase.auth.getUser();
-
-      // Atualiza otimisticamente + feedback tátil imediato (sensação nativa)
+      // FEEDBACK IMEDIATO primeiro (sem esperar a rede) — usa o userId já
+      // cacheado no store (setado pelo layout), eliminando o getUser() que
+      // travava o toque.
       updateItem(itemId, { status: newStatus });
       hapticSuccess();
 
       const { error } = await supabase
         .from("items")
-        .update({ status: newStatus, updated_by: user?.id })
+        .update({ status: newStatus, updated_by: userId })
         .eq("id", itemId);
 
       if (error) {
@@ -49,11 +48,11 @@ export function useItems() {
       }
 
       // Registra evento
-      if (user && currentHouse) {
+      if (userId && currentHouse) {
         await supabase.from("item_events").insert({
           house_id: currentHouse.id,
           item_id: itemId,
-          user_id: user.id,
+          user_id: userId,
           event_type: "status_changed",
           old_status: item.status,
           new_status: newStatus,
@@ -92,7 +91,7 @@ export function useItems() {
         }
       }
     },
-    [items, currentHouse, supabase, updateItem]
+    [items, currentHouse, supabase, updateItem, userId]
   );
 
   const markPurchased = useCallback(
@@ -102,12 +101,11 @@ export function useItems() {
       const item = items.find((i) => i.id === itemId);
       if (!item || !currentHouse) return;
 
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
+      if (userId) {
         await supabase.from("item_events").insert({
           house_id: currentHouse.id,
           item_id: itemId,
-          user_id: user.id,
+          user_id: userId,
           event_type: "purchased",
           old_status: item.status,
           new_status: "tem",
@@ -121,7 +119,7 @@ export function useItems() {
           .eq("id", itemId);
       }
     },
-    [items, currentHouse, supabase, changeStatus]
+    [items, currentHouse, supabase, changeStatus, userId]
   );
 
   const createItem = useCallback(
@@ -133,9 +131,7 @@ export function useItems() {
       quantity_text?: string;
     }) => {
       if (!currentHouse) throw new Error("Nenhuma casa selecionada");
-
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Não autenticado");
+      if (!userId) throw new Error("Não autenticado");
 
       // Verificação server-side do limite de itens (anti-bypass)
       try {
@@ -159,8 +155,8 @@ export function useItems() {
         .insert({
           ...data,
           house_id: currentHouse.id,
-          created_by: user.id,
-          updated_by: user.id,
+          created_by: userId,
+          updated_by: userId,
           source: "app",
         })
         .select("*, category:categories(*)")
@@ -181,7 +177,7 @@ export function useItems() {
       await supabase.from("item_events").insert({
         house_id: currentHouse.id,
         item_id: item.id,
-        user_id: user.id,
+        user_id: userId,
         event_type: "created",
         new_status: data.status,
         source: "app",
@@ -189,7 +185,7 @@ export function useItems() {
 
       return item as Item;
     },
-    [currentHouse, supabase, addItem]
+    [currentHouse, supabase, addItem, userId]
   );
 
   const deleteItem = useCallback(

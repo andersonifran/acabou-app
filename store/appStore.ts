@@ -108,6 +108,25 @@ export const useAppStore = create<AppState>((set, get) => {
     writeCache(get());
   };
 
+  // writeCache com debounce: em ações rápidas (tocar vários itens seguidos),
+  // junta tudo numa gravação só em vez de serializar o estado inteiro a cada
+  // toque (isso causava "travadinha" na main thread). Flush ao sair do app.
+  let cacheTimer: ReturnType<typeof setTimeout> | null = null;
+  const scheduleWriteCache = () => {
+    if (typeof window === "undefined") return;
+    if (cacheTimer) clearTimeout(cacheTimer);
+    cacheTimer = setTimeout(() => { cacheTimer = null; writeCache(get()); }, 400);
+  };
+  if (typeof window !== "undefined") {
+    window.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "hidden" && cacheTimer) {
+        clearTimeout(cacheTimer);
+        cacheTimer = null;
+        writeCache(get());
+      }
+    });
+  }
+
   return {
     userId: cached.userId ?? null,
     setUserId: (id) => persistThenSet({ userId: id }),
@@ -138,15 +157,15 @@ export const useAppStore = create<AppState>((set, get) => {
           item.id === id ? { ...item, ...updates } : item
         ),
       }));
-      writeCache(get());
+      scheduleWriteCache();
     },
     addItem: (item) => {
       set((state) => ({ items: [item, ...state.items] }));
-      writeCache(get());
+      scheduleWriteCache();
     },
     removeItem: (id) => {
       set((state) => ({ items: state.items.filter((item) => item.id !== id) }));
-      writeCache(get());
+      scheduleWriteCache();
     },
 
     categories: cached.categories ?? [],
