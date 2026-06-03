@@ -71,9 +71,12 @@ export async function POST(request: NextRequest) {
       options: { payer_email: user.email ?? "" },
     });
 
+    // Casa o preapproval pelo DONO (parts[1] = userId), igual ao cancelamento —
+    // a assinatura é por dono (ativa todas as casas), então não importa de qual
+    // casa ele assinou; o que importa é ser a assinatura autorizada DESTE usuário.
     const sub = search.results?.find((r) => {
-      const ref = String(r.external_reference ?? "");
-      return ref.startsWith(`${houseId}:`) && r.status === "authorized";
+      const parts = String(r.external_reference ?? "").split(":");
+      return parts[1] === user.id && r.status === "authorized";
     });
 
     if (!sub) {
