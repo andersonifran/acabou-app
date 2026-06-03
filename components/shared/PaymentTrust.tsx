@@ -35,7 +35,7 @@ export function PaymentTrust({
         className="h-11 md:h-12 w-auto select-none"
       />
       <div className="flex items-center justify-center gap-2 flex-wrap">
-        {["Pix", "Cartão", "Boleto"].map((m) => (
+        {["💳 Cartão de crédito", "🔁 Renovação automática", "↩️ Cancele quando quiser"].map((m) => (
           <span
             key={m}
             className={cn(

@@ -67,14 +67,20 @@ export async function POST(request: NextRequest) {
 
     const preapprovalId = sub?.provider_subscription_id;
 
-    // Cancela no Mercado Pago (se houver assinatura recorrente vinculada)
+    // TRAVA PRINCIPAL contra cobrança indevida: ao marcar a assinatura como
+    // "cancelled" no Mercado Pago, o PRÓPRIO MP para de cobrar — nem tenta a
+    // próxima fatura (mês/ano seguinte). A parada acontece na fonte.
+    // Se essa chamada FALHAR, NÃO fingimos que cancelou (senão o MP continuaria
+    // cobrando enquanto mostramos "cancelado") — devolvemos erro pra tentar de novo.
     if (preapprovalId) {
       try {
         await cancelRecurringSubscription(preapprovalId);
       } catch (e) {
-        console.error("[Cancelar] erro ao cancelar no Mercado Pago:", e);
-        // Não bloqueia: ainda marcamos como cancelada localmente para parar a
-        // renovação no nosso lado; o usuário pode tentar de novo se preciso.
+        console.error("[Cancelar] MP falhou ao cancelar:", e);
+        return NextResponse.json(
+          { error: "Não conseguimos cancelar agora. Tente de novo em instantes." },
+          { status: 502 }
+        );
       }
     }
 
