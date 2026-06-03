@@ -52,7 +52,7 @@ export function TrustBar() {
           <p className="text-green-200 text-xs md:text-sm mt-1">pra marcar</p>
         </div>
         <div>
-          <p className="text-xl md:text-3xl font-black leading-tight whitespace-nowrap">R$&nbsp;<AnimatedCounter to={4} />,99<span className="text-base font-bold">/mês</span></p>
+          <p className="text-lg sm:text-xl md:text-3xl font-black leading-tight">R$&nbsp;<AnimatedCounter to={4} />,99<span className="text-sm sm:text-base font-bold">/mês</span></p>
           <p className="text-green-200 text-xs md:text-sm mt-1">no plano anual</p>
         </div>
       </div>
