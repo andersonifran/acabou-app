@@ -70,8 +70,8 @@ export default function FeedbackPage() {
 
   return (
     <div className="min-h-screen bg-white flex flex-col">
-      {/* Header */}
-      <div className="flex items-center gap-3 px-4 py-4 border-b border-gray-100">
+      {/* Header — fixo no topo (sticky), igual às outras telas */}
+      <div className="sticky top-0 z-30 flex items-center gap-3 px-4 py-4 border-b border-gray-100 bg-white">
         <button
           onClick={() => router.back()}
           className="p-2 rounded-xl hover:bg-gray-100 transition-colors text-gray-600"
