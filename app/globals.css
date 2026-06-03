@@ -179,13 +179,15 @@ input, select, textarea {
 }
 
 /* ═══ APP — TRANSIÇÃO DE PÁGINA ═══ */
-/* Slide-up suave (telas que não são abas). */
+/* Slide-up suave (telas que não são abas). SEM fade de opacity — a página
+   entra OPACA, cobrindo a anterior (evita a sensação de "2 páginas juntas"
+   ao voltar de páginas bem diferentes, ex: Privacidade → Início). */
 @keyframes page-in {
-  0% { opacity: 0; transform: translateY(14px); }
-  100% { opacity: 1; transform: translateY(0); }
+  0% { transform: translateY(14px); }
+  100% { transform: translateY(0); }
 }
 .animate-page-in {
-  animation: page-in 0.34s cubic-bezier(0.34, 1.56, 0.64, 1);
+  animation: page-in 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 /* Slide HORIZONTAL direcional com bounce (entre abas) — estilo nativo/Chris.
