@@ -28,5 +28,11 @@ export default function AppTemplate({ children }: { children: React.ReactNode })
     if (idx !== -1) lastTabIndex = idx;
   }, [idx]);
 
-  return <div className={cls}>{children}</div>;
+  // key={pathname} força o elemento a remontar a cada navegação →
+  // a animação CSS re-dispara toda vez (sem isso, só tocava na 1ª vez).
+  return (
+    <div key={pathname} className={cls}>
+      {children}
+    </div>
+  );
 }
