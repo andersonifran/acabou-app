@@ -13,6 +13,7 @@ const SRC = {
   buscando: "/mascote/sacolino-buscando.png",
   feliz: "/mascote/sacolino-feliz.png",
   comemorando: "/mascote/sacolino-comemorando.png",
+  alerta: "/mascote/sacolino-alerta.png",
 } as const;
 
 const ANIM = {
@@ -20,6 +21,7 @@ const ANIM = {
   buscando: "animate-mascot-scan",
   feliz: "animate-mascot-nod",
   comemorando: "animate-mascot-celebrate",
+  alerta: "animate-mascot-alert",
 } as const;
 
 export type MascoteMood = keyof typeof SRC;

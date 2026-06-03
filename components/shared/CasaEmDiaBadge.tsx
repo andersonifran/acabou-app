@@ -7,13 +7,12 @@ import { Mascote } from "@/components/shared/Mascote";
 import { hapticSuccess } from "@/lib/haptics";
 
 /**
- * Badge "{Local} em dia" — aparece SÓ quando não falta nada (estado bom),
- * premiando o resultado que o usuário quer. O Sacolino dá um joinha 👍.
- * Conta dias seguidos em dia e comemora a cada 7. Nunca aparece em estado
- * ruim → nunca soa como cobrança. O texto muda conforme o tipo de local.
+ * Badge de "humor da casa" — o Sacolino reage ao estado do local:
+ *  - Nada faltando  → joinha 👍 + "{Local} em dia!" (premia o resultado)
+ *  - Tem itens      → placa de alerta + "Você tem X pra comprar" (empurrãozinho amigável)
+ * Só aparece após confirmar dados (ready) — nunca mostra estado errado do cache.
  */
 
-// "Casa em dia", "Apê em dia", etc. — personalizado por tipo de local
 const EM_DIA_LABEL: Record<string, string> = {
   casa: "Casa em dia",
   apartamento: "Apê em dia",
@@ -24,21 +23,41 @@ const EM_DIA_LABEL: Record<string, string> = {
 };
 
 export function CasaEmDiaBadge({
-  emDia,
+  shoppingCount,
   ready,
   propertyType = "casa",
 }: {
-  emDia: boolean;
+  shoppingCount: number;
   ready: boolean;
   propertyType?: string;
 }) {
+  const emDia = shoppingCount === 0;
   const { days, milestone } = useCasaEmDia(emDia, ready);
 
   useEffect(() => {
     if (milestone) hapticSuccess();
   }, [milestone]);
 
-  if (!emDia || days < 1) return null;
+  if (!ready) return null;
+
+  // ── Estado: TEM ITENS na lista → alerta amigável ──
+  if (!emDia) {
+    return (
+      <div className="flex items-center gap-2 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-2xl pl-2 pr-4 py-2">
+        <Mascote mood="alerta" size={56} className="shrink-0" />
+        <div className="flex-1 min-w-0">
+          <p className="font-black text-gray-900 text-sm leading-tight">Tem item te esperando! 🛒</p>
+          <p className="text-xs text-gray-500 leading-tight mt-0.5">
+            Você tem <strong className="text-amber-700">{shoppingCount}</strong>{" "}
+            {shoppingCount === 1 ? "item" : "itens"} pra comprar.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Estado: TUDO EM DIA → joinha + streak ──
+  if (days < 1) return null;
 
   const label = EM_DIA_LABEL[propertyType] ?? EM_DIA_LABEL.casa;
   const title = days === 1 ? `${label}! ✨` : `${label} há ${days} dias! 🏆`;

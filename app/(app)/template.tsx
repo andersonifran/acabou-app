@@ -1,11 +1,32 @@
 "use client";
 
+import { useEffect } from "react";
+import { usePathname } from "next/navigation";
+
 /**
- * Transição sutil ao trocar de aba/página dentro do app.
- * Fade rápido (150ms) — dá sensação de movimento "premium" sem
- * parecer lento. Usa só opacity (não transform) para NÃO quebrar
- * os headers sticky das páginas.
+ * Transição de página estilo nativo (o "slide com bounce" que o Chris cita).
+ * A página entra deslizando HORIZONTALMENTE conforme a direção da navegação:
+ *  - avançar (aba à direita) → entra da direita
+ *  - voltar (aba à esquerda) → entra da esquerda
+ * Páginas que não são abas usam um slide-up suave.
  */
+const TAB_ORDER = ["/home", "/despensa", "/lista", "/casa", "/configuracoes"];
+
+// Persiste entre remounts do template (módulo não recarrega na navegação SPA)
+let lastTabIndex = -1;
+
 export default function AppTemplate({ children }: { children: React.ReactNode }) {
-  return <div className="animate-page-in">{children}</div>;
+  const pathname = usePathname();
+  const idx = TAB_ORDER.indexOf(pathname);
+
+  let cls = "animate-page-in"; // padrão (slide-up) para telas que não são abas
+  if (idx !== -1 && lastTabIndex !== -1 && idx !== lastTabIndex) {
+    cls = idx > lastTabIndex ? "animate-enter-right" : "animate-enter-left";
+  }
+
+  useEffect(() => {
+    if (idx !== -1) lastTabIndex = idx;
+  }, [idx]);
+
+  return <div className={cls}>{children}</div>;
 }

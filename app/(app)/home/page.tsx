@@ -340,9 +340,9 @@ export default function HomePage() {
 
         {!switchingHouse && (
           <>
-            {/* "{Local} em dia" — premia o resultado (nada faltando) sem cobrar */}
+            {/* Humor da casa — Sacolino reage: em dia (joinha) ou alerta (tem itens) */}
             <CasaEmDiaBadge
-              emDia={shoppingCount === 0}
+              shoppingCount={shoppingCount}
               ready={dataSyncComplete}
               propertyType={(currentHouse as any)?.property_type ?? "casa"}
             />
