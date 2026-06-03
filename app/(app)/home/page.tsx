@@ -28,60 +28,13 @@ const PROPERTY_MAP: Record<string, { icon: string; label: string }> = {
   outro:       { icon: "📍", label: "Outro" },
 };
 
-// Ícones SVG inline para os botões de ação — modernos com gradiente
-function IconAcabou() {
-  return (
-    <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
-      <rect width="36" height="36" rx="12" fill="#ef4444"/>
-      <rect x="9" y="18" width="18" height="10" rx="2" fill="white" fillOpacity="0.3" stroke="white" strokeWidth="1.5"/>
-      <path d="M9 18L11.5 13H18" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-      <path d="M27 18L24.5 13H18" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-      <line x1="18" y1="13" x2="18" y2="18" stroke="white" strokeWidth="1.2" strokeLinecap="round"/>
-      <path d="M15 22l6 0" stroke="white" strokeWidth="1.5" strokeLinecap="round"/>
-    </svg>
-  );
-}
-
-function IconAcabando() {
-  return (
-    <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
-      <rect width="36" height="36" rx="12" fill="#f59e0b"/>
-      <circle cx="18" cy="19" r="7.5" stroke="white" strokeWidth="1.8"/>
-      <path d="M18 15v4l2.5 2.5" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-      <path d="M12 10l2 2M24 10l-2 2" stroke="white" strokeWidth="1.8" strokeLinecap="round"/>
-    </svg>
-  );
-}
-
-function IconQueroComprar() {
-  return (
-    <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
-      <rect width="36" height="36" rx="12" fill="#3b82f6"/>
-      <path d="M10 11h2l2.5 10h9l2.5-7H13" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-      <circle cx="16" cy="24" r="1.5" fill="white"/>
-      <circle cx="22" cy="24" r="1.5" fill="white"/>
-      <line x1="22" y1="8" x2="22" y2="14" stroke="white" strokeWidth="2" strokeLinecap="round"/>
-      <line x1="19" y1="11" x2="25" y2="11" stroke="white" strokeWidth="2" strokeLinecap="round"/>
-    </svg>
-  );
-}
-
-function IconComprei() {
-  return (
-    <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
-      <rect width="36" height="36" rx="12" fill="#16a34a"/>
-      <circle cx="18" cy="18" r="8" stroke="white" strokeWidth="1.8"/>
-      <path d="M13.5 18l3.5 3.5 5.5-7" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-    </svg>
-  );
-}
-
-// Constante fora do componente — evita re-criação a cada render
+// Botões de ação — ícones 3D (public/acoes/). A borda colorida do card
+// mantém o "semáforo" de status (vermelho/âmbar/azul/verde).
 const ACTION_BUTTONS = [
-  { label: "Acabou!", sublabel: "Precisa repor", icon: <IconAcabou />, bg: "bg-white border-red-200 shadow-sm", status: "acabou" },
-  { label: "Está acabando!", sublabel: "Já está no fim", icon: <IconAcabando />, bg: "bg-white border-amber-200 shadow-sm", status: "acabando" },
-  { label: "Quero comprar!", sublabel: "Adicionar à lista", icon: <IconQueroComprar />, bg: "bg-white border-blue-200 shadow-sm", status: "comprar" },
-  { label: "Comprei!", sublabel: "Já comprou o item", icon: <IconComprei />, bg: "bg-white border-green-300 shadow-sm", status: "tem" },
+  { label: "Acabou!", sublabel: "Precisa repor", img: "/acoes/acao-acabou.png", bg: "bg-white border-red-200 shadow-sm", status: "acabou" },
+  { label: "Está acabando!", sublabel: "Já está no fim", img: "/acoes/acao-acabando.png", bg: "bg-white border-amber-200 shadow-sm", status: "acabando" },
+  { label: "Quero comprar!", sublabel: "Adicionar à lista", img: "/acoes/acao-comprar.png", bg: "bg-white border-blue-200 shadow-sm", status: "comprar" },
+  { label: "Comprei!", sublabel: "Já comprou o item", img: "/acoes/acao-comprei.png", bg: "bg-white border-green-300 shadow-sm", status: "tem" },
 ];
 
 export default function HomePage() {
@@ -507,7 +460,8 @@ export default function HomePage() {
             <div className="grid grid-cols-2 gap-3">
               <Link href="/lista" className="bg-white rounded-2xl border border-green-200 shadow-sm p-4 hover:shadow-md transition-all">
                 <div className="flex items-center justify-between mb-1">
-                  <span className="text-lg">🛒</span>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src="/acoes/contador-comprar.png" alt="" aria-hidden="true" draggable={false} className="w-8 h-8 object-contain select-none pointer-events-none" />
                   <span className="text-[10px] font-bold text-green-600 bg-green-50 px-2 py-0.5 rounded-full">Ver lista →</span>
                 </div>
                 <p className="text-3xl font-black text-green-600">{shoppingCount}</p>
@@ -515,7 +469,8 @@ export default function HomePage() {
               </Link>
               <Link href="/despensa?filtro=acabando" className="bg-white rounded-2xl border border-amber-200 shadow-sm p-4 hover:shadow-md transition-all">
                 <div className="flex items-center justify-between mb-1">
-                  <span className="text-lg">⏰</span>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src="/acoes/contador-acabando.png" alt="" aria-hidden="true" draggable={false} className="w-8 h-8 object-contain select-none pointer-events-none" />
                   <span className="text-[10px] font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">Ver itens →</span>
                 </div>
                 <p className="text-3xl font-black text-amber-500">{endingCount}</p>
@@ -529,13 +484,14 @@ export default function HomePage() {
                 O que aconteceu?
               </p>
               <div className="grid grid-cols-2 gap-3">
-                {ACTION_BUTTONS.map(({ label, sublabel, icon, bg, status }) => (
+                {ACTION_BUTTONS.map(({ label, sublabel, img, bg, status }) => (
                   <button
                     key={status}
                     onClick={() => openModal(status)}
                     className={`flex flex-col items-start p-4 rounded-2xl border transition-all hover:scale-[1.02] hover:shadow-md active:scale-[0.97] text-left ${bg}`}
                   >
-                    <div className="mb-2.5">{icon}</div>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={img} alt="" aria-hidden="true" draggable={false} className="w-12 h-12 object-contain mb-2 select-none pointer-events-none" />
                     <span className="font-black text-gray-900 text-sm leading-tight">{label}</span>
                     <span className="text-xs text-gray-400 mt-0.5 leading-tight">{sublabel}</span>
                   </button>
