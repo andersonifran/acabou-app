@@ -19,6 +19,18 @@ function formatPhone(value: string): string {
   return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
 }
 
+// Valida celular brasileiro de verdade (não aceita "qualquer número"):
+// 11 dígitos, DDD válido (11-99), começa com 9 após o DDD, e não é tudo igual.
+function isValidMobile(value: string): boolean {
+  const d = value.replace(/\D/g, "");
+  if (d.length !== 11) return false;
+  const ddd = parseInt(d.slice(0, 2), 10);
+  if (ddd < 11 || ddd > 99) return false;
+  if (d[2] !== "9") return false;
+  if (/^(\d)\1{10}$/.test(d)) return false; // rejeita 00000000000, 11111111111...
+  return true;
+}
+
 export default function CadastroPage() {
   const router = useRouter();
   const supabase = createClient();
@@ -67,8 +79,8 @@ export default function CadastroPage() {
         setError("A senha deve ter pelo menos 6 caracteres.");
         return;
       }
-      if (phone.replace(/\D/g, "").length < 10) {
-        setError("Informe um WhatsApp válido com DDD.");
+      if (!isValidMobile(phone)) {
+        setError("Informe um celular/WhatsApp válido com DDD. Ex.: (11) 99999-9999");
         return;
       }
       setError("");
@@ -88,8 +100,8 @@ export default function CadastroPage() {
         setLoading(false);
         return;
       }
-      if (hasInvite && phone.replace(/\D/g, "").length < 10) {
-        setError("Informe um WhatsApp válido com DDD.");
+      if (hasInvite && !isValidMobile(phone)) {
+        setError("Informe um celular/WhatsApp válido com DDD. Ex.: (11) 99999-9999");
         setLoading(false);
         return;
       }

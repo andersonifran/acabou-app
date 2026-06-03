@@ -17,7 +17,7 @@ export interface Profile {
   phone?: string;
   city?: string;
   state?: string;
-  avatar_url?: string;
+  avatar_url?: string | null;
   created_at: string;
   updated_at: string;
 }

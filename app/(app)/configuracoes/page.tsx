@@ -22,7 +22,7 @@ import { ProfileAvatar } from "@/components/shared/ProfileAvatar";
 export default function ConfiguracoesPage() {
   const router = useRouter();
   const supabase = createClient();
-  const { currentHouse, items, categories, reset, updateItem, profileName: storeProfileName, profileAvatar: storeProfileAvatar } = useAppStore();
+  const { currentHouse, items, categories, reset, updateItem, profileName: storeProfileName, profileAvatar: storeProfileAvatar, setProfile: setStoreProfile } = useAppStore();
   const { isPaid, canAddItem, limits } = useSubscription();
   const { renameItem, deleteItem, createItem } = useItems();
   const { isOwner, isMember, canAccessPlans } = useRole();
@@ -248,6 +248,9 @@ export default function ConfiguracoesPage() {
                   editable
                   onAvatarChange={(newUrl) => {
                     setProfile((prev) => prev ? { ...prev, avatar_url: newUrl } : prev);
+                    // Atualiza o store também — senão o fallback ?? storeProfileAvatar
+                    // re-mostra a foto antiga após remover.
+                    setStoreProfile(storeProfileName, newUrl ?? "");
                   }}
                 />
                 <h2 className="font-bold text-gray-900 text-lg mt-3">

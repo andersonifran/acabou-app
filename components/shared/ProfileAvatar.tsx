@@ -10,7 +10,8 @@ interface ProfileAvatarProps {
   fullName: string;
   size?: "sm" | "md" | "lg";
   editable?: boolean;
-  onAvatarChange?: (newUrl: string) => void;
+  // newUrl = string (nova foto) ou null (foto removida)
+  onAvatarChange?: (newUrl: string | null) => void;
 }
 
 function getInitials(name: string): string {
@@ -42,6 +43,7 @@ export function ProfileAvatar({
   onAvatarChange,
 }: ProfileAvatarProps) {
   const [uploading, setUploading] = useState(false);
+  const [removing, setRemoving] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const supabase = createClient();
@@ -119,7 +121,38 @@ export function ProfileAvatar({
     }
   }
 
+  async function handleRemove() {
+    if (removing || uploading) return;
+    if (!confirm("Remover sua foto de perfil?")) return;
+    setRemoving(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Não autenticado");
+
+      // Apaga o arquivo do storage (tenta as extensões comuns; ignora as que não existem)
+      await supabase.storage
+        .from("avatars")
+        .remove([`${user.id}.jpg`, `${user.id}.jpeg`, `${user.id}.png`, `${user.id}.webp`, `${user.id}.gif`]);
+
+      // Zera no banco
+      const { error } = await supabase
+        .from("profiles")
+        .update({ avatar_url: null, updated_at: new Date().toISOString() })
+        .eq("user_id", user.id);
+      if (error) throw error;
+
+      setPreviewUrl(null);
+      onAvatarChange?.(null);
+    } catch (err) {
+      console.error("Erro ao remover foto:", err);
+      alert("Erro ao remover foto. Tente novamente.");
+    } finally {
+      setRemoving(false);
+    }
+  }
+
   return (
+    <div className="inline-flex flex-col items-center gap-2">
     <div className="relative inline-block">
       {/* Avatar */}
       <div
@@ -168,6 +201,18 @@ export function ProfileAvatar({
             className="hidden"
           />
         </>
+      )}
+    </div>
+
+      {/* Remover foto — só quando editável e há foto */}
+      {editable && displayUrl && !uploading && (
+        <button
+          onClick={handleRemove}
+          disabled={removing}
+          className="text-xs font-medium text-gray-400 hover:text-red-500 transition-colors disabled:opacity-50"
+        >
+          {removing ? "Removendo..." : "Remover foto"}
+        </button>
       )}
     </div>
   );
