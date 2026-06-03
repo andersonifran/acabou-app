@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/server";
 import { sendPlanExpiringEmail } from "@/lib/emails";
+import { preApproval } from "@/lib/mercadopago";
+import { syncSubscriptionFromPreapproval } from "@/lib/subscription-sync";
 
 // =============================================
 // CRON: Verificar assinaturas expirando + expiradas
@@ -133,10 +135,51 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    // =============================================
+    // PARTE 3: RECONCILIAÇÃO — ativa quem PAGOU mas não ativou
+    // (webhook do MP falhou E o cliente não voltou ao app). Idempotente.
+    // Trava de segurança: só ativa assinatura AUTORIZADA no MP E com próxima
+    // cobrança no FUTURO (= realmente paga). Nunca reativa de graça quem falhou.
+    // =============================================
+    let reconciled = 0;
+    try {
+      const search = await preApproval.search({ options: { status: "authorized", limit: 100 } });
+      for (const pre of search.results ?? []) {
+        const parts = String(pre.external_reference ?? "").split(":");
+        if (parts.length !== 3) continue;
+
+        // Só conta como paga se a próxima cobrança está no futuro
+        const npd = pre.next_payment_date ? new Date(pre.next_payment_date) : null;
+        if (!npd || npd.getTime() <= now.getTime()) continue;
+
+        const houseId = parts[0];
+        const { data: h } = await supabase
+          .from("houses")
+          .select("plan_status")
+          .eq("id", houseId)
+          .maybeSingle();
+        // Já está ativo → pula (evita escrita desnecessária)
+        if (!h || h.plan_status === "active") continue;
+
+        // MP diz autorizado + pago, mas a casa não está ativa → ATIVA
+        await syncSubscriptionFromPreapproval({
+          id: pre.id,
+          status: pre.status,
+          external_reference: pre.external_reference,
+          next_payment_date: pre.next_payment_date,
+        });
+        reconciled++;
+        console.log(`[Cron] 🔄 Reconciliado: casa ${houseId} (assinatura ${pre.id}) ativada`);
+      }
+    } catch (e) {
+      console.error("[Cron] erro na reconciliação:", e);
+    }
+
     const message = [
       downgraded > 0 ? `${downgraded} plano(s) expirado(s)` : null,
       emailsSent > 0 ? `${emailsSent} email(s) de renovação` : null,
-      downgraded === 0 && emailsSent === 0 ? "Nenhuma ação necessária" : null,
+      reconciled > 0 ? `${reconciled} reconciliado(s)` : null,
+      downgraded === 0 && emailsSent === 0 && reconciled === 0 ? "Nenhuma ação necessária" : null,
     ].filter(Boolean).join(", ");
 
     return NextResponse.json({
@@ -144,6 +187,7 @@ export async function GET(request: NextRequest) {
       message,
       downgraded,
       emails_sent: emailsSent,
+      reconciled,
     });
   } catch (err) {
     console.error("[Cron Subscriptions Error]", err);
