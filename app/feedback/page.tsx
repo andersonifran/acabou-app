@@ -104,7 +104,6 @@ export default function FeedbackPage() {
               onChange={(e) => setFeedback(e.target.value)}
               placeholder="Ex: Adorei o app! Seria ótimo ter a opção de..."
               rows={6}
-              autoFocus
               className="w-full px-4 py-3.5 rounded-xl border border-gray-200 bg-gray-50 focus:outline-none focus:border-green-400 focus:bg-white transition-colors text-gray-900 resize-none text-sm"
             />
             <p className="text-xs text-gray-400 mt-1">{feedback.length} caracteres</p>
