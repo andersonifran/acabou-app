@@ -52,7 +52,7 @@ export default function HomePage() {
   const [deletingHouse, setDeletingHouse] = useState(false);
   const pickerRef = useRef<HTMLDivElement>(null);
   const { canAddItem, isTrialing, trialDaysLeft, trialExpired, isFrozen } = useSubscription();
-  const { canManageItems, isOwner: isRoleOwner } = useRole();
+  const { canManageItems, isOwner: isRoleOwner, loaded: roleLoaded } = useRole();
 
   const shoppingItems = items.filter((i) => SHOPPING_LIST_STATUSES.includes(i.status as any));
   const shoppingCount = shoppingItems.length;
@@ -352,7 +352,7 @@ export default function HomePage() {
             {dataSyncComplete && (
               <>
             {/* Banner de trial ativo */}
-            {isTrialing && (currentHouse as any)?.owner_id === currentUserId && (
+            {isTrialing && isRoleOwner && (
               <Link
                 href="/planos"
                 className="flex items-center gap-3 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-2xl px-4 py-3.5 hover:from-blue-100 hover:to-indigo-100 transition-all"
@@ -371,7 +371,7 @@ export default function HomePage() {
             )}
 
             {/* Banner de trial expirado para MEMBROS (dono já vê via isFrozen) */}
-            {trialExpired && !isFrozen && (currentHouse as any)?.owner_id !== currentUserId && (
+            {trialExpired && !isFrozen && roleLoaded && !isRoleOwner && (
               <div className="flex items-center gap-3 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-2xl px-4 py-3.5">
                 <div className="w-9 h-9 bg-amber-400 rounded-full flex items-center justify-center shrink-0">
                   <span className="text-lg">⏰</span>
@@ -384,7 +384,7 @@ export default function HomePage() {
             )}
 
             {/* Banner de plano congelado — DONO vê com botão de assinar */}
-            {isFrozen && (currentHouse as any)?.owner_id === currentUserId && (
+            {isFrozen && isRoleOwner && (
               <Link
                 href="/planos"
                 className="flex items-center gap-3 bg-gradient-to-r from-red-50 to-orange-50 border border-red-200 rounded-2xl px-4 py-3.5 hover:from-red-100 hover:to-orange-100 transition-all"
@@ -406,7 +406,7 @@ export default function HomePage() {
             )}
 
             {/* Banner de plano congelado — MEMBRO convidado vê aviso diferente */}
-            {isFrozen && (currentHouse as any)?.owner_id !== currentUserId && (
+            {isFrozen && roleLoaded && !isRoleOwner && (
               <div className="flex items-center gap-3 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-2xl px-4 py-3.5">
                 <div className="w-9 h-9 bg-amber-400 rounded-full flex items-center justify-center shrink-0">
                   <span className="text-lg">🔒</span>
@@ -419,7 +419,7 @@ export default function HomePage() {
             )}
 
             {/* Banner de upgrade — plano grátis sem trial (só mostra para o dono) */}
-            {!isTrialing && !trialExpired && currentHouse?.plan === "free" && currentHouse?.plan_status !== "inactive" && (currentHouse as any)?.owner_id === currentUserId && (
+            {!isTrialing && !trialExpired && currentHouse?.plan === "free" && currentHouse?.plan_status !== "inactive" && isRoleOwner && (
               <Link
                 href="/planos"
                 className="flex items-center gap-3 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-2xl px-4 py-3.5 hover:from-amber-100 hover:to-orange-100 transition-all"

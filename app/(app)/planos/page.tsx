@@ -104,6 +104,10 @@ function PlanosContent() {
   // Assinatura recorrente paga e ativa (não trial) → pode cancelar
   const hasActiveSubscription = isPaid && !isTrialing && (rawPlan === "monthly" || rawPlan === "yearly");
   const isCancelledButActive = hasActiveSubscription && planStatus === "cancelled";
+  // Plano pago de verdade e ATIVO (não trial, não cancelado) → é o "Plano atual"
+  // que trava o botão. Em teste grátis o plano fica monthly/trialing, mas o
+  // usuário PRECISA poder assinar pra converter — então não travamos.
+  const isActivePaidPlan = isPaid && !isTrialing && planStatus === "active";
 
   async function handleCancel() {
     setCancelling(true);
@@ -415,7 +419,7 @@ function PlanosContent() {
                     <span className="text-gray-500 text-sm">{plan.period}</span>
                   </div>
                 </div>
-                {currentPlan === plan.id && (
+                {currentPlan === plan.id && (isActivePaidPlan || isCancelledButActive) && (
                   <span className={cn(
                     "text-xs font-semibold px-2.5 py-1 rounded-full",
                     isCancelledButActive ? "bg-amber-100 text-amber-700" : "bg-green-100 text-green-700"
@@ -444,7 +448,9 @@ function PlanosContent() {
                 const isCurrent = currentPlan === plan.id;
                 // Plano cancelado mas ainda no período pago → permite reativar
                 const showReactivate = isCancelledButActive && isCurrent;
-                const lockedAsCurrent = isCurrent && !showReactivate;
+                // Só trava como "Plano atual" se for plano pago ATIVO de verdade.
+                // Em teste grátis (monthly/trialing) o botão fica liberado p/ assinar.
+                const lockedAsCurrent = isCurrent && isActivePaidPlan && !showReactivate;
                 return (
                   <button
                     onClick={() => handleSubscribe(plan)}
@@ -465,7 +471,7 @@ function PlanosContent() {
                         <Loader2 size={16} className="animate-spin" />
                         Aguarde...
                       </>
-                    ) : showReactivate ? "Reativar assinatura" : isCurrent ? "Plano atual" : plan.cta}
+                    ) : showReactivate ? "Reativar assinatura" : lockedAsCurrent ? "Plano atual" : plan.cta}
                   </button>
                 );
               })()}

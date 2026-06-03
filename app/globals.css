@@ -3,6 +3,11 @@
 :root {
   --background: #ffffff;
   --foreground: #1a1a1a;
+  /* Força o tema claro como padrão. Sem isto, num aparelho com o sistema no
+     modo escuro o navegador escurece sozinho campos, selects e barras de
+     rolagem — dando falsa sensação de "modo escuro" mesmo no tema claro.
+     O escuro de verdade só entra pela classe .dark (escolha do usuário). */
+  color-scheme: light;
 }
 
 .dark {
