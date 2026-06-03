@@ -89,8 +89,36 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     async function refreshInBackground() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
-      // Atualiza a casa atual em segundo plano (sem mexer em isReady)
-      await loadHouseData(currentHouse!.id);
+
+      setUserId(user.id);
+
+      // Busca as casas REAIS do usuário no servidor (fonte da verdade).
+      const { data: membersData } = await supabase
+        .from("house_members")
+        .select("house_id, houses(*)")
+        .eq("user_id", user.id)
+        .eq("status", "active");
+
+      const houses = (membersData ?? []).map((m: any) => m.houses as House).filter(Boolean);
+
+      // Usuário não tem mais nenhuma casa (todas deletadas / saiu) → onboarding.
+      if (houses.length === 0) {
+        reset();
+        router.push("/onboarding");
+        return;
+      }
+
+      setAllHouses(houses);
+
+      // RECONCILIAÇÃO: se a casa do cache não existe mais no servidor
+      // (foi deletada), cai numa casa válida — evita "casa fantasma".
+      const savedId = localStorage.getItem(SELECTED_HOUSE_KEY);
+      const target =
+        houses.find((h) => h.id === currentHouse!.id) ??
+        houses.find((h) => h.id === savedId) ??
+        houses[0];
+
+      await loadHouseData(target.id);
       // Marca que os dados foram confirmados com o servidor
       // (banners de plano podem agora confiar nos dados)
       setDataSyncComplete(true);
