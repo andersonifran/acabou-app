@@ -55,6 +55,16 @@ export async function POST(request: NextRequest) {
         phone: phone ?? null,
       }, { onConflict: "user_id" });
 
+    // Marcador PERMANENTE de "já usou o trial" (sobrevive a apagar/recriar casa).
+    // Leitura defensiva: se a coluna ainda não existir, cai pra checagem de membro.
+    let trialUsed = false;
+    const { data: profileRow, error: profErr } = await supabase
+      .from("profiles")
+      .select("trial_used")
+      .eq("user_id", userId)
+      .maybeSingle();
+    if (!profErr && profileRow) trialUsed = !!(profileRow as any).trial_used;
+
     // Verifica se o dono tem alguma casa com plano pago → herda o plano
     const { data: paidHouse } = await supabase
       .from("houses")
@@ -84,15 +94,24 @@ export async function POST(request: NextRequest) {
         .select("id", { count: "exact", head: true })
         .eq("user_id", userId);
 
-      const isBrandNew = (ownedCount === 0 || ownedCount === null) && (memberCount === 0 || memberCount === null);
+      // Trial só se: NUNCA usou trial (marcador permanente) E nunca teve casa E
+      // nunca foi membro/convidado de nenhuma casa.
+      const isBrandNew =
+        !trialUsed &&
+        (ownedCount === 0 || ownedCount === null) &&
+        (memberCount === 0 || memberCount === null);
 
       if (isBrandNew) {
         // Conta nova de verdade — trial de 7 dias
         const trialEnd = new Date();
         trialEnd.setDate(trialEnd.getDate() + 7);
         inheritedPlan = { plan: "monthly", plan_status: "trialing", plan_expires_at: trialEnd.toISOString() };
+        // Marca o trial como usado PRA SEMPRE (sobrevive a apagar a casa) — sem
+        // isso dá pra farmar trial apagando e recriando. Falha silenciosa se a
+        // coluna ainda não existir (será ativada quando a migration rodar).
+        await supabase.from("profiles").update({ trial_used: true } as any).eq("user_id", userId);
       } else {
-        // Já foi membro/convidado antes (ou já teve casa) → grátis, sem trial
+        // Já usou trial / já foi membro/convidado / já teve casa → grátis
         inheritedPlan = { plan: "free", plan_status: "active" };
       }
     }
