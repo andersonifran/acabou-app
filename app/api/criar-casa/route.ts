@@ -70,18 +70,29 @@ export async function POST(request: NextRequest) {
       // Herda plano pago ou trial existente
       inheritedPlan = { plan: paidHouse.plan, plan_status: paidHouse.plan_status, plan_expires_at: paidHouse.plan_expires_at ?? undefined };
     } else {
-      // Verifica se é a PRIMEIRA casa do usuário → ativa trial de 7 dias
-      const { count } = await supabase
+      // Trial de 7 dias SÓ para conta GENUINAMENTE nova: sem casa própria E que
+      // NUNCA foi membro de nenhuma casa. Assim, um CONVIDADO (que já entrou via
+      // convite e usou o premium do dono) NÃO ganha um novo trial ao criar a
+      // própria casa — entra no plano grátis. Também evita farm de trial.
+      const { count: ownedCount } = await supabase
         .from("houses")
         .select("id", { count: "exact", head: true })
         .eq("owner_id", userId);
 
-      if (count === 0 || count === null) {
-        // Primeira casa — trial de 7 dias
+      const { count: memberCount } = await supabase
+        .from("house_members")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", userId);
+
+      const isBrandNew = (ownedCount === 0 || ownedCount === null) && (memberCount === 0 || memberCount === null);
+
+      if (isBrandNew) {
+        // Conta nova de verdade — trial de 7 dias
         const trialEnd = new Date();
         trialEnd.setDate(trialEnd.getDate() + 7);
         inheritedPlan = { plan: "monthly", plan_status: "trialing", plan_expires_at: trialEnd.toISOString() };
       } else {
+        // Já foi membro/convidado antes (ou já teve casa) → grátis, sem trial
         inheritedPlan = { plan: "free", plan_status: "active" };
       }
     }
