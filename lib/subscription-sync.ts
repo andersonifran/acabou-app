@@ -63,6 +63,23 @@ export async function syncSubscriptionFromPreapproval(pre: PreapprovalLike) {
       .eq("owner_id", userId);
     if (houseError) console.error("[SubSync] erro ao atualizar casas:", houseError);
 
+    // Restaura os convidados que foram congelados na expiração (frozen -> active)
+    // em TODAS as casas do dono — o acesso compartilhado volta automaticamente.
+    const { data: ownerHouses } = await supabase
+      .from("houses")
+      .select("id")
+      .eq("owner_id", userId);
+    const ownerHouseIds = (ownerHouses ?? []).map((h) => h.id);
+    if (ownerHouseIds.length > 0) {
+      const { error: thawError } = await supabase
+        .from("house_members")
+        .update({ status: "active" })
+        .in("house_id", ownerHouseIds)
+        .eq("status", "frozen")
+        .neq("role", "owner");
+      if (thawError) console.error("[SubSync] erro ao reativar convidados:", thawError);
+    }
+
     if (prevSub) {
       await supabase
         .from("subscriptions")

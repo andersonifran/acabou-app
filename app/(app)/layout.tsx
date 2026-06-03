@@ -42,6 +42,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { createItem, changeStatus, editItem } = useItems();
   const { canAddItem, isPaid, isTrialing } = useSubscription();
   const [showPlanLimit, setShowPlanLimit] = useState(false);
+  // Convidado cujo dono deixou o plano expirar → membership vira "frozen" (no
+  // banco) e a RLS bloqueia o acesso. Mostramos a tela "Acesso pausado".
+  const [accessPaused, setAccessPaused] = useState(false);
   // Verifica DIRETAMENTE no localStorage se tem casa — evita depender do timing do Zustand.
   // Isso garante que NUNCA mostramos spinner quando o usuário já estava logado.
   const [isReady, setIsReady] = useState(() => {
@@ -101,8 +104,20 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
       const houses = (membersData ?? []).map((m: any) => m.houses as House).filter(Boolean);
 
-      // Usuário não tem mais nenhuma casa (todas deletadas / saiu) → onboarding.
+      // Usuário não tem mais nenhuma casa ATIVA.
       if (houses.length === 0) {
+        // Convidado congelado (dono expirou)? → tela "Acesso pausado".
+        const { data: frozen } = await supabase
+          .from("house_members")
+          .select("id")
+          .eq("user_id", user.id)
+          .eq("status", "frozen")
+          .limit(1);
+        if (frozen && frozen.length > 0) {
+          setAccessPaused(true);
+          setIsReady(true);
+          return;
+        }
         reset();
         router.push("/onboarding");
         return;
@@ -173,6 +188,19 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           }
         }
 
+        // Convidado congelado (dono deixou o plano expirar)? → "Acesso pausado".
+        const { data: frozen } = await supabase
+          .from("house_members")
+          .select("id")
+          .eq("user_id", user.id)
+          .eq("status", "frozen")
+          .limit(1);
+        if (frozen && frozen.length > 0) {
+          setAccessPaused(true);
+          setIsReady(true);
+          return;
+        }
+
         router.push("/onboarding");
         return;
       }
@@ -210,7 +238,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const housePremiumActive = isPaid || isTrialing;
   const blockGuestMember = dataSyncComplete && !!currentHouse && !isOwnerOfCurrent && !housePremiumActive;
 
-  if (blockGuestMember) {
+  if (blockGuestMember || accessPaused) {
     return (
       <div className="min-h-screen app-bg flex flex-col items-center justify-center px-6 text-center gap-4">
         <div className="w-16 h-16 rounded-full bg-amber-100 flex items-center justify-center text-3xl">🔒</div>

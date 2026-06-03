@@ -116,6 +116,17 @@ export async function GET(request: NextRequest) {
           .eq("house_id", house.id)
           .eq("status", "active");
 
+        // CONGELA OS CONVIDADOS (não-donos): acesso compartilhado é recurso
+        // premium. Status "frozen" faz a RLS (que exige "active") bloquear o
+        // acesso ao banco — não dá pra burlar pelo cliente. O dono permanece.
+        const { error: freezeError } = await supabase
+          .from("house_members")
+          .update({ status: "frozen" })
+          .eq("house_id", house.id)
+          .neq("role", "owner")
+          .eq("status", "active");
+        if (freezeError) console.error(`[Cron] Erro ao congelar convidados da casa ${house.id}:`, freezeError);
+
         const wasTrialing = house.plan_status === "trialing";
         console.log(`[Cron] ⬇️ Casa "${house.name}" (${house.id}) — ${wasTrialing ? "trial" : "plano " + house.plan} expirou → free`);
         downgraded++;
