@@ -7,13 +7,41 @@ export function MobileStickyBar() {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
-    function onScroll() {
-      // Mostra após scroll de 600px (depois do hero)
-      setVisible(window.scrollY > 600);
+    // A barra só aparece no MEIO da página:
+    //  - some no topo (hero já tem CTA)
+    //  - some no fim (CTA final + rodapé já têm CTA) → não cobre nada
+    let pastHero = false;
+    let ctaFinalVisible = false;
+
+    function update() {
+      setVisible(pastHero && !ctaFinalVisible);
     }
+
+    function onScroll() {
+      pastHero = window.scrollY > 600;
+      update();
+    }
+
+    // Esconde assim que a seção de CTA final (que leva ao rodapé) aparece
+    const ctaFinal = document.getElementById("final-cta");
+    let io: IntersectionObserver | undefined;
+    if (ctaFinal) {
+      io = new IntersectionObserver(
+        ([entry]) => {
+          ctaFinalVisible = entry.isIntersecting;
+          update();
+        },
+        { rootMargin: "0px 0px -8% 0px" }
+      );
+      io.observe(ctaFinal);
+    }
+
     window.addEventListener("scroll", onScroll, { passive: true });
     onScroll();
-    return () => window.removeEventListener("scroll", onScroll);
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      io?.disconnect();
+    };
   }, []);
 
   return (

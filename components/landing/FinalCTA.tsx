@@ -4,7 +4,7 @@ import { InstallButton } from "@/components/shared/InstallPWA";
 
 export function FinalCTA() {
   return (
-    <section className="relative overflow-hidden px-6 py-20 text-white text-center" style={{ background: "linear-gradient(135deg, #16a34a 0%, #15803d 100%)" }}>
+    <section id="final-cta" className="relative overflow-hidden px-6 py-20 text-white text-center" style={{ background: "linear-gradient(135deg, #16a34a 0%, #15803d 100%)" }}>
       {/* Floating emojis */}
       <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
         {[
