@@ -10,11 +10,11 @@ const pains = [
 
 export function PainSection() {
   return (
-    <section className="px-6 py-16 bg-white">
+    <section className="px-6 pt-8 md:pt-12 pb-8 md:pb-12 bg-white">
       <div className="max-w-3xl mx-auto">
         <RevealOnScroll>
           <div className="text-center mb-10">
-            <span className="inline-flex items-center bg-red-500 text-white text-xs font-bold px-3 py-1.5 rounded-full mb-4">Esse roteiro é familiar?</span>
+            <span className="inline-flex items-center bg-red-500 text-white text-sm font-bold px-4 py-2 rounded-full mb-4">Esse roteiro é familiar?</span>
             <h2 className="text-3xl md:text-4xl font-black text-gray-900 leading-tight mb-3">
               Você só lembra que esqueceu…<br />quando já voltou do mercado.
             </h2>

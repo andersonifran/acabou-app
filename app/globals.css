@@ -172,6 +172,10 @@ input, select, textarea {
 .animate-marquee {
   animation: marquee 30s linear infinite;
 }
+/* No mobile a faixa é mais estreita e parece mais lenta → acelera um pouco */
+@media (max-width: 768px) {
+  .animate-marquee { animation-duration: 18s; }
+}
 
 /* Float — emojis flutuando suavemente (sobe-desce + giro leve, como desenhado).
    will-change avisa o navegador para animar na GPU → mesmo visual, mais fluido. */

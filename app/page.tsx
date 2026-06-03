@@ -207,7 +207,7 @@ export default function LandingPage() {
       <TrustBar />
 
       {/* ═══ VÍDEO ═══ */}
-      <section className="px-6 py-14 md:py-16 bg-white">
+      <section className="px-6 pt-14 md:pt-16 pb-8 md:pb-10 bg-white">
         <div className="max-w-md mx-auto text-center">
           <RevealOnScroll>
             <span className="inline-flex items-center gap-2 bg-green-100 text-green-700 text-xs font-bold px-3 py-1.5 rounded-full mb-5">
@@ -225,11 +225,11 @@ export default function LandingPage() {
       <PainSection />
 
       {/* ═══ COMO FUNCIONA ═══ */}
-      <section id="como-funciona" className="px-6 py-16 bg-white">
+      <section id="como-funciona" className="px-6 pt-8 md:pt-12 pb-16 bg-white">
         <div className="max-w-2xl mx-auto">
           <RevealOnScroll>
             <div className="text-center mb-12">
-              <span className="inline-flex items-center bg-green-100 text-green-700 text-xs font-bold px-3 py-1.5 rounded-full mb-4">O mecanismo</span>
+              <span className="inline-flex items-center bg-green-100 text-green-700 text-sm font-bold px-4 py-2 rounded-full mb-4">O mecanismo</span>
               <h2 className="text-3xl md:text-4xl font-black text-gray-900 mb-3">Se sabe usar WhatsApp,<br />já sabe usar.</h2>
               <p className="text-gray-500 text-lg">4 passos. 30 segundos. Sua casa nunca mais esquece nada.</p>
             </div>
