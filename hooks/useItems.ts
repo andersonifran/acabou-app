@@ -166,7 +166,14 @@ export function useItems() {
         .select("*, category:categories(*)")
         .single();
 
-      if (error) throw error;
+      if (error) {
+        // A trava de limite vive no banco (trigger enforce_item_limit).
+        // Traduz a rejeição para uma mensagem amigável → a UI abre o upgrade.
+        if (error.message?.includes("ITEM_LIMIT_REACHED")) {
+          throw new Error("Limite de itens atingido. Faça upgrade para o Plano Família.");
+        }
+        throw error;
+      }
 
       addItem(item as Item);
 
