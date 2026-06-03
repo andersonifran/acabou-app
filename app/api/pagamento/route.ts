@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
-import { createRecurringSubscription } from "@/lib/mercadopago";
+import { createRecurringSubscription, cancelRecurringSubscription, preApproval } from "@/lib/mercadopago";
 
 export async function POST(request: NextRequest) {
   try {
@@ -66,6 +66,28 @@ export async function POST(request: NextRequest) {
       new Date(house.plan_expires_at).getTime() > Date.now()
     ) {
       startDate = new Date(house.plan_expires_at).toISOString();
+    }
+
+    // ANTI COBRANÇA EM DOBRO: cancela qualquer assinatura recorrente ATIVA do
+    // usuário antes de criar uma nova (troca de mensal<->anual, reativação).
+    // Garante no máximo 1 assinatura cobrando por dono.
+    try {
+      const existing = await preApproval.search({ options: { payer_email: user.email ?? "" } });
+      const actives = (existing.results ?? []).filter((r) => {
+        const ref = String(r.external_reference ?? "");
+        return ref.includes(`:${user.id}:`) && r.status === "authorized";
+      });
+      for (const a of actives) {
+        if (a.id) {
+          try {
+            await cancelRecurringSubscription(String(a.id));
+          } catch (e) {
+            console.error("[Pagamento] erro ao cancelar assinatura antiga:", e);
+          }
+        }
+      }
+    } catch (e) {
+      console.error("[Pagamento] erro ao buscar assinaturas existentes:", e);
     }
 
     // Cria a assinatura recorrente no Mercado Pago
