@@ -21,7 +21,7 @@ import { ProfileAvatar } from "@/components/shared/ProfileAvatar";
 export default function ConfiguracoesPage() {
   const router = useRouter();
   const supabase = createClient();
-  const { currentHouse, items, categories, reset, updateItem } = useAppStore();
+  const { currentHouse, items, categories, reset, updateItem, profileName: storeProfileName, profileAvatar: storeProfileAvatar } = useAppStore();
   const { isPaid, canAddItem, limits } = useSubscription();
   const { renameItem, deleteItem, createItem } = useItems();
   const { isOwner, isMember, canAccessPlans } = useRole();
@@ -236,21 +236,19 @@ export default function ConfiguracoesPage() {
             {/* Seção de Perfil com Foto */}
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
               <div className="flex flex-col items-center text-center">
-                {loadingProfile ? (
-                  <div className="w-28 h-28 rounded-full bg-gray-100 animate-pulse" />
-                ) : (
-                  <ProfileAvatar
-                    avatarUrl={profile?.avatar_url ?? null}
-                    fullName={profile?.full_name ?? ""}
-                    size="lg"
-                    editable
-                    onAvatarChange={(newUrl) => {
-                      setProfile((prev) => prev ? { ...prev, avatar_url: newUrl } : prev);
-                    }}
-                  />
-                )}
+                {/* Usa o perfil cacheado no store → aparece NA HORA (sem
+                    placeholder de 1s). O fetch atualiza email/telefone depois. */}
+                <ProfileAvatar
+                  avatarUrl={profile?.avatar_url ?? storeProfileAvatar ?? null}
+                  fullName={profile?.full_name ?? storeProfileName ?? ""}
+                  size="lg"
+                  editable
+                  onAvatarChange={(newUrl) => {
+                    setProfile((prev) => prev ? { ...prev, avatar_url: newUrl } : prev);
+                  }}
+                />
                 <h2 className="font-bold text-gray-900 text-lg mt-3">
-                  {profile?.full_name ?? "..."}
+                  {profile?.full_name ?? storeProfileName ?? "..."}
                 </h2>
                 <p className="text-sm text-gray-500 mt-0.5">{profile?.email ?? ""}</p>
                 {profile?.phone && (

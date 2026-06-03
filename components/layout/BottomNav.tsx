@@ -170,7 +170,10 @@ export function BottomNav() {
       );
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-100 safe-area-pb">
+    <nav
+      className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-100 safe-area-pb"
+      style={{ transform: "translateZ(0)", willChange: "transform" }}
+    >
       <div className="max-w-lg mx-auto flex">
         {items.map(({ href, label, Icon }) => {
           // Mantém a aba Casa ativa (pílula roxa) ao entrar em Configurações
