@@ -432,10 +432,11 @@ export default function CadastroPage() {
       </div>
       </div>
 
-      {/* Badges de confiança */}
+      {/* Badges de confiança — matam o medo no momento de entregar os dados */}
       <div className="flex items-center justify-center gap-4 mt-5 text-white/70 text-xs font-medium flex-wrap relative z-10">
-        <span>✅ Seguro para crianças</span>
+        <span>✅ Dados protegidos</span>
         <span>✅ Sem anúncios</span>
+        <span>🇧🇷 Feito no Brasil</span>
       </div>
     </div>
   );
