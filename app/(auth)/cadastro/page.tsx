@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { useAppStore } from "@/store/appStore";
 import { Logo } from "@/components/shared/Logo";
+import { LocationIcon } from "@/components/shared/LocationIcon";
 import { Eye, EyeOff, ArrowLeft } from "lucide-react";
 import { trackCadastroCompleto } from "@/lib/analytics";
 
@@ -378,7 +379,7 @@ export default function CadastroPage() {
                           : "border-gray-200 text-gray-500 hover:border-green-300"
                       }`}
                     >
-                      <span className="text-xl">{p.icon}</span>
+                      <LocationIcon type={p.id} size={32} />
                       {p.label}
                     </button>
                   ))}

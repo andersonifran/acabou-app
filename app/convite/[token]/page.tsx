@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { LoadingSpinner } from "@/components/shared/LoadingSpinner";
 import { Logo } from "@/components/shared/Logo";
+import { LocationIcon } from "@/components/shared/LocationIcon";
 import Link from "next/link";
 
 interface Props {
@@ -125,14 +126,16 @@ export default function ConvitePage({ params }: Props) {
 
       {status === "ready" && (
         <div className="max-w-sm w-full">
-          <div className="text-5xl mb-4">{prop.icon}</div>
+          <div className="flex justify-center mb-4"><LocationIcon type={propertyType} size={72} /></div>
           <h2 className="text-2xl font-black text-gray-900 mb-3">Você foi convidado!</h2>
 
           {/* Nome do local em destaque */}
           {houseName && (
             <div className="bg-gray-50 border border-gray-100 rounded-2xl px-5 py-3.5 mb-4 inline-block">
               <p className="text-sm text-gray-500">Para {prop.preposition}</p>
-              <p className="text-lg font-bold text-gray-900">{prop.icon} {houseName}</p>
+              <p className="text-lg font-bold text-gray-900 flex items-center justify-center gap-1.5">
+                <LocationIcon type={propertyType} size={22} /> {houseName}
+              </p>
             </div>
           )}
 
