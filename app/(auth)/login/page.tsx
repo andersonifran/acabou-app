@@ -196,9 +196,9 @@ export default function LoginPage() {
 
       {/* Badges de confiança */}
       <div className="flex items-center justify-center gap-4 mt-5 text-white/70 text-xs font-medium flex-wrap">
-        <span>✅ Seguro</span>
+        <span>✅ Dados protegidos</span>
         <span>✅ Sem anúncios</span>
-        <span>✅ 100% LGPD</span>
+        <span>🇧🇷 Feito no Brasil</span>
       </div>
     </div>
   );
