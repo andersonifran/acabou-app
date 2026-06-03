@@ -42,6 +42,9 @@ CREATE TABLE IF NOT EXISTS houses (
   owner_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
   plan TEXT DEFAULT 'free' CHECK (plan IN ('free', 'monthly', 'yearly')) NOT NULL,
   plan_status TEXT DEFAULT 'active' CHECK (plan_status IN ('active', 'inactive', 'cancelled', 'past_due', 'trialing')) NOT NULL,
+  -- Vencimento do plano pago/trial. Acesso vale até esta data (checado em tempo
+  -- real); "cancelled" mantém acesso até aqui e só então congela.
+  plan_expires_at TIMESTAMPTZ,
   created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
   updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
 );

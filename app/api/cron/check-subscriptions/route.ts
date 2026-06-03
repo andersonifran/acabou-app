@@ -81,11 +81,13 @@ export async function GET(request: NextRequest) {
     // =============================================
     // PARTE 2: Downgrade de planos que já expiraram
     // =============================================
+    // Inclui "cancelled": quem cancelou a assinatura recorrente mantém acesso até
+    // o fim do período pago; quando essa data passa, congela igual aos demais.
     const { data: expiredHouses, error } = await supabase
       .from("houses")
       .select("id, name, plan, plan_status, plan_expires_at")
       .neq("plan", "free")
-      .in("plan_status", ["active", "trialing"])
+      .in("plan_status", ["active", "trialing", "cancelled"])
       .lt("plan_expires_at", nowISO);
 
     if (error) {

@@ -79,14 +79,50 @@ const plans = [
   },
 ];
 
+function formatDate(iso?: string | null) {
+  if (!iso) return "";
+  try {
+    return new Date(iso).toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" });
+  } catch {
+    return "";
+  }
+}
+
 function PlanosContent() {
   const { currentHouse } = useAppStore();
-  const { isTrialing, trialDaysLeft, trialExpired } = useSubscription();
+  const { isTrialing, trialDaysLeft, trialExpired, isPaid, isFrozen, rawPlan } = useSubscription();
   const currentPlan = currentHouse?.plan ?? "free";
+  const planStatus = currentHouse?.plan_status ?? "active";
+  const planExpiresAt = currentHouse?.plan_expires_at ?? null;
   const searchParams = useSearchParams();
   const motivo = searchParams.get("motivo");
   const status = searchParams.get("status");
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
+  const [cancelOpen, setCancelOpen] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
+
+  // Assinatura recorrente paga e ativa (não trial) → pode cancelar
+  const hasActiveSubscription = isPaid && !isTrialing && (rawPlan === "monthly" || rawPlan === "yearly");
+  const isCancelledButActive = hasActiveSubscription && planStatus === "cancelled";
+
+  async function handleCancel() {
+    setCancelling(true);
+    try {
+      const res = await fetch("/api/cancelar-assinatura", { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Erro ao cancelar.");
+
+      const store = useAppStore.getState();
+      if (store.currentHouse) {
+        store.setCurrentHouse({ ...store.currentHouse, plan_status: "cancelled" });
+      }
+      setCancelOpen(false);
+    } catch (err: any) {
+      alert(err.message ?? "Erro ao cancelar. Tente novamente.");
+    } finally {
+      setCancelling(false);
+    }
+  }
 
   // Pré-carrega as imagens da tela-ponte de checkout (Sacolino + logo MP)
   // para evitar o "flash"/travada no PRIMEIRO clique em assinar.
@@ -176,6 +212,47 @@ function PlanosContent() {
     <div>
       {checkoutPlan && <CheckoutTransition planName={checkoutPlan.name} price={checkoutPlan.price} />}
 
+      {/* Modal de confirmação de cancelamento */}
+      {cancelOpen && (
+        <div
+          className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center bg-black/50 p-4"
+          onClick={() => !cancelling && setCancelOpen(false)}
+        >
+          <div className="bg-white rounded-2xl w-full max-w-sm p-6" onClick={(e) => e.stopPropagation()}>
+            <div className="text-center">
+              <div className="text-4xl mb-2">🤔</div>
+              <h3 className="font-bold text-gray-900 text-lg">Cancelar assinatura?</h3>
+              <p className="text-gray-600 text-sm mt-2 leading-relaxed">
+                Você não será mais cobrado. Mas{" "}
+                <strong>continua com acesso completo até {formatDate(planExpiresAt)}</strong> —
+                depois sua casa volta ao plano grátis.
+              </p>
+            </div>
+            <div className="mt-5 space-y-2">
+              <button
+                onClick={handleCancel}
+                disabled={cancelling}
+                className="w-full py-3 rounded-xl font-semibold text-sm bg-red-600 text-white hover:bg-red-700 disabled:opacity-70 flex items-center justify-center gap-2"
+              >
+                {cancelling ? (
+                  <>
+                    <Loader2 size={16} className="animate-spin" />
+                    Cancelando...
+                  </>
+                ) : "Sim, cancelar assinatura"}
+              </button>
+              <button
+                onClick={() => setCancelOpen(false)}
+                disabled={cancelling}
+                className="w-full py-3 rounded-xl font-semibold text-sm bg-gray-100 text-gray-700 hover:bg-gray-200"
+              >
+                Manter minha assinatura
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <Header title="Planos" subtitle="Escolha o melhor para sua casa" showBack />
 
       <div className="max-w-lg mx-auto px-4 py-4 space-y-4">
@@ -264,6 +341,56 @@ function PlanosContent() {
           </p>
         </div>
 
+        {/* Plano pago congelado (expirou) */}
+        {isFrozen && (
+          <div className="bg-red-50 border border-red-200 rounded-2xl p-4 flex items-start gap-3">
+            <span className="text-2xl">🔒</span>
+            <div>
+              <p className="font-semibold text-red-800 text-sm">Seu plano expirou</p>
+              <p className="text-red-700 text-xs mt-1">
+                Seus dados estão guardados. Assine de novo para desbloquear itens ilimitados e os convidados.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Gerenciar assinatura recorrente */}
+        {hasActiveSubscription && (
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+            {isCancelledButActive ? (
+              <>
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-lg">🗓️</span>
+                  <h3 className="font-bold text-gray-900 text-sm">Assinatura cancelada</h3>
+                </div>
+                <p className="text-gray-600 text-sm leading-relaxed">
+                  Você continua com acesso completo até <strong>{formatDate(planExpiresAt)}</strong>.
+                  Depois dessa data, sua casa volta para o plano grátis (seus dados ficam guardados).
+                </p>
+                <p className="text-gray-500 text-xs mt-2">
+                  Mudou de ideia? É só assinar de novo abaixo — a cobrança só começa no fim do período atual.
+                </p>
+              </>
+            ) : (
+              <>
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-lg">🔄</span>
+                  <h3 className="font-bold text-gray-900 text-sm">Assinatura ativa</h3>
+                </div>
+                <p className="text-gray-600 text-sm leading-relaxed">
+                  Renova automaticamente em <strong>{formatDate(planExpiresAt)}</strong>. Pode cancelar quando quiser, sem multa.
+                </p>
+                <button
+                  onClick={() => setCancelOpen(true)}
+                  className="mt-3 text-sm font-medium text-gray-400 hover:text-red-600 transition-colors"
+                >
+                  Cancelar assinatura
+                </button>
+              </>
+            )}
+          </div>
+        )}
+
         {plans.map((plan) => (
           <div
             key={plan.id}
@@ -289,8 +416,11 @@ function PlanosContent() {
                   </div>
                 </div>
                 {currentPlan === plan.id && (
-                  <span className="bg-green-100 text-green-700 text-xs font-semibold px-2.5 py-1 rounded-full">
-                    Ativo
+                  <span className={cn(
+                    "text-xs font-semibold px-2.5 py-1 rounded-full",
+                    isCancelledButActive ? "bg-amber-100 text-amber-700" : "bg-green-100 text-green-700"
+                  )}>
+                    {isCancelledButActive ? "Cancelada" : "Ativo"}
                   </span>
                 )}
               </div>
@@ -310,25 +440,35 @@ function PlanosContent() {
                 ))}
               </ul>
 
-              <button
-                onClick={() => handleSubscribe(plan)}
-                disabled={plan.ctaDisabled || currentPlan === plan.id || loadingPlan === plan.id}
-                className={cn(
-                  "w-full py-3.5 rounded-xl font-semibold text-sm transition-all flex items-center justify-center gap-2",
-                  plan.highlight
-                    ? "bg-green-600 text-white hover:bg-green-700 disabled:opacity-70"
-                    : plan.ctaDisabled || currentPlan === plan.id
-                    ? "bg-gray-100 text-gray-400 cursor-default"
-                    : "bg-gray-900 text-white hover:bg-gray-800 disabled:opacity-70"
-                )}
-              >
-                {loadingPlan === plan.id ? (
-                  <>
-                    <Loader2 size={16} className="animate-spin" />
-                    Aguarde...
-                  </>
-                ) : currentPlan === plan.id ? "Plano atual" : plan.cta}
-              </button>
+              {(() => {
+                const isCurrent = currentPlan === plan.id;
+                // Plano cancelado mas ainda no período pago → permite reativar
+                const showReactivate = isCancelledButActive && isCurrent;
+                const lockedAsCurrent = isCurrent && !showReactivate;
+                return (
+                  <button
+                    onClick={() => handleSubscribe(plan)}
+                    disabled={plan.ctaDisabled || lockedAsCurrent || loadingPlan === plan.id}
+                    className={cn(
+                      "w-full py-3.5 rounded-xl font-semibold text-sm transition-all flex items-center justify-center gap-2",
+                      showReactivate
+                        ? "bg-green-600 text-white hover:bg-green-700 disabled:opacity-70"
+                        : plan.highlight
+                        ? "bg-green-600 text-white hover:bg-green-700 disabled:opacity-70"
+                        : plan.ctaDisabled || lockedAsCurrent
+                        ? "bg-gray-100 text-gray-400 cursor-default"
+                        : "bg-gray-900 text-white hover:bg-gray-800 disabled:opacity-70"
+                    )}
+                  >
+                    {loadingPlan === plan.id ? (
+                      <>
+                        <Loader2 size={16} className="animate-spin" />
+                        Aguarde...
+                      </>
+                    ) : showReactivate ? "Reativar assinatura" : isCurrent ? "Plano atual" : plan.cta}
+                  </button>
+                );
+              })()}
             </div>
           </div>
         ))}

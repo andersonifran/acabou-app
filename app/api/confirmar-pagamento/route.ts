@@ -1,20 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { createAdminClient } from "@/lib/supabase/server";
-import { sendPaymentApprovedEmail } from "@/lib/emails";
 import { cookies } from "next/headers";
-import MercadoPagoLib, { Payment } from "mercadopago";
+import { preApproval } from "@/lib/mercadopago";
+import { syncSubscriptionFromPreapproval } from "@/lib/subscription-sync";
 
 // =============================================
-// CONFIRMAR PAGAMENTO — Fallback do Webhook
+// CONFIRMAR ASSINATURA — Fallback do Webhook
 // =============================================
-// Quando o usuário volta do Mercado Pago com status=sucesso,
-// a página de planos chama esta API para verificar e ativar o plano.
-// Isso garante ativação mesmo que o webhook falhe.
+// Quando o usuário volta do Mercado Pago com status=sucesso, a página de planos
+// chama esta API para garantir a ativação mesmo que o webhook atrase/falhe.
+// Busca a assinatura (preapproval) autorizada do usuário e sincroniza o banco.
 
 export async function POST(request: NextRequest) {
   try {
-    // 1. Verifica autenticação
+    // 1. Autenticação
     const cookieStore = await cookies();
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
     }
 
-    // 2. Busca a casa do usuário
+    // 2. Casa do usuário
     const { data: membership } = await supabase
       .from("house_members")
       .select("house_id")
@@ -49,139 +49,56 @@ export async function POST(request: NextRequest) {
 
     const houseId = membership.house_id;
 
-    // 3. Verifica se a casa já tem plano pago ativo
+    // 3. Se já está ativo, não precisa fazer nada
     const supabaseAdmin = createAdminClient();
     const { data: house } = await supabaseAdmin
       .from("houses")
-      .select("plan, plan_status")
+      .select("plan, plan_status, plan_expires_at")
       .eq("id", houseId)
       .single();
 
     if (house && house.plan !== "free" && house.plan_status === "active") {
-      return NextResponse.json({ ok: true, message: "Plano já ativo", plan: house.plan });
+      return NextResponse.json({
+        ok: true,
+        message: "Plano já ativo",
+        plan: house.plan,
+        expires_at: house.plan_expires_at,
+      });
     }
 
-    // 4. Busca pagamentos recentes no Mercado Pago para este usuário/casa
-    const client = new MercadoPagoLib({
-      accessToken: process.env.MERCADOPAGO_ACCESS_TOKEN!,
-    });
-    const paymentClient = new Payment(client);
-
-    // Busca pagamentos com external_reference contendo o houseId
-    const searchResult = await paymentClient.search({
-      options: {
-        criteria: "desc",
-        sort: "date_created",
-      },
+    // 4. Busca a assinatura autorizada deste usuário no Mercado Pago
+    const search = await preApproval.search({
+      options: { payer_email: user.email ?? "" },
     });
 
-    if (!searchResult || !searchResult.results) {
-      return NextResponse.json({ error: "Nenhum pagamento encontrado" }, { status: 404 });
-    }
-
-    // Procura pagamento aprovado para esta casa
-    const approvedPayment = searchResult.results.find((p: any) => {
-      const ref = p.external_reference ?? "";
-      return ref.startsWith(`${houseId}:`) && p.status === "approved";
+    const sub = search.results?.find((r) => {
+      const ref = String(r.external_reference ?? "");
+      return ref.startsWith(`${houseId}:`) && r.status === "authorized";
     });
 
-    if (!approvedPayment) {
-      return NextResponse.json({ error: "Pagamento aprovado não encontrado para esta casa" }, { status: 404 });
+    if (!sub) {
+      return NextResponse.json(
+        { error: "Assinatura autorizada não encontrada para esta casa" },
+        { status: 404 }
+      );
     }
 
-    // 5. Extrai dados do pagamento
-    const externalRef = approvedPayment.external_reference ?? "";
-    const parts = externalRef.split(":");
-    if (parts.length !== 3) {
-      return NextResponse.json({ error: "Referência inválida" }, { status: 400 });
+    // 5. Sincroniza o banco a partir da assinatura
+    const result = await syncSubscriptionFromPreapproval({
+      id: sub.id,
+      status: sub.status,
+      external_reference: sub.external_reference,
+      next_payment_date: sub.next_payment_date,
+    });
+
+    if (!result.ok || result.status !== "active") {
+      return NextResponse.json({ error: "Não foi possível ativar a assinatura" }, { status: 500 });
     }
 
-    const [, userId, plan] = parts;
-
-    // 6. Calcula expiração
-    const now = new Date();
-    const expiresAt = new Date(now);
-    if (plan === "yearly") {
-      expiresAt.setFullYear(expiresAt.getFullYear() + 1);
-    } else {
-      expiresAt.setMonth(expiresAt.getMonth() + 1);
-    }
-
-    // 7. Atualiza TODAS as casas do dono para o plano pago
-    const { data: houseData } = await supabaseAdmin
-      .from("houses").select("owner_id").eq("id", houseId).single();
-    const ownerId = houseData?.owner_id ?? user.id;
-
-    const { error: houseError } = await supabaseAdmin
-      .from("houses")
-      .update({
-        plan,
-        plan_status: "active",
-        plan_expires_at: expiresAt.toISOString(),
-      })
-      .eq("owner_id", ownerId);
-
-    if (houseError) {
-      console.error("[Confirmar Pagamento] Erro ao atualizar casa:", houseError);
-      return NextResponse.json({ error: "Erro ao ativar plano" }, { status: 500 });
-    }
-
-    // 8. Salva subscription — tenta update primeiro, se não existe faz insert
-    const { data: existingSub } = await supabaseAdmin
-      .from("subscriptions")
-      .select("id")
-      .eq("house_id", houseId)
-      .maybeSingle();
-
-    if (existingSub) {
-      await supabaseAdmin
-        .from("subscriptions")
-        .update({
-          provider: "mercadopago",
-          provider_subscription_id: String(approvedPayment.id),
-          plan,
-          status: "active",
-          current_period_start: now.toISOString(),
-          current_period_end: expiresAt.toISOString(),
-          updated_at: now.toISOString(),
-        })
-        .eq("id", existingSub.id);
-    } else {
-      await supabaseAdmin
-        .from("subscriptions")
-        .insert({
-          house_id: houseId,
-          user_id: userId,
-          provider: "mercadopago",
-          provider_subscription_id: String(approvedPayment.id),
-          plan,
-          status: "active",
-          current_period_start: now.toISOString(),
-          current_period_end: expiresAt.toISOString(),
-        });
-    }
-
-    // Envia e-mail de confirmação de pagamento (fire-and-forget)
-    if (user.email) {
-      const { data: profile } = await supabaseAdmin
-        .from("profiles")
-        .select("full_name")
-        .eq("user_id", user.id)
-        .maybeSingle();
-
-      sendPaymentApprovedEmail(
-        user.email,
-        profile?.full_name ?? "",
-        plan,
-        expiresAt.toISOString()
-      ).catch((err) => console.error("[Confirmar Pagamento] Erro email:", err));
-    }
-
-    console.log(`[Confirmar Pagamento] ✅ Casa ${houseId} → plano ${plan} ativado via confirmação`);
-
-    return NextResponse.json({ ok: true, plan, expires_at: expiresAt.toISOString() });
+    console.log(`[Confirmar Assinatura] ✅ Casa ${houseId} → plano ${result.plan} ativado`);
+    return NextResponse.json({ ok: true, plan: result.plan, expires_at: result.expiresAt });
   } catch (err) {
-    console.error("[Confirmar Pagamento Error]", err);
-    return NextResponse.json({ error: "Erro ao confirmar pagamento" }, { status: 500 });
+    console.error("[Confirmar Assinatura Error]", err);
+    return NextResponse.json({ error: "Erro ao confirmar assinatura" }, { status: 500 });
   }
 }

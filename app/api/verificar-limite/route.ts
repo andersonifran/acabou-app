@@ -72,7 +72,12 @@ export async function POST(request: NextRequest) {
     const trialExpired = isTrialing && house.plan_expires_at
       ? new Date(house.plan_expires_at) < new Date()
       : false;
-    const paidExpired = !isTrialing && house.plan !== "free" && house.plan_status === "inactive";
+    // Plano pago expira por status "inactive" OU quando a data de vencimento passou
+    // (em tempo real) — cobre assinatura cancelada que vale até o fim do período e
+    // renovação recorrente não cobrada.
+    const paidPastDue = !!house.plan_expires_at && new Date(house.plan_expires_at) < new Date();
+    const paidExpired = !isTrialing && house.plan !== "free"
+      && (house.plan_status === "inactive" || paidPastDue);
     const isExpired = trialExpired || paidExpired;
 
     const effectivePlan = isExpired ? "free" : house.plan;

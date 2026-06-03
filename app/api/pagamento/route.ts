@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
-import { createPaymentPreference } from "@/lib/mercadopago";
+import { createRecurringSubscription } from "@/lib/mercadopago";
 
 export async function POST(request: NextRequest) {
   try {
@@ -45,17 +45,41 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Casa não encontrada." }, { status: 404 });
     }
 
-    // Cria a preferência de pagamento no Mercado Pago
-    const checkoutUrl = await createPaymentPreference({
+    // Só o DONO pode assinar (membros convidados não podem) — trava anti-burla
+    const { data: house } = await supabase
+      .from("houses")
+      .select("owner_id, plan, plan_status, plan_expires_at")
+      .eq("id", membership.house_id)
+      .single();
+
+    if (!house || house.owner_id !== user.id) {
+      return NextResponse.json({ error: "Apenas o dono da casa pode assinar." }, { status: 403 });
+    }
+
+    // Reativação: se ainda há período pago no futuro (cancelou mas continua com
+    // acesso), a 1ª cobrança da nova assinatura começa no fim desse período —
+    // assim o usuário não paga em dobro. Senão, cobra já.
+    let startDate: string | undefined;
+    if (
+      house.plan !== "free" &&
+      house.plan_expires_at &&
+      new Date(house.plan_expires_at).getTime() > Date.now()
+    ) {
+      startDate = new Date(house.plan_expires_at).toISOString();
+    }
+
+    // Cria a assinatura recorrente no Mercado Pago
+    const checkoutUrl = await createRecurringSubscription({
       houseId: membership.house_id,
       userId: user.id,
       plan: plan as "monthly" | "yearly",
       userEmail: user.email ?? "",
+      startDate,
     });
 
     return NextResponse.json({ url: checkoutUrl });
   } catch (err) {
     console.error("[Pagamento API]", err);
-    return NextResponse.json({ error: "Erro ao criar preferência de pagamento." }, { status: 500 });
+    return NextResponse.json({ error: "Erro ao criar assinatura." }, { status: 500 });
   }
 }

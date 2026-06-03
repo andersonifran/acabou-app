@@ -15,8 +15,15 @@ export function useSubscription() {
     ? new Date(currentHouse.plan_expires_at) < new Date()
     : false;
 
-  // Plano pago expirado (não trial) — status "inactive" com plano diferente de free
-  const paidExpired = !isTrialing && rawPlan !== "free" && planStatus === "inactive";
+  // Plano pago expirado (não trial). Expira quando:
+  //  - status já está "inactive" (webhook/cron marcou), OU
+  //  - a data de vencimento já passou (tempo real) — isso vale pra assinatura
+  //    cancelada, que continua ativa até o fim do período pago e só então congela,
+  //    e também pra renovação recorrente que não foi cobrada.
+  const paidPastDue = !!currentHouse?.plan_expires_at
+    && new Date(currentHouse.plan_expires_at) < new Date();
+  const paidExpired = !isTrialing && rawPlan !== "free"
+    && (planStatus === "inactive" || paidPastDue);
 
   // Se o plano expirou (trial ou pago), trata como free nos limites
   const isExpired = trialExpired || paidExpired;
