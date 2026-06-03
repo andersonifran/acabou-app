@@ -179,13 +179,14 @@ input, select, textarea {
 }
 
 /* ═══ APP — TRANSIÇÃO DE PÁGINA ═══ */
-/* Fade rápido ao trocar de aba. Só opacity (não quebra sticky headers). */
+/* Slide-up com bounce ao trocar de aba (estilo que o Chris cita).
+   Sobe deslizando + leve "overshoot" no easing = sensação premium. */
 @keyframes page-in {
-  from { opacity: 0.55; }
-  to { opacity: 1; }
+  0% { opacity: 0; transform: translateY(14px); }
+  100% { opacity: 1; transform: translateY(0); }
 }
 .animate-page-in {
-  animation: page-in 0.15s ease-out;
+  animation: page-in 0.34s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 /* Pop sutil ao tocar — feedback visual de "premium" (pareado com haptics) */

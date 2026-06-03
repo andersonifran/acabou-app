@@ -88,6 +88,15 @@ function PlanosContent() {
   const status = searchParams.get("status");
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
 
+  // Pré-carrega as imagens da tela-ponte de checkout (Sacolino + logo MP)
+  // para evitar o "flash"/travada no PRIMEIRO clique em assinar.
+  useEffect(() => {
+    ["/mascote/sacolino-feliz.png", "/mercadopago/mp-horizontal.png"].forEach((src) => {
+      const img = new window.Image();
+      img.src = src;
+    });
+  }, []);
+
   // Quando volta do Mercado Pago com sucesso, confirma e ativa o plano
   useEffect(() => {
     if (status !== "sucesso") return;
@@ -150,10 +159,10 @@ function PlanosContent() {
         });
       }
 
-      // Mantém a tela-ponte de confiança visível por ~1,8s para o usuário
+      // Mantém a tela-ponte de confiança visível por ~1,5s para o usuário
       // registrar os selos de segurança antes de ir ao Mercado Pago.
       const elapsed = Date.now() - startedAt;
-      const wait = Math.max(0, 1800 - elapsed);
+      const wait = Math.max(0, 1500 - elapsed);
       setTimeout(() => { window.location.href = data.url; }, wait);
     } catch (err: any) {
       alert(err.message ?? "Erro ao iniciar pagamento. Tente novamente.");

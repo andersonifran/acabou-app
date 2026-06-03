@@ -340,8 +340,12 @@ export default function HomePage() {
 
         {!switchingHouse && (
           <>
-            {/* "Casa em dia" — premia o resultado (nada faltando) sem cobrar */}
-            <CasaEmDiaBadge emDia={shoppingCount === 0} ready={dataSyncComplete} />
+            {/* "{Local} em dia" — premia o resultado (nada faltando) sem cobrar */}
+            <CasaEmDiaBadge
+              emDia={shoppingCount === 0}
+              ready={dataSyncComplete}
+              propertyType={(currentHouse as any)?.property_type ?? "casa"}
+            />
 
             {/* Banners de plano: só renderiza apos dados confirmados com o servidor.
                 Isso evita flash de banner com info desatualizada do cache */}
