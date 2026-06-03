@@ -10,7 +10,9 @@ import { usePathname } from "next/navigation";
  *  - voltar (aba à esquerda) → entra da esquerda
  * Páginas que não são abas usam um slide-up suave.
  */
-const TAB_ORDER = ["/home", "/despensa", "/lista", "/casa", "/configuracoes"];
+// Só as 4 abas reais entram no slide horizontal direcional.
+// Configurações (e outras sub-páginas) usam o slide-up suave (page-in).
+const TAB_ORDER = ["/home", "/despensa", "/lista", "/casa"];
 
 // Persiste entre remounts do template (módulo não recarrega na navegação SPA)
 let lastTabIndex = -1;

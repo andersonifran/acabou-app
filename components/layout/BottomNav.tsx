@@ -173,7 +173,12 @@ export function BottomNav() {
     <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-100 safe-area-pb">
       <div className="max-w-lg mx-auto flex">
         {items.map(({ href, label, Icon }) => {
-          const active = pathname === href;
+          // Mantém a aba Casa ativa (pílula roxa) ao entrar em Configurações
+          // ou em sub-páginas de Casa (ex: criar novo local).
+          const active =
+            pathname === href ||
+            (href === "/casa" &&
+              (pathname === "/configuracoes" || pathname.startsWith("/casa/")));
           return (
             <Link
               key={href}
