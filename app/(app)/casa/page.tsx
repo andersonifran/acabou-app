@@ -816,19 +816,13 @@ export default function CasaPage() {
               </div>
             )}
           </div>
-        ) : (
-          <div className="bg-gray-50 rounded-2xl border border-gray-100 p-4 space-y-3">
+        ) : !isOwner ? (
+          <div className="bg-gray-50 rounded-2xl border border-gray-100 p-4">
             <p className="text-sm text-gray-500 text-center">
-              🔒 Apenas o dono da casa pode convidar membros e acessar configurações.
+              🔒 Apenas o dono da casa pode convidar membros e gerenciar este local.
             </p>
-            <Link
-              href="/planos"
-              className="flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 font-semibold text-sm hover:bg-amber-100 transition-colors"
-            >
-              ⭐ Ver planos e benefícios
-            </Link>
           </div>
-        )}
+        ) : null}
 
         {/* ── ADICIONAR NOVO LOCAL (somente dono) ── */}
         {isOwner && (
@@ -893,7 +887,7 @@ export default function CasaPage() {
                 </div>
                 <div>
                   <p className="font-medium text-gray-900 text-sm">Plano atual</p>
-                  <p className="text-xs text-gray-500 capitalize">{currentHouse?.plan === "free" ? "Grátis" : "Família"}</p>
+                  <p className="text-xs text-gray-500">{isPaid ? "Família" : currentHouse?.plan !== "free" ? "Grátis (plano expirou)" : "Grátis"}</p>
                 </div>
               </div>
               <ChevronRight size={18} className="text-gray-400" />

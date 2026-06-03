@@ -335,12 +335,14 @@ function PlanosContent() {
 
         <div className="text-center py-2">
           <p className="text-gray-500 text-sm">
-            Plano atual: <span className="font-semibold text-gray-800 capitalize">
+            Plano atual: <span className="font-semibold text-gray-800">
               {isTrialing
                 ? "Teste grátis (7 dias)"
                 : trialExpired
                   ? "Trial expirado"
-                  : currentPlan === "free" ? "Grátis" : currentPlan === "monthly" ? "Família Mensal" : "Família Anual"}
+                  : isFrozen
+                    ? "Grátis (plano expirou)"
+                    : currentPlan === "free" ? "Grátis" : currentPlan === "monthly" ? "Família Mensal" : "Família Anual"}
             </span>
           </p>
         </div>
