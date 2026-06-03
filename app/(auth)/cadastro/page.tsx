@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { useAppStore } from "@/store/appStore";
 import { Logo } from "@/components/shared/Logo";
 import { Eye, EyeOff, ArrowLeft } from "lucide-react";
 import { trackCadastroCompleto } from "@/lib/analytics";
@@ -106,6 +107,11 @@ export default function CadastroPage() {
       if (!authData.user) throw new Error("Erro ao criar conta.");
 
       const userId = authData.user.id;
+
+      // Conta NOVA neste navegador → zera qualquer cache de conta anterior,
+      // para a casa recém-criada não se misturar com dados antigos (casa-fantasma).
+      useAppStore.getState().reset();
+      try { localStorage.removeItem("acabou_selected_house"); } catch {}
 
       if (hasInvite) {
         // Usuário convidado: cria perfil + aceita convite server-side

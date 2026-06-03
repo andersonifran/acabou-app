@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { useAppStore } from "@/store/appStore";
 import { Logo } from "@/components/shared/Logo";
 import { Eye, EyeOff, ArrowLeft } from "lucide-react";
 
@@ -28,12 +29,21 @@ export default function LoginPage() {
     setLoading(true);
     setError("");
 
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
     if (error) {
       setError("E-mail ou senha incorretos. Tente novamente.");
       setLoading(false);
       return;
+    }
+
+    // Trocou de conta neste navegador? Zera o cache da conta anterior para
+    // NUNCA vazar dados de uma conta para outra (ex.: PC de família, vários
+    // logins). Quem volta na MESMA conta mantém o carregamento instantâneo.
+    const cachedUserId = useAppStore.getState().userId;
+    if (data.user && cachedUserId && cachedUserId !== data.user.id) {
+      useAppStore.getState().reset();
+      try { localStorage.removeItem("acabou_selected_house"); } catch {}
     }
 
     // Se veio de um convite, redireciona para aceitar
