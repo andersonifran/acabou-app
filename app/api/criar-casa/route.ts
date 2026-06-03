@@ -1,20 +1,49 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createAdminClient } from "@/lib/supabase/server";
+import { createAdminClient, getAuthUser } from "@/lib/supabase/server";
 import { sendWelcomeEmail } from "@/lib/emails";
 
 export async function POST(request: NextRequest) {
   try {
-    const { userId, houseName, fullName, phone, propertyType } = await request.json();
+    // Autentica pela SESSÃO — nunca confia em userId vindo do corpo (anti-IDOR)
+    const authUser = await getAuthUser();
+    if (!authUser) {
+      return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
+    }
+    const userId = authUser.id;
 
-    if (!userId || !houseName) {
+    const { houseName, fullName, phone, propertyType } = await request.json();
+
+    if (!houseName) {
       return NextResponse.json({ error: "Dados inválidos" }, { status: 400 });
     }
 
     const supabase = createAdminClient();
 
-    // Busca o email do usuário no Auth
-    const { data: { user: authUser } } = await supabase.auth.admin.getUserById(userId);
-    const userEmail = authUser?.email ?? "";
+    // TRAVA DE PLANO no servidor: plano grátis permite apenas 1 casa.
+    // Só quem tem plano pago/trial ATIVO pode ter casas adicionais.
+    const { data: ownerHouses } = await supabase
+      .from("houses")
+      .select("plan, plan_status, plan_expires_at")
+      .eq("owner_id", userId);
+
+    const houseCount = ownerHouses?.length ?? 0;
+    const hasActivePaid = (ownerHouses ?? []).some(
+      (h) =>
+        h.plan !== "free" &&
+        (h.plan_status === "active" ||
+          (h.plan_status === "trialing" &&
+            (!h.plan_expires_at || new Date(h.plan_expires_at) > new Date())))
+    );
+
+    if (houseCount >= 1 && !hasActivePaid) {
+      return NextResponse.json(
+        { error: "O plano grátis permite apenas 1 casa. Assine o Plano Família para adicionar mais locais." },
+        { status: 403 }
+      );
+    }
+
+    // Email vem direto da sessão autenticada (sem chamada extra)
+    const userEmail = authUser.email ?? "";
 
     // Atualiza profile
     await supabase

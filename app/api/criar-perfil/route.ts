@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createAdminClient } from "@/lib/supabase/server";
+import { createAdminClient, getAuthUser } from "@/lib/supabase/server";
 
 // =============================================
 // API: Criar perfil + aceitar convite (server-side)
@@ -10,17 +10,17 @@ import { createAdminClient } from "@/lib/supabase/server";
 
 export async function POST(request: NextRequest) {
   try {
-    const { userId, fullName, phone, conviteToken } = await request.json();
-
-    if (!userId) {
-      return NextResponse.json({ error: "Dados inválidos" }, { status: 400 });
+    // Autentica pela SESSÃO — nunca confia em userId vindo do corpo (anti-IDOR)
+    const authUser = await getAuthUser();
+    if (!authUser) {
+      return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
     }
+    const userId = authUser.id;
+    const userEmail = authUser.email ?? "";
+
+    const { fullName, phone, conviteToken } = await request.json();
 
     const supabase = createAdminClient();
-
-    // 1. Busca o email do usuário no Auth
-    const { data: { user: authUser } } = await supabase.auth.admin.getUserById(userId);
-    const userEmail = authUser?.email ?? "";
 
     // 2. Cria/atualiza profile
     const { error: profileError } = await supabase

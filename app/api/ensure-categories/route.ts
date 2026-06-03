@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createAdminClient } from "@/lib/supabase/server";
+import { createAdminClient, getAuthUser } from "@/lib/supabase/server";
 
 /**
  * POST /api/ensure-categories
@@ -9,11 +9,31 @@ import { createAdminClient } from "@/lib/supabase/server";
  */
 export async function POST(req: NextRequest) {
   try {
-    const { categories } = await req.json() as {
+    // Exige login — endpoint usa service role e grava em tabela GLOBAL,
+    // então NÃO pode ficar aberto à internet.
+    const authUser = await getAuthUser();
+    if (!authUser) {
+      return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
+    }
+
+    const body = await req.json() as {
       categories: { name: string; icon: string }[];
     };
 
-    if (!categories || !Array.isArray(categories) || categories.length === 0) {
+    if (!body.categories || !Array.isArray(body.categories) || body.categories.length === 0) {
+      return NextResponse.json({ error: "categories array required" }, { status: 400 });
+    }
+
+    // Sanitiza e limita (anti-abuso): no máx. 50 itens, nomes/ícones curtos.
+    const categories = body.categories
+      .slice(0, 50)
+      .map((c) => ({
+        name: String(c?.name ?? "").trim().slice(0, 40),
+        icon: String(c?.icon ?? "").trim().slice(0, 8),
+      }))
+      .filter((c) => c.name.length > 0);
+
+    if (categories.length === 0) {
       return NextResponse.json({ error: "categories array required" }, { status: 400 });
     }
 

@@ -27,6 +27,15 @@ export async function createClient() {
   );
 }
 
+// Retorna o usuário autenticado da sessão (cookies) ou null.
+// Use em TODA rota de API antes de qualquer ação — NUNCA confie em um userId
+// vindo do corpo da requisição (isso permitiria agir em nome de outro usuário).
+export async function getAuthUser() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  return user;
+}
+
 // Cliente admin com service role — bypassa RLS completamente
 export function createAdminClient() {
   return createSupabaseClient(
