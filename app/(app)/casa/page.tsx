@@ -381,8 +381,8 @@ export default function CasaPage() {
         .select("user_id, full_name, email, avatar_url")
         .in("user_id", userIds);
 
-      const profileMap = new Map((profiles ?? []).map(p => [p.user_id, p]));
-      const enriched = userIds.map(uid => ({
+      const profileMap = new Map((profiles ?? []).map((p: any) => [p.user_id, p]));
+      const enriched = userIds.map((uid: string) => ({
         ...uniqueMap.get(uid),
         profile: profileMap.get(uid),
       }));
