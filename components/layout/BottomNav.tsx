@@ -155,7 +155,7 @@ const activePillColors: Record<string, string> = {
 
 export function BottomNav() {
   const pathname = usePathname();
-  const { userId, currentHouse } = useAppStore();
+  const { userId, currentHouse, setAddItemModalOpen } = useAppStore();
 
   // Síncrono — sem async, sem useEffect, sem flash
   const isOwner = !!(userId && currentHouse && (currentHouse as any).owner_id === userId);
@@ -183,7 +183,7 @@ export function BottomNav() {
             <Link
               key={href}
               href={href}
-              onClick={() => { if (!active) hapticLight(); }}
+              onClick={() => { setAddItemModalOpen(false); if (!active) hapticLight(); }}
               className="flex-1 flex flex-col items-center justify-center py-2 gap-0.5 transition-colors active:scale-90"
             >
               <span

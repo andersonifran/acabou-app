@@ -274,8 +274,10 @@ export function AddItemModal({
   };
 
   return (
-    <div className="fixed inset-0 z-[60] bg-black/40 flex items-end justify-center px-0">
-      <div className="w-full max-w-lg bg-white rounded-t-2xl shadow-xl max-h-[88vh] flex flex-col pb-safe">
+    <div className="fixed inset-0 z-[45] bg-black/40 flex items-end justify-center px-0 pb-16">
+      {/* z-[45] (abaixo do rodapé z-50) + pb-16 → sheet senta ACIMA do rodapé,
+          que continua visível e firme (visual mais profissional). */}
+      <div className="w-full max-w-lg bg-white rounded-t-2xl shadow-xl max-h-[82vh] flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between px-5 pt-5 pb-3 border-b border-gray-100">
           <div>
