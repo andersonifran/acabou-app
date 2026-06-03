@@ -47,6 +47,10 @@ function DespensaContent() {
   const [savingCat, setSavingCat] = useState(false);
   const { categories, setCategories } = useAppStore();
 
+  // Renomear CATEGORIA está desativado (mexia na categoria global de todos).
+  // Renomear ITENS continua normal. Reativar quando houver categoria por casa.
+  const CATEGORY_RENAME_ENABLED = false;
+
   async function handleRenameCategory(catId: string) {
     const trimmed = editingCatName.trim();
     if (!trimmed || savingCat) return;
@@ -265,7 +269,7 @@ function DespensaContent() {
                     <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">
                       {catItems[0].category?.icon} {category} ({catItems.length})
                     </p>
-                    {canEditCategories && catId && (
+                    {CATEGORY_RENAME_ENABLED && canEditCategories && catId && (
                       <button
                         onClick={() => { setEditingCat(catId); setEditingCatName(category); }}
                         className="text-gray-300 hover:text-gray-500 transition-colors p-0.5"
