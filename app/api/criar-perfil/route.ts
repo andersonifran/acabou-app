@@ -62,10 +62,10 @@ export async function POST(request: NextRequest) {
           new Date(house.plan_expires_at) > new Date();
 
         if (canAccept && trialOk) {
-          // Verifica se já não é membro
+          // Verifica se já tem registro de membro
           const { data: existing } = await supabase
             .from("house_members")
-            .select("id")
+            .select("id, status")
             .eq("house_id", invite.house_id)
             .eq("user_id", userId)
             .maybeSingle();
@@ -79,18 +79,27 @@ export async function POST(request: NextRequest) {
               status: "active",
               invited_by: userId,
             });
-
-            // Marca token como usado
             await supabase
               .from("invite_tokens")
               .update({ used_at: new Date().toISOString() })
               .eq("token", conviteToken);
-
             houseId = invite.house_id;
             console.log(`[criar-perfil] ✅ Usuário ${userId} entrou na casa ${houseId} via convite`);
+          } else if (existing.status !== "active") {
+            // Estava "removed"/"frozen" → reativa
+            await supabase
+              .from("house_members")
+              .update({ status: "active", role: "member" })
+              .eq("id", existing.id);
+            await supabase
+              .from("invite_tokens")
+              .update({ used_at: new Date().toISOString() })
+              .eq("token", conviteToken);
+            houseId = invite.house_id;
+            console.log(`[criar-perfil] ✅ Usuário ${userId} REATIVADO na casa ${houseId}`);
           } else {
             houseId = invite.house_id;
-            console.log(`[criar-perfil] ℹ️ Usuário ${userId} já é membro da casa ${houseId}`);
+            console.log(`[criar-perfil] ℹ️ Usuário ${userId} já é membro ativo da casa ${houseId}`);
           }
         } else {
           console.log(`[criar-perfil] ⚠️ Convite inválido ou plano inativo para casa ${invite.house_id}`);

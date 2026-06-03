@@ -35,16 +35,36 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Convite expirado." }, { status: 400 });
     }
 
-    // 2. Já é membro? → ok (vai pro app)
+    // 2. Já tem registro de membro?
     const { data: existing } = await admin
       .from("house_members")
-      .select("id")
+      .select("id, status")
       .eq("house_id", invite.house_id)
       .eq("user_id", authUser.id)
       .maybeSingle();
 
     if (existing) {
-      return NextResponse.json({ ok: true, houseId: invite.house_id, alreadyMember: true });
+      if (existing.status === "active") {
+        // Já é membro ativo → só entra
+        return NextResponse.json({ ok: true, houseId: invite.house_id, alreadyMember: true });
+      }
+      // Estava "removed"/"frozen" → REATIVA com os dados do novo convite
+      const { error: reactErr } = await admin
+        .from("house_members")
+        .update({
+          status: "active",
+          role: "member",
+          display_name: invite.invitee_name || null,
+          member_type: invite.member_type || "familiar",
+          relation_label: invite.relation_label || null,
+        } as any)
+        .eq("id", existing.id);
+      if (reactErr) {
+        console.error("[convite/aceitar] erro ao reativar membro:", reactErr);
+        return NextResponse.json({ error: "Erro ao entrar na casa. Tente novamente." }, { status: 500 });
+      }
+      await admin.from("invite_tokens").update({ used_at: new Date().toISOString() }).eq("token", token);
+      return NextResponse.json({ ok: true, houseId: invite.house_id });
     }
 
     // 3. Casa precisa ter plano pago/trial ATIVO e não expirado (convite é premium)
