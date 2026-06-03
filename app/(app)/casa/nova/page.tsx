@@ -9,11 +9,18 @@ import { LocationIcon } from "@/components/shared/LocationIcon";
 import { cn } from "@/lib/utils";
 
 function hasPaidHouse(houses: any[]): boolean {
-  return houses.some(
-    (h) =>
-      (h.plan === "monthly" || h.plan === "yearly") &&
-      (h.plan_status === "active" || h.plan_status === "trialing")
-  );
+  const now = Date.now();
+  return houses.some((h) => {
+    if (h.plan !== "monthly" && h.plan !== "yearly") return false;
+    if (h.plan_status === "inactive") return false;
+    // active/trialing/cancelled valem só se NÃO expirou (em tempo real).
+    // Sem isso, um trial expirado (que o cron ainda não congelou) contava como
+    // pago e deixava criar 2ª casa de graça / não redirecionava pro /planos.
+    if (["active", "trialing", "cancelled"].includes(h.plan_status)) {
+      return !h.plan_expires_at || new Date(h.plan_expires_at).getTime() > now;
+    }
+    return false;
+  });
 }
 
 const PROPERTY_TYPES = [
