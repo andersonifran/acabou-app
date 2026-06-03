@@ -5,6 +5,17 @@ import { Resend } from "resend";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
+// Escapa HTML do conteúdo enviado pelo usuário antes de injetar no e-mail
+// (evita injeção de HTML/script no e-mail que o suporte recebe).
+function escapeHtml(s: unknown): string {
+  return String(s ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 export async function POST(request: NextRequest) {
   try {
     const { content, userName, userEmail } = await request.json();
@@ -54,11 +65,11 @@ export async function POST(request: NextRequest) {
             </div>
             <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-top: none; padding: 24px; border-radius: 0 0 12px 12px;">
               <p style="margin: 0 0 8px; font-size: 13px; color: #6b7280; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">Usuário</p>
-              <p style="margin: 0 0 20px; font-size: 15px; color: #111827;">${senderInfo}</p>
+              <p style="margin: 0 0 20px; font-size: 15px; color: #111827;">${escapeHtml(senderInfo)}</p>
 
               <p style="margin: 0 0 8px; font-size: 13px; color: #6b7280; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">Mensagem</p>
               <div style="background: white; border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px;">
-                <p style="margin: 0; font-size: 15px; color: #111827; line-height: 1.6; white-space: pre-wrap;">${content.trim()}</p>
+                <p style="margin: 0; font-size: 15px; color: #111827; line-height: 1.6; white-space: pre-wrap;">${escapeHtml(content.trim())}</p>
               </div>
 
               <p style="margin: 20px 0 0; font-size: 12px; color: #9ca3af; text-align: center;">
