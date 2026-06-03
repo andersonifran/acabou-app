@@ -39,9 +39,30 @@ export async function syncSubscriptionFromPreapproval(pre: PreapprovalLike) {
 
   // ---------- Assinatura ATIVA (autorizada / renovou) ----------
   if (status === "authorized") {
-    // Acesso vale até a próxima cobrança. Fallback: +1 período a partir de agora.
+    // next_payment_date do MP = fonte da verdade do "acesso até quando".
     const npd = pre.next_payment_date ? new Date(pre.next_payment_date) : null;
-    const expiresAt = npd && npd.getTime() > now.getTime() ? npd : addPeriod(now, plan);
+
+    // Vencimento atual — para ser IDEMPOTENTE: reprocessar o mesmo evento (ou
+    // o webhook + o fallback confirmar-pagamento) NÃO pode estender o período
+    // indevidamente (isso liberaria acesso de graça).
+    const { data: curHouse } = await supabase
+      .from("houses")
+      .select("plan_expires_at")
+      .eq("id", houseId)
+      .maybeSingle();
+    const currentExpiry = curHouse?.plan_expires_at ? new Date(curHouse.plan_expires_at) : null;
+
+    let expiresAt: Date;
+    if (npd && npd.getTime() > now.getTime()) {
+      // MP informou a próxima cobrança → autoridade. Nunca encurta o período.
+      expiresAt = currentExpiry && currentExpiry.getTime() > npd.getTime() ? currentExpiry : npd;
+    } else if (currentExpiry && currentExpiry.getTime() > now.getTime()) {
+      // Sem next_payment_date, mas já existe período válido → mantém (idempotente).
+      expiresAt = currentExpiry;
+    } else {
+      // Primeira ativação ou período já vencido → estende +1 período.
+      expiresAt = addPeriod(now, plan);
+    }
 
     // Estado anterior — para mandar o e-mail de confirmação só na 1ª ativação
     // (não a cada renovação automática).
@@ -80,10 +101,14 @@ export async function syncSubscriptionFromPreapproval(pre: PreapprovalLike) {
       if (thawError) console.error("[SubSync] erro ao reativar convidados:", thawError);
     }
 
-    if (prevSub) {
-      await supabase
-        .from("subscriptions")
-        .update({
+    // Upsert atômico por house_id (exige UNIQUE(house_id) em subscriptions) —
+    // evita linha duplicada e garante que o cancelamento sempre acha o preapproval.
+    const { error: subError } = await supabase
+      .from("subscriptions")
+      .upsert(
+        {
+          house_id: houseId,
+          user_id: userId,
           provider: "mercadopago",
           provider_subscription_id: preapprovalId,
           plan,
@@ -91,20 +116,10 @@ export async function syncSubscriptionFromPreapproval(pre: PreapprovalLike) {
           current_period_start: now.toISOString(),
           current_period_end: expiresAt.toISOString(),
           updated_at: now.toISOString(),
-        })
-        .eq("id", prevSub.id);
-    } else {
-      await supabase.from("subscriptions").insert({
-        house_id: houseId,
-        user_id: userId,
-        provider: "mercadopago",
-        provider_subscription_id: preapprovalId,
-        plan,
-        status: "active",
-        current_period_start: now.toISOString(),
-        current_period_end: expiresAt.toISOString(),
-      });
-    }
+        },
+        { onConflict: "house_id" }
+      );
+    if (subError) console.error("[SubSync] erro ao salvar subscription:", subError);
 
     if (!wasActive) {
       try {
