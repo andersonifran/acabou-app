@@ -157,11 +157,6 @@ export function BottomNav() {
   const pathname = usePathname();
   const { userId, currentHouse, setAddItemModalOpen } = useAppStore();
 
-  // Só mostra o rodapé quando há sessão logada. Assim podemos colocá-lo em
-  // sub-páginas (Feedback, Privacidade, Termos) sem ele aparecer pra quem
-  // chega deslogado (ex: vindo da landing).
-  if (!userId || !currentHouse) return null;
-
   // Síncrono — sem async, sem useEffect, sem flash
   const isOwner = !!(userId && currentHouse && (currentHouse as any).owner_id === userId);
 

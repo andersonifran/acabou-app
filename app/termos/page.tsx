@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { PublicBottomNav } from "@/components/layout/PublicBottomNav";
 
 export default function TermosPage() {
   return (
@@ -90,8 +89,6 @@ export default function TermosPage() {
           </p>
         </section>
       </main>
-      <div className="pb-16" />
-      <PublicBottomNav />
     </div>
   );
 }

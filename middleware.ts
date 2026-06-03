@@ -8,7 +8,6 @@ const PUBLIC_PATHS = [
   "/privacidade",
   "/termos",
   "/convite",
-  "/feedback",
   "/onboarding",
   "/debug-pwa",
 ];

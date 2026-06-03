@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { PublicBottomNav } from "@/components/layout/PublicBottomNav";
 
 export default function PrivacidadePage() {
   return (
@@ -87,8 +86,6 @@ export default function PrivacidadePage() {
           </p>
         </section>
       </main>
-      <div className="pb-16" />
-      <PublicBottomNav />
     </div>
   );
 }
