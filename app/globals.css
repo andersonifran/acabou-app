@@ -166,11 +166,12 @@ input, select, textarea {
 
 /* Marquee — scroll infinito de itens */
 @keyframes marquee {
-  0% { transform: translateX(0); }
-  100% { transform: translateX(-50%); }
+  0% { transform: translate3d(0, 0, 0); }
+  100% { transform: translate3d(-50%, 0, 0); }
 }
 .animate-marquee {
   animation: marquee 30s linear infinite;
+  will-change: transform;
 }
 /* No mobile a faixa é mais estreita e parece mais lenta → acelera um pouco */
 @media (max-width: 768px) {

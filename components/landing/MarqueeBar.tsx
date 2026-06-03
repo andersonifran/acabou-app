@@ -22,7 +22,7 @@ export function MarqueeBar() {
 
   return (
     <div className="bg-green-600 overflow-hidden py-3">
-      <div className="flex animate-marquee whitespace-nowrap">
+      <div className="flex w-max animate-marquee whitespace-nowrap">
         {doubled.map((item, i) => (
           <span key={i} className="inline-flex items-center gap-1.5 text-sm text-white font-medium mx-5 shrink-0">
             <span className="text-base">{item.emoji}</span>
