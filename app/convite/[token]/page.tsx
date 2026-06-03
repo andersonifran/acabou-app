@@ -52,39 +52,19 @@ export default function ConvitePage({ params }: Props) {
     setStatus("loading");
 
     try {
-      const { data: invite, error: queryError } = await supabase
-        .from("invite_tokens")
-        .select("*, house:houses(name, property_type)")
-        .eq("token", t)
-        .is("used_at", null)
-        .single();
+      // Leitura no SERVIDOR (rota com admin client) — a tabela invite_tokens
+      // não é mais lida direto pelo cliente (evita listar todos os tokens).
+      const res = await fetch(`/api/convite/info?token=${encodeURIComponent(t)}`);
+      const data = await res.json();
 
-      if (queryError || !invite) {
-        // Verifica se o token existe mas já foi usado (usuário já aceitou)
-        const { data: usedInvite } = await supabase
-          .from("invite_tokens")
-          .select("used_at")
-          .eq("token", t)
-          .single();
-
-        if (usedInvite?.used_at) {
-          setError("Este convite já foi utilizado. Se foi você, acesse o app normalmente.");
-        } else {
-          setError("Link de convite inválido ou expirado.");
-        }
+      if (!data.valid) {
+        setError(data.reason ?? "Link de convite inválido ou expirado.");
         setStatus("error");
         return;
       }
 
-      if (new Date(invite.expires_at) < new Date()) {
-        setError("Este link de convite expirou. Peça um novo convite ao dono da casa.");
-        setStatus("error");
-        return;
-      }
-
-      const house = invite.house as any;
-      setHouseName(house?.name ?? "");
-      setPropertyType(house?.property_type ?? "casa");
+      setHouseName(data.houseName ?? "");
+      setPropertyType(data.propertyType ?? "casa");
       setStatus("ready");
     } catch (err) {
       setError("Erro de conexão. Verifique sua internet e tente novamente.");
@@ -103,83 +83,33 @@ export default function ConvitePage({ params }: Props) {
       return;
     }
 
-    const { data: invite } = await supabase
-      .from("invite_tokens")
-      .select("house_id")
-      .eq("token", token)
-      .single();
+    // Aceite no SERVIDOR (admin client) — todas as validações (token, plano,
+    // expiração, já-é-membro) acontecem lá, sem dar pra burlar pelo cliente.
+    try {
+      const res = await fetch("/api/convite/aceitar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token }),
+      });
+      const data = await res.json();
 
-    if (!invite) { setError("Convite inválido."); setStatus("error"); return; }
-
-    // Verifica se já é membro
-    const { data: existing } = await supabase
-      .from("house_members")
-      .select("id")
-      .eq("house_id", invite.house_id)
-      .eq("user_id", user.id)
-      .single();
-
-    if (existing) {
-      router.push("/home");
-      return;
-    }
-
-    // Verifica se a casa tem plano pago (convites são do Plano Família)
-    const { data: house } = await supabase
-      .from("houses")
-      .select("plan, plan_status")
-      .eq("id", invite.house_id)
-      .single();
-
-    // Aceita convites de casas com plano pago (ativo ou trial)
-    const validStatuses = ["active", "trialing"];
-    if (!house || house.plan === "free" || !validStatuses.includes(house.plan_status)) {
-      setError("O dono desta casa precisa ter o Plano Família ativo para convidar membros.");
-      setStatus("error");
-      return;
-    }
-
-    // Verifica se o trial/plano não expirou (proteção extra caso cron não tenha rodado)
-    if (house.plan_status === "trialing") {
-      const { data: houseExpiry } = await supabase
-        .from("houses")
-        .select("plan_expires_at")
-        .eq("id", invite.house_id)
-        .single();
-      if (houseExpiry?.plan_expires_at && new Date(houseExpiry.plan_expires_at) < new Date()) {
-        setError("O período de teste grátis do dono desta casa expirou.");
+      if (!res.ok) {
+        setError(data.error ?? "Não foi possível aceitar o convite.");
         setStatus("error");
         return;
       }
+
+      if (data.alreadyMember) {
+        router.push("/home");
+        return;
+      }
+
+      setStatus("success");
+      setTimeout(() => router.push("/home"), 2000);
+    } catch (err) {
+      setError("Erro ao aceitar convite. Tente novamente.");
+      setStatus("error");
     }
-
-    // Busca dados extras do convite (nome, tipo, parentesco)
-    const { data: inviteExtra } = await supabase
-      .from("invite_tokens")
-      .select("invitee_name, member_type, relation_label")
-      .eq("token", token)
-      .single();
-
-    // Adiciona como membro com os dados do convite
-    await supabase.from("house_members").insert({
-      house_id: invite.house_id,
-      user_id: user.id,
-      role: "member",
-      status: "active",
-      invited_by: user.id,
-      display_name: (inviteExtra as any)?.invitee_name || null,
-      member_type: (inviteExtra as any)?.member_type || "familiar",
-      relation_label: (inviteExtra as any)?.relation_label || null,
-    } as any);
-
-    // Marca token como usado
-    await supabase
-      .from("invite_tokens")
-      .update({ used_at: new Date().toISOString() })
-      .eq("token", token);
-
-    setStatus("success");
-    setTimeout(() => router.push("/home"), 2000);
   }
 
   // Monta a frase com base no tipo de imóvel
