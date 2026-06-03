@@ -86,6 +86,14 @@ export function InstallPWA() {
     };
   }, []);
 
+  // Avisa o resto da página quando este banner está aberto, para a barra fixa
+  // de CTA ("Testar 7 dias grátis") se esconder e não competir/cobrir.
+  useEffect(() => {
+    const open = visible && !isInstalled;
+    (window as any).__installBannerOpen = open;
+    window.dispatchEvent(new Event("install-banner-change"));
+  }, [visible, isInstalled]);
+
   function dismiss() {
     setVisible(false);
     setShowIOSSteps(false);

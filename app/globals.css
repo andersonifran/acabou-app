@@ -171,11 +171,12 @@ input, select, textarea {
 }
 .animate-marquee {
   animation: marquee 30s linear infinite;
-  will-change: transform;
+  /* SEM will-change: numa faixa muito larga ele cria uma camada GPU enorme que
+     trava no mobile. O translate3d no keyframe já compõe na GPU durante o giro. */
 }
-/* No mobile a faixa é mais estreita e parece mais lenta → acelera um pouco */
+/* No mobile, um pouco mais rápido que o desktop, mas não corrido */
 @media (max-width: 768px) {
-  .animate-marquee { animation-duration: 18s; }
+  .animate-marquee { animation-duration: 24s; }
 }
 
 /* Float — emojis flutuando suavemente (sobe-desce + giro leve, como desenhado).

@@ -4,22 +4,13 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 
 export function MobileStickyBar() {
-  const [visible, setVisible] = useState(false);
+  const [pastHero, setPastHero] = useState(false);
+  const [ctaFinalVisible, setCtaFinalVisible] = useState(false);
+  const [installOpen, setInstallOpen] = useState(false);
 
   useEffect(() => {
-    // A barra só aparece no MEIO da página:
-    //  - some no topo (hero já tem CTA)
-    //  - some no fim (CTA final + rodapé já têm CTA) → não cobre nada
-    let pastHero = false;
-    let ctaFinalVisible = false;
-
-    function update() {
-      setVisible(pastHero && !ctaFinalVisible);
-    }
-
     function onScroll() {
-      pastHero = window.scrollY > 600;
-      update();
+      setPastHero(window.scrollY > 600);
     }
 
     // Esconde assim que a seção de CTA final (que leva ao rodapé) aparece
@@ -27,22 +18,30 @@ export function MobileStickyBar() {
     let io: IntersectionObserver | undefined;
     if (ctaFinal) {
       io = new IntersectionObserver(
-        ([entry]) => {
-          ctaFinalVisible = entry.isIntersecting;
-          update();
-        },
+        ([entry]) => setCtaFinalVisible(entry.isIntersecting),
         { rootMargin: "0px 0px -8% 0px" }
       );
       io.observe(ctaFinal);
     }
 
+    // Se o banner de instalar estiver aberto, esconde a barra (não competir)
+    function syncInstall() {
+      setInstallOpen(!!(window as any).__installBannerOpen);
+    }
+    syncInstall();
+    window.addEventListener("install-banner-change", syncInstall);
     window.addEventListener("scroll", onScroll, { passive: true });
     onScroll();
     return () => {
       window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("install-banner-change", syncInstall);
       io?.disconnect();
     };
   }, []);
+
+  // A barra só aparece no MEIO da página, e nunca quando o banner de instalar
+  // está aberto (pra não cobrir o "Instalar").
+  const visible = pastHero && !ctaFinalVisible && !installOpen;
 
   return (
     <div
