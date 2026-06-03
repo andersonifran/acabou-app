@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { createAdminClient } from "@/lib/supabase/server";
 import { cookies } from "next/headers";
-import { cancelRecurringSubscription } from "@/lib/mercadopago";
+import { cancelRecurringSubscription, preApproval } from "@/lib/mercadopago";
 
 // =============================================
 // CANCELAR ASSINATURA (estilo Netflix)
@@ -65,7 +65,24 @@ export async function POST(request: NextRequest) {
       .eq("house_id", membership.house_id)
       .maybeSingle();
 
-    const preapprovalId = sub?.provider_subscription_id;
+    let preapprovalId = sub?.provider_subscription_id ?? null;
+
+    // FALLBACK de segurança: se não temos o id da assinatura salvo localmente
+    // (ex.: o registro não foi criado por algum motivo), buscamos a assinatura
+    // ATIVA do dono direto no Mercado Pago. Assim SEMPRE conseguimos cancelar na
+    // fonte e parar a cobrança — nunca deixamos cobrando por falta de registro.
+    if (!preapprovalId && user.email) {
+      try {
+        const search = await preApproval.search({ options: { payer_email: user.email } });
+        const found = search.results?.find((r) => {
+          const ref = String(r.external_reference ?? "");
+          return ref.includes(`:${user.id}:`) && r.status === "authorized";
+        });
+        if (found?.id) preapprovalId = String(found.id);
+      } catch (e) {
+        console.error("[Cancelar] busca da assinatura no MP falhou:", e);
+      }
+    }
 
     // TRAVA PRINCIPAL contra cobrança indevida: ao marcar a assinatura como
     // "cancelled" no Mercado Pago, o PRÓPRIO MP para de cobrar — nem tenta a
