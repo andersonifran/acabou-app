@@ -1,11 +1,22 @@
 import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
+import { LogoIcon } from "@/components/shared/Logo";
 
 export default function TermosPage() {
   return (
     <div className="min-h-screen bg-white">
       <header className="bg-green-600 text-white px-6 py-5">
         <div className="max-w-3xl mx-auto">
-          <Link href="/" className="text-green-200 text-sm hover:text-white mb-2 block">← Voltar</Link>
+          {/* Topo: pill "Início" (igual cadastro/login) + logo clicável */}
+          <div className="flex items-center justify-between mb-4">
+            <Link href="/" className="inline-flex items-center gap-1.5 text-green-700 text-sm font-semibold bg-white shadow-md hover:shadow-lg px-4 py-2 rounded-full transition-all">
+              <ArrowLeft size={14} /> Início
+            </Link>
+            <Link href="/" className="flex items-center gap-2" aria-label="Acabou? — voltar ao início">
+              <span className="bg-white rounded-xl p-1 inline-flex shadow-sm"><LogoIcon size={26} /></span>
+              <span className="text-lg font-black text-white">Acabou?</span>
+            </Link>
+          </div>
           <h1 className="text-2xl font-bold">Termos de Uso</h1>
           <p className="text-green-100 text-sm mt-1">Última atualização: {new Date().toLocaleDateString("pt-BR")}</p>
         </div>

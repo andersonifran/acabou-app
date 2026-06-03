@@ -28,10 +28,10 @@ export default function LandingPage() {
       {/* ═══ NAV ═══ */}
       <nav className="sticky top-0 z-40 bg-white/95 backdrop-blur border-b border-gray-100 px-6 py-3">
         <div className="max-w-5xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
+          <a href="#top" className="flex items-center gap-2.5 cursor-pointer" aria-label="Voltar ao topo">
             <LogoIcon size={42} />
             <BrandName className="text-2xl" />
-          </div>
+          </a>
           <div className="flex items-center gap-2 sm:gap-3">
             <Link href="#como-funciona" className="hidden md:block text-gray-500 hover:text-gray-900 text-sm font-medium">
               Como funciona
@@ -58,7 +58,7 @@ export default function LandingPage() {
       </nav>
 
       {/* ═══ HERO ═══ */}
-      <section className="relative overflow-hidden px-6 pt-14 pb-16 md:pt-20 md:pb-24" style={{ background: "linear-gradient(160deg, #d4f5e0 0%, #f0fdf4 40%, #ffffff 80%)" }}>
+      <section id="top" className="relative overflow-hidden px-6 pt-14 pb-16 md:pt-20 md:pb-24 scroll-mt-20" style={{ background: "linear-gradient(160deg, #d4f5e0 0%, #f0fdf4 40%, #ffffff 80%)" }}>
         {/* Floating emojis */}
         <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
           {[
