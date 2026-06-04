@@ -46,7 +46,7 @@ export function LogoIcon({ size = 40 }: { size?: number }) {
 
       {/* Parede direita — vira "?" */}
       <path
-        d="M 75 42 L 75 63 Q 75 81 60 81 Q 50 81 50 90"
+        d="M 75 42 L 75 63 Q 75 81 60 81 Q 50 81 50 84"
         stroke="white"
         strokeWidth="5.5"
         strokeLinecap="round"
