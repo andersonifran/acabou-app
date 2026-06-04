@@ -204,7 +204,7 @@ export default function CadastroPage() {
   }
 
   return (
-    <div className="min-h-screen relative flex flex-col items-center justify-center px-4 py-8" style={{ background: "linear-gradient(135deg, #d4f5e0 0%, #a7e8c0 30%, #16a34a 70%, #15803d 100%)" }}>
+    <div className="min-h-screen relative flex flex-col items-center justify-center px-4 py-8 brand-grad">
       {/* Floating emojis */}
       <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
         {[

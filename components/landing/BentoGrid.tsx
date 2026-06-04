@@ -27,7 +27,7 @@ export function BentoGrid() {
             <RevealOnScroll key={b.title} delay={i * 60}>
               <div className={`rounded-2xl p-5 border transition-all h-full ${b.span ? "sm:col-span-2" : ""} ${
                 b.accent
-                  ? "bg-green-700 border-green-700 shadow-lg shadow-green-300/30"
+                  ? "brand-grad border-green-700 shadow-lg shadow-green-300/30"
                   : "bg-white border-gray-200/60 hover:border-green-300 hover:shadow-md"
               }`}>
                 <span className="text-2xl block mb-2">{b.icon}</span>

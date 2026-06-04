@@ -357,7 +357,7 @@ export default function LandingPage() {
               { title: "✅ Acabou?", items: ["Todo mundo vê", "Status em tempo real", "Lista automática", "WhatsApp + offline", "Lembrete diário"], bad: false },
             ].map((col, i) => (
               <RevealOnScroll key={col.title} delay={i * 100}>
-                <div className={`rounded-2xl p-5 border h-full ${col.bad ? "bg-white border-gray-100" : "bg-green-600 border-green-600 text-white"}`}>
+                <div className={`rounded-2xl p-5 border h-full ${col.bad ? "bg-white border-gray-100" : "brand-grad border-green-700 text-white"}`}>
                   <h4 className={`font-bold text-sm mb-4 ${col.bad ? "text-gray-900" : "text-white"}`}>{col.title}</h4>
                   <div className="space-y-2.5">
                     {col.items.map((item) => (
