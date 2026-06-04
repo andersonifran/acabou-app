@@ -355,7 +355,7 @@ function OnboardingContent() {
   // Step de configurar a casa (para quem entrou pelo Google)
   if (needsSetup) {
     return (
-      <div className="min-h-screen bg-white flex flex-col">
+      <div className="min-h-screen bg-white flex flex-col pb-28">
         <div className="px-6 pt-10 pb-6 flex flex-col items-center text-center">
           <Mascote mood="acenando" size={120} className="mb-3" />
           <h1 className="text-2xl font-black text-gray-900 mb-2">Oi! Eu sou o Sacolino 👋</h1>
@@ -415,20 +415,25 @@ function OnboardingContent() {
               💡 Depois você pode convidar sua família e adicionar mais locais.
             </p>
           </div>
+        </div>
 
-          <button
-            onClick={handleCreateHouse}
-            disabled={setupLoading || !setupHouseName.trim()}
-            className="w-full bg-green-600 text-white font-black py-4 rounded-2xl hover:bg-green-700 transition-colors disabled:opacity-60 text-base shadow-md shadow-green-200 flex items-center justify-center gap-2"
-          >
-            {setupLoading ? (
-              "Criando..."
-            ) : (
-              <>
-                Continuar <ArrowRight size={18} />
-              </>
-            )}
-          </button>
+        {/* CTA fixo no rodapé — sempre visível, sem precisar rolar (igual à 2ª etapa) */}
+        <div className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur border-t border-gray-100 px-4 py-4 shadow-lg">
+          <div className="max-w-md mx-auto">
+            <button
+              onClick={handleCreateHouse}
+              disabled={setupLoading || !setupHouseName.trim()}
+              className="w-full bg-green-600 text-white font-black py-4 rounded-2xl hover:bg-green-700 transition-colors disabled:opacity-60 text-base shadow-md shadow-green-200 flex items-center justify-center gap-2"
+            >
+              {setupLoading ? (
+                "Criando..."
+              ) : (
+                <>
+                  Continuar <ArrowRight size={18} />
+                </>
+              )}
+            </button>
+          </div>
         </div>
       </div>
     );

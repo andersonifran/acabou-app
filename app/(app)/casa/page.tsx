@@ -580,7 +580,7 @@ export default function CasaPage() {
                     }}
                     maxLength={60}
                     placeholder="Seu nome"
-                    className="flex-1 text-base font-semibold text-gray-900 border-b-2 border-green-400 bg-transparent outline-none pb-0.5"
+                    className="flex-1 min-w-0 text-base font-semibold text-gray-900 border-b-2 border-green-400 bg-transparent outline-none pb-0.5"
                   />
                   <button
                     onClick={handleSaveProfileName}
@@ -639,7 +639,7 @@ export default function CasaPage() {
                       if (e.key === "Escape") { setEditingHouseName(false); setHouseName(currentHouse?.name ?? ""); }
                     }}
                     maxLength={60}
-                    className="flex-1 text-base font-semibold text-gray-900 border-b-2 border-green-400 bg-transparent outline-none pb-0.5"
+                    className="flex-1 min-w-0 text-base font-semibold text-gray-900 border-b-2 border-green-400 bg-transparent outline-none pb-0.5"
                   />
                   <button
                     onClick={handleSaveHouseName}
