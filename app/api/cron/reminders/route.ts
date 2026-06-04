@@ -3,20 +3,19 @@ import { createAdminClient } from "@/lib/supabase/server";
 import { sendPushToUser } from "@/lib/push";
 
 /**
- * Cron diário (Vercel) — roda 1x/dia às 18h (Brasília): "0 21 * * *" UTC.
+ * Cron (Vercel Pro) — roda a cada 15 minutos.
  *
  * PARTE 1 (PAGO) — Lembrete de compras: "Hora de ir às compras".
- *   Vai para TODA casa com reminder_enabled + plano válido + itens na lista.
- *   (18h fixo: o horário escolhido pelo usuário é tratado como preferência,
- *    porque o cron grátis só dispara 1x/dia.)
+ *   Enviado no HORÁRIO QUE O USUÁRIO ESCOLHEU (reminder_time), dentro da
+ *   janela de 15 min correspondente. Só para casas com plano válido + itens.
  *
- * PARTE 2 (GRÁTIS, re-engajamento estilo Duolingo) — Nudge diário:
- *   "Dá uma olhada na despensa hoje". Vai para quem tem notificação ativa,
- *   NÃO abriu o app hoje e NÃO recebeu outra notificação hoje.
- *   Regra de ouro: NO MÁXIMO 1 notificação por dia por usuário (sem colisão).
+ * PARTE 2 (GRÁTIS) — Nudge diário de re-engajamento (estilo Duolingo):
+ *   Roda 1x/dia, SÓ na janela das 18h. Vai para quem tem push ativo, NÃO
+ *   abriu o app hoje e NÃO recebeu outra notificação hoje.
+ *
+ * Regra de ouro: no máximo 1 notificação/dia por usuário (sem colisão).
  */
 
-// Frases rotativas do nudge (gira por dia, pra nunca enjoar).
 const NUDGE_PHRASES = [
   { title: "Dá uma olhada na despensa hoje 👀", body: "Marque o que tá acabando pra não faltar nada." },
   { title: "Tá faltando algo em casa? 🏠", body: "Deixa marcado pra não esquecer no mercado." },
@@ -33,7 +32,7 @@ const NUDGE_FRIDAY = { title: "Fim de semana chegando! 🛒", body: "Vê o que f
 const NUDGE_SUNDAY = { title: "Bora começar a semana abastecido? 🗓️", body: "Confere a despensa e monte a lista." };
 
 export async function GET(request: NextRequest) {
-  // Verifica token de segurança do Vercel Cron
+  // Token de segurança do Vercel Cron
   const authHeader = request.headers.get("authorization");
   if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
     return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
@@ -45,20 +44,26 @@ export async function GET(request: NextRequest) {
   todayStart.setUTCHours(0, 0, 0, 0);
   const todayStartISO = todayStart.toISOString();
 
-  // Conjunto de usuários que JÁ receberam alguma notificação hoje (dedup global,
-  // garante no máximo 1 notificação/dia por usuário — sem colisão lembrete×nudge).
+  // Hora atual no Brasil (UTC-3) + janela de 15 min (alinhada ao cron).
+  const d = new Date();
+  const brasilHour = (d.getUTCHours() - 3 + 24) % 24;
+  const brasilMinute = d.getUTCMinutes();
+  const currentMinutes = brasilHour * 60 + brasilMinute;
+  const slotStart = Math.floor(currentMinutes / 15) * 15; // 0,15,30,45...
+
+  // Dedup global: no máximo 1 notificação/dia por usuário.
   const notifiedToday = new Set<string>();
 
   let remindersSent = 0;
   let nudgesSent = 0;
 
+  // ───────────────────────────────────────────────────────────────
+  // PARTE 1 — LEMBRETE DE COMPRAS (no horário escolhido pelo usuário)
+  // ───────────────────────────────────────────────────────────────
   try {
-    // ─────────────────────────────────────────────────────────────
-    // PARTE 1 — LEMBRETE DE COMPRAS (pago)
-    // ─────────────────────────────────────────────────────────────
     const { data: houses } = await admin
       .from("houses")
-      .select("id, name, owner_id, plan_expires_at")
+      .select("id, name, owner_id, reminder_time, plan_expires_at")
       .eq("reminder_enabled", true)
       .in("plan_status", ["active", "trialing", "cancelled"]);
 
@@ -66,7 +71,12 @@ export async function GET(request: NextRequest) {
       // Acesso expirado (trial/período pago) não recebe lembrete.
       if (house.plan_expires_at && new Date(house.plan_expires_at).getTime() <= now) continue;
 
-      // Já enviou lembrete hoje pra essa casa? (evita duplicata)
+      // O horário escolhido cai na janela de 15 min atual?
+      const [rh, rm] = (house.reminder_time ?? "18:00").split(":").map(Number);
+      const reminderMinutes = rh * 60 + rm;
+      if (reminderMinutes < slotStart || reminderMinutes >= slotStart + 15) continue;
+
+      // Já enviou lembrete hoje? (evita duplicata)
       const { data: existing } = await admin
         .from("notifications")
         .select("id")
@@ -109,63 +119,65 @@ export async function GET(request: NextRequest) {
     console.error("[Cron] Erro na Parte 1 (lembrete):", err);
   }
 
-  try {
-    // ─────────────────────────────────────────────────────────────
-    // PARTE 2 — NUDGE DIÁRIO (re-engajamento, grátis)
-    // ─────────────────────────────────────────────────────────────
-    const { data: subs } = await admin.from("push_subscriptions").select("user_id");
-    const pushUserIds = [...new Set((subs ?? []).map((s: { user_id: string }) => s.user_id))];
+  // ───────────────────────────────────────────────────────────────
+  // PARTE 2 — NUDGE DIÁRIO (re-engajamento) — só na janela das 18h
+  // ───────────────────────────────────────────────────────────────
+  const isNudgeWindow = brasilHour === 18 && brasilMinute < 15;
+  if (isNudgeWindow) {
+    try {
+      const { data: subs } = await admin.from("push_subscriptions").select("user_id");
+      const pushUserIds = [...new Set((subs ?? []).map((s: { user_id: string }) => s.user_id))];
 
-    if (pushUserIds.length > 0) {
-      // Atividade (last_active_at) desses usuários.
-      const { data: profs } = await admin
-        .from("profiles")
-        .select("user_id, last_active_at")
-        .in("user_id", pushUserIds);
+      if (pushUserIds.length > 0) {
+        const { data: profs } = await admin
+          .from("profiles")
+          .select("user_id, last_active_at")
+          .in("user_id", pushUserIds);
 
-      // Quem já recebeu QUALQUER notificação hoje → não recebe nudge.
-      const { data: notifsToday } = await admin
-        .from("notifications")
-        .select("user_id")
-        .gte("created_at", todayStartISO)
-        .in("user_id", pushUserIds);
-      for (const n of notifsToday ?? []) notifiedToday.add((n as { user_id: string }).user_id);
+        // Quem já recebeu QUALQUER notificação hoje → não recebe nudge.
+        const { data: notifsToday } = await admin
+          .from("notifications")
+          .select("user_id")
+          .gte("created_at", todayStartISO)
+          .in("user_id", pushUserIds);
+        for (const n of notifsToday ?? []) notifiedToday.add((n as { user_id: string }).user_id);
 
-      // Frase do dia (determinística, com variações de sexta e domingo).
-      const brasil = new Date(now - 3 * 60 * 60 * 1000);
-      const dayOfWeek = brasil.getUTCDay(); // 0=dom ... 6=sáb
-      const dayOfYear = Math.floor(
-        (brasil.getTime() - Date.UTC(brasil.getUTCFullYear(), 0, 0)) / 86_400_000
-      );
-      const phrase =
-        dayOfWeek === 5 ? NUDGE_FRIDAY
-        : dayOfWeek === 0 ? NUDGE_SUNDAY
-        : NUDGE_PHRASES[dayOfYear % NUDGE_PHRASES.length];
+        // Frase do dia (determinística; sexta e domingo têm variações).
+        const brasil = new Date(now - 3 * 60 * 60 * 1000);
+        const dayOfWeek = brasil.getUTCDay();
+        const dayOfYear = Math.floor(
+          (brasil.getTime() - Date.UTC(brasil.getUTCFullYear(), 0, 0)) / 86_400_000
+        );
+        const phrase =
+          dayOfWeek === 5 ? NUDGE_FRIDAY
+          : dayOfWeek === 0 ? NUDGE_SUNDAY
+          : NUDGE_PHRASES[dayOfYear % NUDGE_PHRASES.length];
 
-      const MAX_INACTIVE = 21 * 24 * 60 * 60 * 1000; // não insiste em quem sumiu há +21 dias
+        const MAX_INACTIVE = 21 * 24 * 60 * 60 * 1000;
 
-      for (const prof of profs ?? []) {
-        const uid = (prof as { user_id: string }).user_id;
-        const la = (prof as { last_active_at: string | null }).last_active_at;
+        for (const prof of profs ?? []) {
+          const uid = (prof as { user_id: string }).user_id;
+          const la = (prof as { last_active_at: string | null }).last_active_at;
 
-        if (notifiedToday.has(uid)) continue;          // já recebeu algo hoje
-        if (!la) continue;                              // sem dado de atividade → não incomoda
-        const laTime = new Date(la).getTime();
-        if (laTime >= todayStart.getTime()) continue;   // abriu o app hoje → não incomoda
-        if (now - laTime > MAX_INACTIVE) continue;      // sumiu há muito tempo → não insiste
+          if (notifiedToday.has(uid)) continue;        // já recebeu algo hoje
+          if (!la) continue;                            // sem dado de atividade
+          const laTime = new Date(la).getTime();
+          if (laTime >= todayStart.getTime()) continue; // abriu o app hoje
+          if (now - laTime > MAX_INACTIVE) continue;    // sumiu há +21 dias
 
-        await sendPushToUser(admin, uid, {
-          title: phrase.title,
-          body: phrase.body,
-          url: "/despensa",
-          tag: `nudge-${uid}`,
-        });
-        notifiedToday.add(uid);
-        nudgesSent++;
+          await sendPushToUser(admin, uid, {
+            title: phrase.title,
+            body: phrase.body,
+            url: "/despensa",
+            tag: `nudge-${uid}`,
+          });
+          notifiedToday.add(uid);
+          nudgesSent++;
+        }
       }
+    } catch (err) {
+      console.error("[Cron] Erro na Parte 2 (nudge):", err);
     }
-  } catch (err) {
-    console.error("[Cron] Erro na Parte 2 (nudge):", err);
   }
 
   return NextResponse.json({ message: "OK", reminders: remindersSent, nudges: nudgesSent });
