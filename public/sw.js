@@ -1,5 +1,5 @@
 // Service Worker — Acabou? v3
-const CACHE = "acabou-v94";
+const CACHE = "acabou-v95";
 
 // ── Instalação ──
 self.addEventListener("install", (event) => {
@@ -161,4 +161,39 @@ self.addEventListener("message", function(event) {
   if (event.data && event.data.type === "SKIP_WAITING") {
     self.skipWaiting();
   }
+});
+
+// ── BLINDAGEM ANTI-FALHA DE NOTIFICACAO (camada 2) ───────────────────────────
+// Quando o NAVEGADOR rotaciona/expira a push subscription (acontece sozinho de
+// tempos em tempos), ele dispara este evento. Aqui re-inscrevemos na hora e
+// re-salvamos no servidor — mesmo SEM o usuario abrir o app. Junto com o
+// re-sync na abertura (usePushNotifications), garante que o servidor NUNCA
+// fique sem a subscription atual. Foi por isso que so 5/78 recebiam.
+var VAPID_PUBLIC_KEY = "BDCuDXLFo5k8SS1MFMlYrfCPQM8lOJBa5MoQjrM1K8_bjnC3HDXRSgRGGfKCIp-Tpg5RdI17JhBH2XsYw2q701g";
+
+function urlBase64ToUint8Array(base64String) {
+  var padding = "=".repeat((4 - (base64String.length % 4)) % 4);
+  var base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
+  var raw = self.atob(base64);
+  var arr = new Uint8Array(raw.length);
+  for (var i = 0; i < raw.length; i++) arr[i] = raw.charCodeAt(i);
+  return arr;
+}
+
+self.addEventListener("pushsubscriptionchange", function(event) {
+  event.waitUntil(
+    self.registration.pushManager
+      .subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
+      })
+      .then(function(sub) {
+        return fetch("/api/push/subscribe", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ subscription: sub.toJSON() }),
+        });
+      })
+      .catch(function() {})
+  );
 });
