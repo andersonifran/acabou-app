@@ -43,7 +43,21 @@ export function usePushNotifications() {
     try {
       const reg = await navigator.serviceWorker.ready;
       const sub = await reg.pushManager.getSubscription();
-      setState(sub ? "subscribed" : "prompt");
+      if (sub) {
+        // RE-SINCRONIZA com o servidor (upsert idempotente). Corrige o bug em que
+        // a subscription expira/rotaciona (ou é removida do servidor após um envio
+        // com falha 410) e o aparelho continua mostrando "Ativado", mas o servidor
+        // fica SEM nenhuma subscription — fazendo o usuário não receber nada.
+        // Como o usuário abre o app com frequência, isso se auto-corrige sozinho.
+        fetch("/api/push/subscribe", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ subscription: sub.toJSON() }),
+        }).catch(() => {});
+        setState("subscribed");
+      } else {
+        setState("prompt");
+      }
     } catch {
       setState("prompt");
     }
