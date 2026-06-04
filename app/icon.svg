@@ -4,7 +4,7 @@
   <!-- Casa -->
   <polyline points="19,40 48,12 77,40" stroke="white" stroke-width="5.5" stroke-linejoin="round" stroke-linecap="round"/>
   <path d="M 24 40 L 24 72 Q 24 78 30 78 L 58 78" stroke="white" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"/>
-  <path d="M 72 40 L 72 60 Q 72 78 58 78 Q 48 78 48 86" stroke="white" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M 72 40 L 72 60 Q 72 78 58 78 Q 48 78 48 80" stroke="white" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"/>
   <circle cx="48" cy="91" r="4" fill="white"/>
   <!-- Checklist -->
   <polyline points="33,50 37,55 44,45" stroke="white" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
