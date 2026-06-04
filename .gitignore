@@ -52,5 +52,8 @@ next-env.d.ts
 # scripts utilitários locais (caminhos absolutos)
 /scripts/
 
+# gerador de screenshots de marketing (arquivo local pesado, não deve ir pra produção)
+/public/marketing/
+
 # kit bruto do Mercado Pago (extraído do zip) — usamos só /public/mercadopago/
 /public/logos mercado pago/
