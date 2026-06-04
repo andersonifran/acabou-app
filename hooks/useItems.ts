@@ -3,8 +3,9 @@
 import { useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useAppStore } from "@/store/appStore";
-import { Item, ItemStatus, SHOPPING_LIST_STATUSES } from "@/types";
+import { Item, ItemStatus, SHOPPING_LIST_STATUSES, RecurrenceType } from "@/types";
 import { hapticSuccess } from "@/lib/haptics";
+import { getNextReminderDate } from "@/lib/utils";
 
 export function useItems() {
   const { items, currentHouse, updateItem, addItem, removeItem, userId } = useAppStore();
@@ -32,15 +33,32 @@ export function useItems() {
       updateItem(itemId, { status: newStatus });
       hapticSuccess();
 
+      // Se um item RECORRENTE foi recomprado (status "tem"), avança o ciclo:
+      // agenda o próximo lembrete. Sem isso, ele voltaria a cutucar logo após a
+      // compra, em vez de esperar a próxima semana/quinzena/mês.
+      const updatePayload: Record<string, unknown> = {
+        status: newStatus,
+        updated_by: userId,
+      };
+      if (newStatus === "tem" && item.is_recurring && item.recurrence_type) {
+        updatePayload.next_reminder_at = getNextReminderDate(
+          item.recurrence_type as RecurrenceType
+        ).toISOString();
+      }
+
       const { error } = await supabase
         .from("items")
-        .update({ status: newStatus, updated_by: userId })
+        .update(updatePayload)
         .eq("id", itemId);
 
       if (error) {
         // Reverte em caso de erro
         updateItem(itemId, { status: item.status });
         throw error;
+      }
+
+      if (updatePayload.next_reminder_at) {
+        updateItem(itemId, { next_reminder_at: updatePayload.next_reminder_at as string });
       }
 
       // Registra evento
