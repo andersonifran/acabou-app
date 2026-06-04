@@ -39,6 +39,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     reset,
   } = useAppStore();
 
+  // Marca atividade (last_active_at) ao abrir o app — alimenta o nudge diário
+  // de re-engajamento (não incomoda quem abriu o app hoje). Fire-and-forget.
+  useEffect(() => {
+    fetch("/api/ping", { method: "POST" }).catch(() => {});
+  }, []);
+
   const { createItem, changeStatus, editItem } = useItems();
   const { canAddItem, isPaid, isTrialing } = useSubscription();
   const [showPlanLimit, setShowPlanLimit] = useState(false);
