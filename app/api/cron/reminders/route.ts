@@ -17,12 +17,18 @@ export async function GET(request: NextRequest) {
   try {
     const admin = createAdminClient();
 
-    // Busca casas com lembrete ativado E plano pago
+    // Busca casas com lembrete ativado E com acesso premium VÁLIDO.
+    // Inclui:
+    //  • active   → assinatura paga em dia
+    //  • trialing → 7 dias grátis (precisa sentir o valor pra converter!)
+    //  • cancelled→ cancelou mas ainda está dentro do período já pago
+    // O vencimento (plan_expires_at) é checado no loop, então trial/período
+    // expirado não recebe lembrete mesmo que o status ainda não tenha sido congelado.
     const { data: houses } = await admin
       .from("houses")
-      .select("id, name, owner_id, reminder_time")
+      .select("id, name, owner_id, reminder_time, plan_expires_at")
       .eq("reminder_enabled", true)
-      .in("plan_status", ["active"]);
+      .in("plan_status", ["active", "trialing", "cancelled"]);
 
     if (!houses || houses.length === 0) {
       return NextResponse.json({ message: "Nenhum lembrete para enviar", sent: 0 });
@@ -41,6 +47,12 @@ export async function GET(request: NextRequest) {
     let sentCount = 0;
 
     for (const house of houses) {
+      // Acesso expirado (trial ou período pago) não recebe lembrete,
+      // mesmo que o cron de assinaturas ainda não tenha congelado o status.
+      if (house.plan_expires_at && new Date(house.plan_expires_at).getTime() <= Date.now()) {
+        continue;
+      }
+
       const [rh, rm] = (house.reminder_time ?? "18:00").split(":").map(Number);
       const reminderMinutes = rh * 60 + rm;
 
