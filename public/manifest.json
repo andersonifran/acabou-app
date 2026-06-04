@@ -32,11 +32,32 @@
   ],
   "screenshots": [
     {
-      "src": "/web-app-manifest-512x512.png",
-      "sizes": "512x512",
-      "type": "image/png",
+      "src": "/screenshots/app-1-inicio.jpg",
+      "sizes": "720x1579",
+      "type": "image/jpeg",
       "form_factor": "narrow",
-      "label": "Tela inicial do Acabou?"
+      "label": "Marque o que acabou em 1 toque"
+    },
+    {
+      "src": "/screenshots/app-2-despensa.jpg",
+      "sizes": "720x1579",
+      "type": "image/jpeg",
+      "form_factor": "narrow",
+      "label": "Sua despensa num só olhar"
+    },
+    {
+      "src": "/screenshots/app-3-lista.jpg",
+      "sizes": "720x1579",
+      "type": "image/jpeg",
+      "form_factor": "narrow",
+      "label": "Lista de compras automática"
+    },
+    {
+      "src": "/screenshots/app-4-familia.jpg",
+      "sizes": "720x1579",
+      "type": "image/jpeg",
+      "form_factor": "narrow",
+      "label": "A família toda na mesma lista"
     }
   ],
   "categories": ["utilities", "lifestyle", "shopping"],
