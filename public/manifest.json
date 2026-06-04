@@ -2,7 +2,7 @@
   "id": "br.com.acabouapp",
   "name": "Acabou?",
   "short_name": "Acabou?",
-  "description": "Sua casa sempre sabe o que precisa comprar. Marque o que acabou em segundos e vá ao mercado com a lista certa.",
+  "description": "Nunca mais esqueça nada no mercado! Toda a família marca o que acabou em 1 toque e a lista de compras se monta sozinha. Fácil como um WhatsApp.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
