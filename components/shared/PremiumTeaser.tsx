@@ -27,7 +27,7 @@ export function PremiumTeaser({ emoji, title, subtitle, benefits, cta = "Assinar
       <div className="relative bg-gradient-to-br from-green-50 to-emerald-50 px-6 pt-8 pb-6 text-center border-b border-green-100">
         <div className="absolute top-3 right-3 flex items-center gap-1 bg-white/80 backdrop-blur px-2.5 py-1 rounded-full shadow-sm">
           <Lock size={12} className="text-amber-500" />
-          <span className="text-[11px] font-bold text-amber-600">Premium</span>
+          <span className="text-[11px] font-bold text-amber-600">Plano Família</span>
         </div>
         <div className="text-5xl mb-2">{emoji}</div>
         <h3 className="font-black text-gray-900 text-lg">{title}</h3>

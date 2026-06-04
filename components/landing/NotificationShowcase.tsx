@@ -50,7 +50,7 @@ function PhoneNotification({
     >
       {isPremium && (
         <div className="absolute -top-2.5 -right-2.5 bg-green-600 text-white text-[9px] font-black px-2 py-0.5 rounded-full shadow-md">
-          PREMIUM
+          PLANO FAMÍLIA
         </div>
       )}
       <div className="flex gap-3 items-start">
