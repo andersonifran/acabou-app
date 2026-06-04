@@ -433,7 +433,7 @@ export default function ConfiguracoesPage() {
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
                     <h3 className="font-semibold text-gray-900 text-sm">Lembrete diário</h3>
-                    <span className="text-[10px] font-bold text-green-700 bg-green-100 px-1.5 py-0.5 rounded-full">PREMIUM</span>
+                    <span className="text-[10px] font-bold text-green-700 bg-green-100 px-1.5 py-0.5 rounded-full">Plano Família</span>
                   </div>
                   <p className="text-xs text-gray-500 mt-0.5">
                     Receba um lembrete no horário que escolher para ir às compras
