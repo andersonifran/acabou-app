@@ -1,5 +1,5 @@
 // Service Worker — Acabou? v3
-const CACHE = "acabou-v87";
+const CACHE = "acabou-v88";
 
 // ── Instalação ──
 self.addEventListener("install", (event) => {
