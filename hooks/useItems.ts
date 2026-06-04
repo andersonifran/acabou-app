@@ -1,14 +1,10 @@
 "use client";
 
-import { useCallback, useRef } from "react";
+import { useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useAppStore } from "@/store/appStore";
 import { Item, ItemStatus, SHOPPING_LIST_STATUSES } from "@/types";
 import { hapticSuccess } from "@/lib/haptics";
-
-// Debounce de notificações: evita enviar notificação quando usuário
-// toca acidentalmente e reverte o status rapidamente
-const notifyTimers = new Map<string, ReturnType<typeof setTimeout>>();
 
 export function useItems() {
   const { items, currentHouse, updateItem, addItem, removeItem, userId } = useAppStore();
@@ -59,36 +55,11 @@ export function useItems() {
           source: "app",
         });
 
-        // Notifica o dono da casa se item ficou "acabou" ou "acabando"
-        // Debounce de 3s: se o usuário mudar o status de novo antes de 3s,
-        // cancela a notificação anterior (evita falsos positivos por toque acidental)
-        if (newStatus === "acabou" || newStatus === "acabando") {
-          const timerKey = itemId;
-          // Cancela timer anterior se existir
-          const prev = notifyTimers.get(timerKey);
-          if (prev) clearTimeout(prev);
-
-          const timer = setTimeout(() => {
-            notifyTimers.delete(timerKey);
-            fetch("/api/push/notify-item", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                itemName: item.name,
-                newStatus,
-                houseId: currentHouse.id,
-              }),
-            }).catch(() => {});
-          }, 3000);
-          notifyTimers.set(timerKey, timer);
-        } else {
-          // Se voltou para "tem" ou "comprar", cancela notificação pendente
-          const prev = notifyTimers.get(itemId);
-          if (prev) {
-            clearTimeout(prev);
-            notifyTimers.delete(itemId);
-          }
-        }
+        // A notificação para o dono ("alguém marcou um item como acabou") agora
+        // é disparada pelo SERVIDOR via Database Webhook do Supabase na tabela
+        // `items` (ver /api/webhooks/item-changed). Antes era um timer de 3s no
+        // cliente, que morria quando o celular era bloqueado/app saía de foco —
+        // por isso falhava. O servidor garante o envio de forma confiável.
       }
     },
     [items, currentHouse, supabase, updateItem, userId]
