@@ -354,3 +354,9 @@ input, select, textarea {
     animation: none !important;
   }
 }
+
+/* ── Degrade da marca: mesmo "glow" radial da logo (centro vivo, bordas mais
+   escuras). Usar nas faixas/seções verdes da landing pra dar profundidade. ── */
+.brand-grad {
+  background: radial-gradient(120% 170% at 50% 50%, #2ead46 0%, #16a34a 50%, #15803d 100%);
+}

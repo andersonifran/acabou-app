@@ -41,7 +41,7 @@ function AnimatedCounter({ to, suffix = "" }: { to: number; suffix?: string }) {
 
 export function TrustBar() {
   return (
-    <section className="px-6 py-8 bg-green-600">
+    <section className="px-6 py-8 brand-grad">
       <div className="max-w-3xl mx-auto grid grid-cols-3 gap-4 text-center text-white">
         <div>
           <p className="text-2xl md:text-4xl font-black"><AnimatedCounter to={30} />s</p>
