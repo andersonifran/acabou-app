@@ -296,7 +296,7 @@ function PlanosContent() {
           </div>
         )}
 
-        {motivo === "multiplas-casas" && (
+        {motivo === "multiplas-casas" && !trialExpired && !isFrozen && (
           <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-start gap-3">
             <Home size={20} className="text-amber-600 shrink-0 mt-0.5" />
             <div>
@@ -347,8 +347,9 @@ function PlanosContent() {
           </p>
         </div>
 
-        {/* Plano pago congelado (expirou) */}
-        {isFrozen && (
+        {/* Plano pago congelado (expirou). NÃO mostra junto do banner de trial
+            expirado — seria redundante (os dois dizem "acabou, assine"). */}
+        {isFrozen && !trialExpired && (
           <div className="bg-red-50 border border-red-200 rounded-2xl p-4 flex items-start gap-3">
             <span className="text-2xl">🔒</span>
             <div>

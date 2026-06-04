@@ -48,10 +48,23 @@ export default function HomePage() {
   const [showHousePicker, setShowHousePicker] = useState(false);
   const [switchingHouse, setSwitchingHouse] = useState(false);
   const [showPlanLimit, setShowPlanLimit] = useState(false);
+  const [planLimitReason, setPlanLimitReason] = useState<"items" | "members" | "houses">("items");
   const [confirmDeleteHouseId, setConfirmDeleteHouseId] = useState<string | null>(null);
   const [deletingHouse, setDeletingHouse] = useState(false);
   const pickerRef = useRef<HTMLDivElement>(null);
-  const { canAddItem, isTrialing, trialDaysLeft, trialExpired, isFrozen } = useSubscription();
+  const { canAddItem, isPaid, isTrialing, trialDaysLeft, trialExpired, isFrozen } = useSubscription();
+
+  // "Novo local" só é liberado no plano pago. No grátis/expirado, abre o paywall
+  // contextual (modal limpo) em vez de mandar pra página de planos poluída.
+  function handleNovoLocal() {
+    setShowHousePicker(false);
+    if (isPaid) {
+      router.push("/casa/nova");
+    } else {
+      setPlanLimitReason("houses");
+      setShowPlanLimit(true);
+    }
+  }
   const { canManageItems, isOwner: isRoleOwner, loaded: roleLoaded } = useRole();
 
   const shoppingItems = items.filter((i) => SHOPPING_LIST_STATUSES.includes(i.status as any));
@@ -297,16 +310,15 @@ export default function HomePage() {
                 </div>
                 {isRoleOwner && (
                   <div className="border-t border-gray-100 p-2">
-                    <Link
-                      href="/casa/nova"
-                      onClick={() => setShowHousePicker(false)}
-                      className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-green-50 transition-colors"
+                    <button
+                      onClick={handleNovoLocal}
+                      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-green-50 transition-colors text-left"
                     >
                       <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
                         <Plus size={15} className="text-green-600" />
                       </div>
                       <span className="text-sm font-bold text-green-700">Adicionar novo local</span>
-                    </Link>
+                    </button>
                   </div>
                 )}
               </div>
@@ -317,13 +329,13 @@ export default function HomePage() {
             <NotificationBell />
             {/* Botão adicionar casa (quando tem só uma) — só para dono */}
             {isRoleOwner && allHouses.length <= 1 && (
-              <Link
-                href="/casa/nova"
+              <button
+                onClick={handleNovoLocal}
                 className="flex items-center gap-1.5 bg-green-50 border border-green-100 text-green-700 text-xs font-semibold px-3 py-1.5 rounded-xl hover:bg-green-100 transition-colors"
               >
                 <Plus size={14} />
                 Novo local
-              </Link>
+              </button>
             )}
           </div>
         </div>
@@ -542,7 +554,7 @@ export default function HomePage() {
       <PlanLimitModal
         isOpen={showPlanLimit}
         onClose={() => setShowPlanLimit(false)}
-        reason="items"
+        reason={planLimitReason}
       />
     </div>
   );

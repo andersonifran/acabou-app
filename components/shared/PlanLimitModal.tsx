@@ -7,7 +7,7 @@ import { PLAN_LIMITS } from "@/types";
 interface PlanLimitModalProps {
   isOpen: boolean;
   onClose: () => void;
-  reason: "items" | "members";
+  reason: "items" | "members" | "houses";
 }
 
 const FREE_ITEMS = PLAN_LIMITS.free.max_items;
@@ -22,6 +22,11 @@ const messages = {
     title: "Convide sua família!",
     description: "No plano grátis apenas você pode usar o app.",
     emoji: "👨‍👩‍👧‍👦",
+  },
+  houses: {
+    title: "Adicione vários locais",
+    description: "No plano grátis você tem 1 local. No Plano Família, tenha casa, apê, praia e empresa — cada um com sua lista.",
+    emoji: "📍",
   },
 };
 

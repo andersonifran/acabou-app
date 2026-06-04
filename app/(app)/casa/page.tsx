@@ -19,6 +19,7 @@ import Link from "next/link";
 import { WhatsAppIcon } from "@/components/shared/WhatsAppIcon";
 import { ThemeToggle } from "@/components/shared/ThemeToggle";
 import { PremiumTeaser } from "@/components/shared/PremiumTeaser";
+import { PlanLimitModal } from "@/components/shared/PlanLimitModal";
 
 const roleIcons: Record<MemberRole, React.ReactNode> = {
   owner: <Crown size={14} className="text-amber-500" />,
@@ -74,6 +75,7 @@ export default function CasaPage() {
   // Excluir casa
   const [deletingHouse, setDeletingHouse] = useState(false);
   const [confirmDeleteHouse, setConfirmDeleteHouse] = useState(false);
+  const [showLocalPaywall, setShowLocalPaywall] = useState(false);
 
   // Modal de convite
   const [showInviteModal, setShowInviteModal] = useState(false);
@@ -826,9 +828,9 @@ export default function CasaPage() {
 
         {/* ── ADICIONAR NOVO LOCAL (somente dono) ── */}
         {isOwner && (
-          <Link
-            href="/casa/nova"
-            className="flex items-center gap-3 bg-green-50 border-2 border-dashed border-green-200 rounded-2xl px-5 py-4 hover:bg-green-100 hover:border-green-300 transition-all"
+          <button
+            onClick={() => isPaid ? router.push("/casa/nova") : setShowLocalPaywall(true)}
+            className="w-full flex items-center gap-3 bg-green-50 border-2 border-dashed border-green-200 rounded-2xl px-5 py-4 hover:bg-green-100 hover:border-green-300 transition-all text-left"
           >
             <div className="w-9 h-9 bg-green-600 rounded-full flex items-center justify-center shrink-0">
               <Plus size={18} className="text-white" />
@@ -838,7 +840,7 @@ export default function CasaPage() {
               <p className="text-xs text-green-600 mt-0.5">Apê, praia, empresa, veraneio...</p>
             </div>
             <ChevronRight size={16} className="text-green-500 ml-auto shrink-0" />
-          </Link>
+          </button>
         )}
 
         {/* ── EXCLUIR LOCAL (somente dono, e se tem mais de 1 casa) ── */}
@@ -1156,6 +1158,12 @@ export default function CasaPage() {
           </div>
         </div>
       )}
+
+      <PlanLimitModal
+        isOpen={showLocalPaywall}
+        onClose={() => setShowLocalPaywall(false)}
+        reason="houses"
+      />
     </div>
   );
 }
