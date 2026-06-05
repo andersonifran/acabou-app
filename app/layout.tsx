@@ -3,7 +3,6 @@ import { Geist } from "next/font/google";
 import "./globals.css";
 import { ThemeApplier } from "@/components/shared/ThemeApplier";
 import { Analytics } from "@vercel/analytics/next";
-import { SpeedInsights } from "@vercel/speed-insights/next";
 
 const geist = Geist({ subsets: ["latin"], variable: "--font-geist-sans" });
 
@@ -126,9 +125,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <ThemeApplier />
         {children}
 
-        {/* Vercel Web Analytics + Speed Insights (acessos e velocidade do app) */}
+        {/* Vercel Web Analytics (acessos / páginas mais vistas) — incluído no plano */}
         <Analytics />
-        <SpeedInsights />
 
         {/* SW registration no body — pode rodar depois, sem pressa */}
         <script
