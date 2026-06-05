@@ -63,8 +63,8 @@ export default function LandingPage() {
         <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
           {[
             // Esquerda — variado (mercado + empresa/estoque + limpeza), espalhado
-            { emoji: "🛒", x: "2%", y: "20%", size: "2.3rem", opacity: 0.34, dur: "10s" },
-            { emoji: "📦", x: "12%", y: "6%", size: "1.7rem", opacity: 0.3, dur: "11.5s" },
+            { emoji: "🛒", x: "3%", y: "4%", size: "1.9rem", opacity: 0.32, dur: "10s" },
+            { emoji: "📦", x: "16%", y: "5%", size: "1.5rem", opacity: 0.28, dur: "11.5s" },
             { emoji: "🧻", x: "3%", y: "54%", size: "1.7rem", opacity: 0.26, dur: "11s" },
             { emoji: "🧴", x: "6%", y: "87%", size: "1.7rem", opacity: 0.3, dur: "9s" },
             // Direita
