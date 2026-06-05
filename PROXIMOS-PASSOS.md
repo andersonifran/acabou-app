@@ -30,7 +30,7 @@
    - [ ] Confirmar que o teste foi **aprovado** no Play Console
    - [ ] Pegar o **link de opt-in** e mandar pros testadores (família + usuários reais)
    - [ ] Garantir **12+ testadores ativos por 14 dias seguidos** (é o item mais DEMORADO — quanto antes começar, melhor)
-2. **Verificação do banco (~3 dias)** — confirmar o depósito de centavos em *Formas de pagamento* (necessário pra criar os produtos de assinatura — peça 5)
+2. ~~**Verificação do banco** — confirmar o depósito de centavos~~ ✅ **FEITO (05/06/2026)** — depósito recebido, perfil de pagamentos liberado
 
 ---
 
