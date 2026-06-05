@@ -10,6 +10,7 @@ import { AddItemModal } from "@/components/items/AddItemModal";
 import { PlanLimitModal } from "@/components/shared/PlanLimitModal";
 import { PWAInstallBanner } from "@/components/shared/PWAInstallBanner";
 import { PushPermissionBanner } from "@/components/shared/PushPermissionBanner";
+import { TesterBanner } from "@/components/shared/TesterBanner";
 import { useItems } from "@/hooks/useItems";
 import { useSubscription } from "@/hooks/useSubscription";
 import { ItemStatus, House } from "@/types";
@@ -277,6 +278,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="min-h-screen app-bg pb-16">
+      <TesterBanner />
       <PushPermissionBanner />
       <SwipeNavigator tabs={swipeTabs} disabled={isAddItemModalOpen}>
         {children}
