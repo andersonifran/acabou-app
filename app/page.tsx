@@ -62,12 +62,16 @@ export default function LandingPage() {
         {/* Floating emojis */}
         <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
           {[
-            { emoji: "🛒", x: "5%", y: "15%", size: "2.8rem", opacity: 0.35, dur: "10s" },
-            { emoji: "☕", x: "90%", y: "10%", size: "2.2rem", opacity: 0.3, dur: "8s" },
-            { emoji: "🥛", x: "3%", y: "68%", size: "2rem", opacity: 0.25, dur: "11s" },
-            { emoji: "🍞", x: "93%", y: "58%", size: "2.4rem", opacity: 0.3, dur: "9s" },
-            { emoji: "🧴", x: "12%", y: "88%", size: "1.8rem", opacity: 0.25, dur: "10s" },
-            { emoji: "🍎", x: "80%", y: "82%", size: "2rem", opacity: 0.25, dur: "12s" },
+            // Esquerda (4) — itens recorrentes variados (mercado + limpeza + higiene)
+            { emoji: "🛒", x: "2%", y: "8%", size: "2.2rem", opacity: 0.3, dur: "10s" },
+            { emoji: "🧻", x: "1%", y: "49%", size: "1.7rem", opacity: 0.22, dur: "11s" },
+            { emoji: "🥚", x: "4%", y: "67%", size: "1.5rem", opacity: 0.2, dur: "12s" },
+            { emoji: "🧴", x: "2%", y: "86%", size: "1.6rem", opacity: 0.24, dur: "9s" },
+            // Direita (4)
+            { emoji: "☕", x: "93%", y: "7%", size: "2rem", opacity: 0.3, dur: "8.5s" },
+            { emoji: "🍞", x: "94%", y: "47%", size: "1.7rem", opacity: 0.22, dur: "10.5s" },
+            { emoji: "🪥", x: "92%", y: "66%", size: "1.5rem", opacity: 0.2, dur: "11.5s" },
+            { emoji: "🍎", x: "93%", y: "85%", size: "1.7rem", opacity: 0.24, dur: "9.5s" },
           ].map((f, i) => (
             <span
               key={i}

@@ -8,12 +8,18 @@ export function FinalCTA() {
       {/* Floating emojis */}
       <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
         {[
-          { emoji: "🛒", x: "7%", y: "18%", size: "2.2rem", opacity: 0.1 },
-          { emoji: "☕", x: "88%", y: "22%", size: "1.8rem", opacity: 0.08 },
-          { emoji: "🍞", x: "14%", y: "78%", size: "1.6rem", opacity: 0.07 },
-          { emoji: "🥛", x: "82%", y: "72%", size: "1.9rem", opacity: 0.09 },
+          // Esquerda (4) — variado vs Hero (mercado + limpeza + higiene)
+          { emoji: "🥛", x: "4%", y: "10%", size: "2rem", opacity: 0.26, dur: "9s", delay: "0s" },
+          { emoji: "🧼", x: "3%", y: "39%", size: "1.7rem", opacity: 0.22, dur: "11s", delay: "-2s" },
+          { emoji: "🍞", x: "5%", y: "64%", size: "1.8rem", opacity: 0.24, dur: "10s", delay: "-4s" },
+          { emoji: "🧹", x: "4%", y: "88%", size: "1.7rem", opacity: 0.22, dur: "12s", delay: "-1s" },
+          // Direita (4)
+          { emoji: "🧻", x: "93%", y: "12%", size: "1.9rem", opacity: 0.26, dur: "10.5s", delay: "-3s" },
+          { emoji: "🥚", x: "94%", y: "40%", size: "1.6rem", opacity: 0.2, dur: "9.5s", delay: "-5s" },
+          { emoji: "🍌", x: "92%", y: "64%", size: "1.8rem", opacity: 0.24, dur: "11.5s", delay: "-2.5s" },
+          { emoji: "🧀", x: "93%", y: "88%", size: "1.7rem", opacity: 0.24, dur: "8.5s", delay: "-4.5s" },
         ].map((f, i) => (
-          <span key={i} className="absolute animate-float" style={{ left: f.x, top: f.y, fontSize: f.size, opacity: f.opacity, animationDuration: "10s", animationDelay: `${-i * 2}s` }}>
+          <span key={i} className="absolute animate-float" style={{ left: f.x, top: f.y, fontSize: f.size, opacity: f.opacity, animationDuration: f.dur, animationDelay: f.delay }}>
             {f.emoji}
           </span>
         ))}
