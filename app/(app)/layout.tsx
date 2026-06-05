@@ -229,9 +229,25 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   if (!isReady) {
     return (
-      <div className="min-h-screen app-bg flex flex-col items-center justify-center gap-3">
-        <div className="w-10 h-10 border-3 border-gray-200 border-t-green-600 rounded-full animate-spin" />
-        <p className="text-sm text-gray-400 font-medium">Carregando...</p>
+      <div className="min-h-screen brand-grad relative flex flex-col items-center justify-center gap-5 overflow-hidden text-white">
+        {/* Itens flutuantes de fundo (vibe do app enquanto abre) */}
+        <div aria-hidden="true" className="pointer-events-none absolute inset-0 select-none">
+          <span className="absolute left-6 top-20 text-4xl opacity-20 animate-float" style={{ animationDuration: "9s" }}>🛒</span>
+          <span className="absolute right-8 top-28 text-3xl opacity-20 animate-float" style={{ animationDuration: "11s", animationDelay: "-2s" }}>☕</span>
+          <span className="absolute left-10 bottom-28 text-3xl opacity-20 animate-float" style={{ animationDuration: "10s", animationDelay: "-4s" }}>🥛</span>
+          <span className="absolute right-7 bottom-24 text-4xl opacity-20 animate-float" style={{ animationDuration: "12s", animationDelay: "-1s" }}>🧻</span>
+        </div>
+        {/* Logo branca + nome */}
+        <div className="relative flex flex-col items-center gap-3">
+          <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-white/15 backdrop-blur-sm">
+            <svg width="36" height="36" viewBox="0 0 64 64" fill="none" stroke="white" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M14 30 L32 14 L50 30 V52 H14 Z" />
+              <path d="M24 38 H40 M24 46 H36" />
+            </svg>
+          </div>
+          <p className="text-2xl font-black">Acabou?</p>
+          <div className="h-7 w-7 animate-spin rounded-full border-[3px] border-white/30 border-t-white" />
+        </div>
       </div>
     );
   }
