@@ -5,7 +5,7 @@ const benefits = [
   { icon: "👥", title: "Toda a família participa", desc: "Marido, esposa, filhos — todo mundo marca e vê.", accent: false, span: false },
   { icon: "📶", title: "Funciona sem internet", desc: "Marca offline. Sincroniza depois. Sítio e praia cobertos.", accent: false, span: false },
   { icon: "💬", title: "WhatsApp em 1 toque", desc: "Envia a lista formatada direto no chat.", accent: false, span: false },
-  { icon: "🔔", title: "Lembrete às 18h", desc: "\"4 itens pra comprar.\" É só passar no mercado no caminho.", accent: false, span: false },
+  { icon: "🔔", title: "Lembrete às 18h", desc: "\"4 itens pra comprar.\" Passa no mercado no caminho.", accent: false, span: false },
   { icon: "🏠", title: "Casa, empresa, praia — tudo em 1 app", desc: "Cada local com sua lista e sua equipe. Gerencie tudo de um lugar só.", accent: false, span: true },
   { icon: "🚀", title: "Simples como WhatsApp", desc: "Se sabe usar WhatsApp, já sabe usar. 1 toque.", accent: false, span: false },
   { icon: "🔄", title: "Zero compra repetida", desc: "Sabe se tem em casa antes de comprar.", accent: false, span: false },
