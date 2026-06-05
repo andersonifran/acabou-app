@@ -17,13 +17,16 @@ export function TesterBanner() {
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    // NÃO mostra dentro do app instalado (TWA / standalone) — quem está aqui já
-    // é testador. O banner é só pra quem está no navegador (web).
-    const isStandalone =
-      window.matchMedia("(display-mode: standalone)").matches ||
-      (navigator as unknown as { standalone?: boolean }).standalone === true;
-    const isTWA = document.referrer.startsWith("android-app://");
-    if (isStandalone || isTWA) return;
+    // REGRA: o banner SÓ some pra quem JÁ baixou o app de teste na Play Store
+    // (TWA — identificado pelo referrer android-app://). Quem ainda não baixou
+    // continua vendo o convite — mesmo que tenha instalado a PWA pela tela inicial
+    // (display-mode standalone NÃO conta como "baixou o teste").
+    // Guardamos um flag persistente: uma vez TWA, sempre TWA (o referrer pode se
+    // perder em navegações internas, então não dependemos só dele).
+    const referrerIsTWA = document.referrer.startsWith("android-app://");
+    if (referrerIsTWA) localStorage.setItem("is_twa_install", "1");
+    const isPlayStoreTester = referrerIsTWA || localStorage.getItem("is_twa_install") === "1";
+    if (isPlayStoreTester) return; // já é testador da Play Store → não convida de novo
     if (!localStorage.getItem(DISMISS_KEY)) setShow(true);
   }, []);
 
