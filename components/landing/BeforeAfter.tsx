@@ -14,7 +14,7 @@ export function BeforeAfter() {
         <div className="grid md:grid-cols-[1fr_auto_1fr] gap-4 md:gap-6 items-stretch">
           {/* Sem */}
           <RevealOnScroll>
-            <div className="bg-white rounded-2xl border border-red-100 p-6 h-full">
+            <div className="bg-gradient-to-b from-red-50/70 to-white rounded-2xl border border-red-200/70 p-6 h-full shadow-[0_8px_24px_-12px_rgba(220,38,38,0.25)]">
               <h3 className="font-black text-gray-900 mb-5 text-base">😤 Sem o Acabou?</h3>
               <div className="space-y-3">
                 {[
@@ -46,7 +46,7 @@ export function BeforeAfter() {
 
           {/* Com */}
           <RevealOnScroll delay={150}>
-            <div className="bg-white rounded-2xl border border-green-200 p-6 h-full ring-1 ring-green-100">
+            <div className="bg-gradient-to-b from-green-50/80 to-white rounded-2xl border border-green-200 p-6 h-full ring-1 ring-green-100 shadow-[0_12px_30px_-12px_rgba(22,163,74,0.3)]">
               <h3 className="font-black text-gray-900 mb-5 text-base">😌 Com o Acabou?</h3>
               <div className="space-y-3">
                 {[

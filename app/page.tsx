@@ -62,16 +62,16 @@ export default function LandingPage() {
         {/* Floating emojis */}
         <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
           {[
-            // Esquerda — variado (mercado + empresa/estoque + limpeza), espalhado
-            { emoji: "🛒", x: "3%", y: "4%", size: "1.9rem", opacity: 0.32, dur: "10s" },
-            { emoji: "📦", x: "16%", y: "5%", size: "1.5rem", opacity: 0.28, dur: "11.5s" },
-            { emoji: "🧻", x: "3%", y: "54%", size: "1.7rem", opacity: 0.26, dur: "11s" },
-            { emoji: "🧴", x: "6%", y: "87%", size: "1.7rem", opacity: 0.3, dur: "9s" },
-            // Direita
-            { emoji: "☕", x: "94%", y: "8%", size: "2rem", opacity: 0.34, dur: "8.5s" },
-            { emoji: "🍞", x: "95%", y: "42%", size: "1.7rem", opacity: 0.26, dur: "10.5s" },
-            { emoji: "🍎", x: "92%", y: "67%", size: "1.8rem", opacity: 0.3, dur: "12s" },
-            { emoji: "🪥", x: "87%", y: "90%", size: "1.6rem", opacity: 0.26, dur: "9.5s" },
+            // Relataveis (casa + empresa) VISIVEIS nos cantos, espacados
+            { emoji: "🛒", x: "3%", y: "4%", size: "2rem", opacity: 0.3, dur: "10s" },
+            { emoji: "☕", x: "91%", y: "4%", size: "1.9rem", opacity: 0.3, dur: "8.5s" },
+            { emoji: "📄", x: "5%", y: "91%", size: "1.8rem", opacity: 0.3, dur: "11s" },
+            { emoji: "📦", x: "90%", y: "91%", size: "1.8rem", opacity: 0.28, dur: "9.5s" },
+            // Secundarios FAINT — passam atras do texto sem atrapalhar (cor fraca)
+            { emoji: "🧴", x: "2%", y: "34%", size: "1.6rem", opacity: 0.15, dur: "12s" },
+            { emoji: "🧻", x: "95%", y: "32%", size: "1.6rem", opacity: 0.15, dur: "10.5s" },
+            { emoji: "🥛", x: "2%", y: "60%", size: "1.6rem", opacity: 0.16, dur: "11.5s" },
+            { emoji: "🍞", x: "95%", y: "60%", size: "1.6rem", opacity: 0.16, dur: "9s" },
           ].map((f, i) => (
             <span
               key={i}
@@ -419,7 +419,7 @@ export default function LandingPage() {
               },
             ].map((plan) => (
               <RevealOnScroll key={plan.name}>
-                <div className={`bg-white rounded-2xl border overflow-hidden transition-transform hover:scale-[1.01] h-full flex flex-col ${plan.highlight ? "border-green-400 ring-2 ring-green-200 shadow-[0_18px_50px_-15px_rgba(22,163,74,0.45)]" : "border-gray-200 shadow-[0_10px_30px_-14px_rgba(0,0,0,0.18)]"}`}>
+                <div className={`bg-white rounded-2xl border overflow-hidden transition-transform hover:scale-[1.01] h-full flex flex-col ${plan.highlight ? "border-green-400 ring-2 ring-green-200 shadow-[0_18px_50px_-15px_rgba(22,163,74,0.45)]" : "border-gray-200 shadow-[0_16px_44px_-12px_rgba(15,23,42,0.22)] ring-1 ring-gray-200/60"}`}>
                   {plan.badge && <div className="bg-green-600 text-white text-center py-2.5 text-xs font-bold px-3">{plan.badge}</div>}
                   <div className="p-6 flex flex-col flex-1">
                     <h3 className="font-bold text-gray-700 text-sm mb-1">{plan.name}</h3>
