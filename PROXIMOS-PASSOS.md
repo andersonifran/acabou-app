@@ -16,6 +16,8 @@
 - 🐞 Sentry (monitor de erros) + **source maps** (rastro 100% legível) — testado
 - 🎨 Landing + app no capricho premium (contraste, sombras, brilho pulsante no Anual, ícones, letreiro com fade)
 - 📲 Play Billing — **peça 1 (cliente)** pronta
+- 📵 **Barra de URL no TWA RESOLVIDA (05/06/2026)** — eram 2 bugs: (a) `assetlinks.json` com fingerprint velho → trocado pelas chaves SHA-256 reais do Play Console (assinatura Google `41:B8:7E:0B…` + upload `27:D0:A6:D4…`); (b) middleware redirecionava `/.well-known/` pro `/login` → liberado no matcher. Validado pela API oficial do Google (Digital Asset Links). Some no celular ao reinstalar.
+- 🌐 **Tela de opt-in em inglês ESCLARECIDA (05/06/2026)** — não era bug nosso: idioma padrão do app **é** pt-BR (confirmado no Play Console). A página de convite é do Google e segue o idioma do **navegador** de quem abre. Solução: usar sempre o link com `?hl=pt-BR` e abrir no celular Android.
 
 ---
 
@@ -48,7 +50,7 @@
 ## 📌 DEPOIS do Play Billing (NÃO ESQUECER)
 - [ ] **Supabase Pro** (~US$25/mês) — backups diários dos dados, no dia do lançamento
 - [ ] Badge oficial **"Disponível no Google Play"** na landing (quando estiver em produção)
-- [ ] Atualizar **`public/.well-known/assetlinks.json`** com o **SHA da chave de assinatura do Google** (depois do upload do .aab)
+- [x] ~~Atualizar **`public/.well-known/assetlinks.json`** com o SHA da chave de assinatura do Google~~ ✅ **FEITO (05/06/2026)**
 - [ ] **Banner in-app de opt-in** pros testadores + **mensagem de recrutamento no WhatsApp**
 - [ ] Verificar o **1º disparo real do lembrete diário** no horário escolhido (confirmar que está chegando)
 - [ ] (Opcional) Limpar os 2 erros de teste no Sentry (Resolve/Delete)
