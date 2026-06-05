@@ -11,7 +11,7 @@ import { EmptyState } from "@/components/shared/EmptyState";
 import { PlanLimitModal } from "@/components/shared/PlanLimitModal";
 import { Header } from "@/components/layout/Header";
 import { Item, ItemStatus, STATUS_LABELS } from "@/types";
-import { Plus, Search, X, Share2, Zap, Pencil, Check } from "lucide-react";
+import { Plus, Search, X, Share2, Zap, Pencil, Check, Package } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 
@@ -112,6 +112,7 @@ function DespensaContent() {
   return (
     <div>
       <Header
+        icon={<Package size={20} />}
         title="Despensa"
         subtitle={isPaid ? `${items.length} itens` : `${itemCount}/${limits.max_items} itens`}
         right={

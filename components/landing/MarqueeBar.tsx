@@ -21,7 +21,7 @@ export function MarqueeBar() {
   const doubled = [...items, ...items];
 
   return (
-    <div className="brand-grad overflow-hidden py-3">
+    <div className="brand-grad overflow-hidden py-3 relative">
       <div className="flex w-max animate-marquee whitespace-nowrap">
         {doubled.map((item, i) => (
           <span key={i} className="inline-flex items-center gap-1.5 text-sm text-white font-medium mx-5 shrink-0">
@@ -30,6 +30,9 @@ export function MarqueeBar() {
           </span>
         ))}
       </div>
+      {/* Fade nas pontas — itens somem suavemente na lateral (sem cortar seco) */}
+      <div className="pointer-events-none absolute inset-y-0 left-0 w-14 bg-gradient-to-r from-[#16a34a] to-transparent" />
+      <div className="pointer-events-none absolute inset-y-0 right-0 w-14 bg-gradient-to-l from-[#16a34a] to-transparent" />
     </div>
   );
 }

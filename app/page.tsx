@@ -65,8 +65,8 @@ export default function LandingPage() {
             // MOBILE+DESKTOP (4) — 🛒☕ no topo + 🍎🖊️ ao lado do celular, ALTURAS DIFERENTES (vida propria)
             { emoji: "🛒", x: "3%", y: "6%", size: "1.9rem", opacity: 0.26, dur: "10s" },
             { emoji: "☕", x: "90%", y: "12%", size: "1.8rem", opacity: 0.26, dur: "8.5s" },
-            { emoji: "🍎", x: "2%", y: "62%", size: "1.8rem", opacity: 0.26, dur: "11s" },
-            { emoji: "🖊️", x: "93%", y: "80%", size: "1.7rem", opacity: 0.26, dur: "12s" },
+            { emoji: "🍅", x: "2%", y: "62%", size: "1.8rem", opacity: 0.26, dur: "11s" },
+            { emoji: "🍪", x: "93%", y: "80%", size: "1.8rem", opacity: 0.26, dur: "12s" },
             // SÓ DESKTOP (escondidos no mobile) — preenchem a tela larga
             { emoji: "🥦", x: "3%", y: "32%", size: "1.7rem", opacity: 0.24, dur: "9.5s", hideMobile: true },
             { emoji: "🍌", x: "92%", y: "34%", size: "1.7rem", opacity: 0.24, dur: "10.5s", hideMobile: true },

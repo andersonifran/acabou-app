@@ -7,12 +7,13 @@ import { cn } from "@/lib/utils";
 interface HeaderProps {
   title: string;
   subtitle?: string;
+  icon?: React.ReactNode;
   showBack?: boolean;
   right?: React.ReactNode;
   className?: string;
 }
 
-export function Header({ title, subtitle, showBack, right, className }: HeaderProps) {
+export function Header({ title, subtitle, icon, showBack, right, className }: HeaderProps) {
   const router = useRouter();
 
   return (
@@ -31,6 +32,11 @@ export function Header({ title, subtitle, showBack, right, className }: HeaderPr
           >
             <ChevronLeft size={22} />
           </button>
+        )}
+        {icon && (
+          <div className="w-9 h-9 rounded-xl bg-green-50 text-green-600 flex items-center justify-center shrink-0">
+            {icon}
+          </div>
         )}
         <div className="flex-1 min-w-0">
           <h1 className="font-semibold text-gray-900 truncate">{title}</h1>

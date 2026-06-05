@@ -11,7 +11,7 @@ import { EmptyState } from "@/components/shared/EmptyState";
 import { PlanLimitModal } from "@/components/shared/PlanLimitModal";
 import { Item } from "@/types";
 import { buildShoppingListText, buildWhatsAppShareUrl } from "@/lib/utils";
-import { CheckSquare, Square } from "lucide-react";
+import { CheckSquare, Square, ClipboardList } from "lucide-react";
 import { WhatsAppIcon } from "@/components/shared/WhatsAppIcon";
 import { Confetti } from "@/components/shared/Confetti";
 import { Mascote } from "@/components/shared/Mascote";
@@ -194,6 +194,7 @@ export default function ListaPage() {
   return (
     <div>
       <Header
+        icon={<ClipboardList size={20} />}
         title="Lista de Compras"
         subtitle={`${shoppingListItems.length} ${shoppingListItems.length === 1 ? "item" : "itens"}`}
         right={undefined}
