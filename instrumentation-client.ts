@@ -13,6 +13,16 @@ Sentry.init({
 
   // Só envia em produção — evita ruído no desenvolvimento.
   enabled: process.env.NODE_ENV === "production",
+
+  // Filtra ruídos conhecidos e INOFENSIVOS (não são bugs do nosso app):
+  ignoreErrors: [
+    // WebView/TWA Android: ponte JS<->Java liberada da memória (timing do sistema).
+    "Java object is gone",
+    "Error invoking postMessage",
+    // Extensões de navegador / scripts de terceiros injetados.
+    /^Non-Error promise rejection captured/,
+    "ResizeObserver loop",
+  ],
 });
 
 // Captura erros de navegação entre páginas (App Router).
