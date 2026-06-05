@@ -17,6 +17,13 @@ export function TesterBanner() {
 
   useEffect(() => {
     if (typeof window === "undefined") return;
+    // NÃO mostra dentro do app instalado (TWA / standalone) — quem está aqui já
+    // é testador. O banner é só pra quem está no navegador (web).
+    const isStandalone =
+      window.matchMedia("(display-mode: standalone)").matches ||
+      (navigator as unknown as { standalone?: boolean }).standalone === true;
+    const isTWA = document.referrer.startsWith("android-app://");
+    if (isStandalone || isTWA) return;
     if (!localStorage.getItem(DISMISS_KEY)) setShow(true);
   }, []);
 
