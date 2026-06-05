@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useAppStore } from "@/store/appStore";
 import { Logo } from "@/components/shared/Logo";
 import { LocationIcon } from "@/components/shared/LocationIcon";
+import { Mascote } from "@/components/shared/Mascote";
 import { Eye, EyeOff, ArrowLeft } from "lucide-react";
 import { trackCadastroCompleto } from "@/lib/analytics";
 
@@ -238,12 +239,16 @@ export default function CadastroPage() {
       <div className="w-full max-w-md bg-white rounded-3xl shadow-2xl p-7 relative z-10">
         {/* Logo + header */}
         <div className="flex flex-col items-center text-center mb-5">
-          <Logo size="lg" linked />
+          {step === 2 && !hasInvite ? (
+            <Mascote mood="acenando" size={96} className="mb-1" />
+          ) : (
+            <Logo size="lg" linked />
+          )}
           <h1 className="text-xl font-black text-gray-900 mt-3">
-            {hasInvite ? "Aceitar convite" : step === 1 ? "Crie sua conta grátis" : "Como se chama sua casa?"}
+            {hasInvite ? "Aceitar convite" : step === 1 ? "Crie sua conta grátis" : "Oi! Eu sou o Sacolino 👋"}
           </h1>
           <p className="text-gray-500 text-sm mt-1">
-            {hasInvite ? "Crie sua conta para aceitar o convite" : step === 1 ? "Comece agora os 7 dias grátis com acesso total." : "Dê um nome para sua casa"}
+            {hasInvite ? "Crie sua conta para aceitar o convite" : step === 1 ? "Comece agora os 7 dias grátis com acesso total." : "Vamos configurar seu primeiro local? Você pode mudar tudo depois."}
           </p>
           {step === 1 && (
             <span className="inline-flex items-center bg-green-100 text-green-700 text-xs font-bold px-3 py-1 rounded-full mt-2">
