@@ -3,6 +3,9 @@
   "target": {
     "namespace": "android_app",
     "package_name": "br.com.acabouapp.www.twa",
-    "sha256_cert_fingerprints": ["4C:84:34:8F:64:BC:3D:6D:02:3C:AA:06:D4:D0:EF:14:10:E1:F1:27:4E:5B:40:52:7C:8F:00:D4:31:B8:70:35"]
+    "sha256_cert_fingerprints": [
+      "41:B8:7E:0B:5B:22:58:80:6C:0D:34:4E:EF:BA:93:36:D1:60:0D:65:A9:D3:3A:15:CD:CF:BC:AB:C0:A2:DC:B1",
+      "27:D0:A6:D4:A2:33:A4:37:EA:C4:E0:BA:4E:C9:45:86:B0:11:66:04:88:1D:9A:37:AE:AB:2B:96:7E:65:9E:98"
+    ]
   }
 }]

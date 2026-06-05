@@ -73,7 +73,9 @@ export const config = {
      * - _next/static (arquivos estáticos do Next.js)
      * - _next/image (otimização de imagem)
      * - Arquivos estáticos do public/ (favicon, ícones, SW, manifest, etc.)
+     * - .well-known/ (Digital Asset Links do TWA — NUNCA pode redirecionar,
+     *   senão a verificação do app na Play falha e a barra de URL aparece)
      */
-    "/((?!_next/static|_next/image|favicon\\.ico|manifest\\.json|sw\\.js|.*\\.png|.*\\.svg|.*\\.mp4|.*\\.webm|.*\\.jpg|.*\\.jpeg|.*\\.webp|.*\\.html|.*\\.ico|.*\\.xml|.*\\.txt|api/).*)",
+    "/((?!_next/static|_next/image|\\.well-known|favicon\\.ico|manifest\\.json|sw\\.js|.*\\.png|.*\\.svg|.*\\.mp4|.*\\.webm|.*\\.jpg|.*\\.jpeg|.*\\.webp|.*\\.html|.*\\.ico|.*\\.xml|.*\\.txt|api/).*)",
   ],
 };
