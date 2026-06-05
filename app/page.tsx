@@ -62,16 +62,15 @@ export default function LandingPage() {
         {/* Floating emojis */}
         <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
           {[
-            // Relataveis (casa + empresa) VISIVEIS nos cantos, espacados
-            { emoji: "🛒", x: "3%", y: "4%", size: "2rem", opacity: 0.3, dur: "10s" },
-            { emoji: "☕", x: "91%", y: "4%", size: "1.9rem", opacity: 0.3, dur: "8.5s" },
-            { emoji: "📄", x: "5%", y: "91%", size: "1.8rem", opacity: 0.3, dur: "11s" },
-            { emoji: "📦", x: "90%", y: "91%", size: "1.8rem", opacity: 0.28, dur: "9.5s" },
-            // Secundarios FAINT — passam atras do texto sem atrapalhar (cor fraca)
-            { emoji: "🧴", x: "2%", y: "34%", size: "1.6rem", opacity: 0.15, dur: "12s" },
-            { emoji: "🧻", x: "95%", y: "32%", size: "1.6rem", opacity: 0.15, dur: "10.5s" },
-            { emoji: "🥛", x: "2%", y: "60%", size: "1.6rem", opacity: 0.16, dur: "11.5s" },
-            { emoji: "🍞", x: "95%", y: "60%", size: "1.6rem", opacity: 0.16, dur: "9s" },
+            // Set fixo (casa + empresa) — MESMA vida (opacidade uniforme), fora do titulo
+            { emoji: "🛒", x: "3%", y: "5%", size: "1.9rem", opacity: 0.24, dur: "10s" },
+            { emoji: "☕", x: "90%", y: "5%", size: "1.8rem", opacity: 0.24, dur: "8.5s" },
+            { emoji: "🍎", x: "2%", y: "55%", size: "1.7rem", opacity: 0.24, dur: "11s" },
+            { emoji: "🖊️", x: "96%", y: "53%", size: "1.7rem", opacity: 0.24, dur: "12s" },
+            { emoji: "🥦", x: "2%", y: "72%", size: "1.7rem", opacity: 0.24, dur: "9.5s" },
+            { emoji: "🍌", x: "96%", y: "70%", size: "1.7rem", opacity: 0.24, dur: "10.5s" },
+            { emoji: "🥛", x: "5%", y: "91%", size: "1.8rem", opacity: 0.24, dur: "11.5s" },
+            { emoji: "📦", x: "90%", y: "91%", size: "1.8rem", opacity: 0.24, dur: "9s" },
           ].map((f, i) => (
             <span
               key={i}
@@ -294,7 +293,7 @@ export default function LandingPage() {
       <AppShowcase />
 
       {/* ═══ PROVA SOCIAL ═══ */}
-      <section className="px-6 py-16 bg-white">
+      <section className="px-6 py-16 bg-slate-100">
         <div className="max-w-3xl mx-auto text-center">
           <RevealOnScroll>
             <span className="inline-flex items-center bg-green-100 text-green-700 text-xs font-bold px-3 py-1.5 rounded-full mb-4">Quem usa, aprova</span>
@@ -387,7 +386,7 @@ export default function LandingPage() {
       </section>
 
       {/* ═══ PLANOS ═══ */}
-      <section id="planos" className="px-6 py-16 bg-white">
+      <section id="planos" className="px-6 py-16 bg-slate-100">
         <div className="max-w-4xl mx-auto">
           <RevealOnScroll>
             <div className="text-center mb-10">
@@ -419,7 +418,7 @@ export default function LandingPage() {
               },
             ].map((plan) => (
               <RevealOnScroll key={plan.name}>
-                <div className={`bg-white rounded-2xl border overflow-hidden transition-transform hover:scale-[1.01] h-full flex flex-col ${plan.highlight ? "border-green-400 ring-2 ring-green-200 shadow-[0_18px_50px_-15px_rgba(22,163,74,0.45)]" : "border-gray-200 shadow-[0_16px_44px_-12px_rgba(15,23,42,0.22)] ring-1 ring-gray-200/60"}`}>
+                <div className={`bg-white rounded-2xl border overflow-hidden transition-transform h-full flex flex-col ${plan.highlight ? "relative z-10 border-green-500 ring-2 ring-green-300 shadow-[0_30px_70px_-14px_rgba(22,163,74,0.55)] md:-translate-y-3 md:scale-[1.03]" : "border-gray-200 shadow-[0_14px_40px_-14px_rgba(15,23,42,0.18)] hover:scale-[1.01]"}`}>
                   {plan.badge && <div className="bg-green-600 text-white text-center py-2.5 text-xs font-bold px-3">{plan.badge}</div>}
                   <div className="p-6 flex flex-col flex-1">
                     <h3 className="font-bold text-gray-700 text-sm mb-1">{plan.name}</h3>

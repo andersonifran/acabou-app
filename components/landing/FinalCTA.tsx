@@ -8,14 +8,14 @@ export function FinalCTA() {
       {/* Floating emojis */}
       <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
         {[
-          // Esquerda (3) — espalhado, sem encostar
-          { emoji: "🥛", x: "5%", y: "12%", size: "2rem", opacity: 0.26, dur: "9s", delay: "0s" },
-          { emoji: "🧼", x: "4%", y: "56%", size: "1.7rem", opacity: 0.22, dur: "11s", delay: "-3s" },
-          { emoji: "🧹", x: "7%", y: "90%", size: "1.7rem", opacity: 0.24, dur: "12s", delay: "-1s" },
+          // Esquerda (3) — itens que NAO repetem a Hero
+          { emoji: "🧻", x: "5%", y: "12%", size: "1.9rem", opacity: 0.26, dur: "9s", delay: "0s" },
+          { emoji: "🧼", x: "4%", y: "56%", size: "1.8rem", opacity: 0.26, dur: "11s", delay: "-3s" },
+          { emoji: "🍞", x: "7%", y: "90%", size: "1.8rem", opacity: 0.26, dur: "12s", delay: "-1s" },
           // Direita (3)
-          { emoji: "🧻", x: "93%", y: "14%", size: "1.9rem", opacity: 0.26, dur: "10.5s", delay: "-4s" },
-          { emoji: "🧾", x: "94%", y: "56%", size: "1.6rem", opacity: 0.22, dur: "9.5s", delay: "-2s" },
-          { emoji: "🍌", x: "90%", y: "90%", size: "1.8rem", opacity: 0.24, dur: "11.5s", delay: "-5s" },
+          { emoji: "🧴", x: "93%", y: "14%", size: "1.8rem", opacity: 0.26, dur: "10.5s", delay: "-4s" },
+          { emoji: "🧹", x: "94%", y: "56%", size: "1.8rem", opacity: 0.26, dur: "9.5s", delay: "-2s" },
+          { emoji: "🧾", x: "90%", y: "90%", size: "1.7rem", opacity: 0.26, dur: "11.5s", delay: "-5s" },
         ].map((f, i) => (
           <span key={i} className="absolute animate-float" style={{ left: f.x, top: f.y, fontSize: f.size, opacity: f.opacity, animationDuration: f.dur, animationDelay: f.delay }}>
             {f.emoji}

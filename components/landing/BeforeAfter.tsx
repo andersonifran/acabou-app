@@ -46,7 +46,7 @@ export function BeforeAfter() {
 
           {/* Com */}
           <RevealOnScroll delay={150}>
-            <div className="bg-gradient-to-b from-green-50/80 to-white rounded-2xl border border-green-200 p-6 h-full ring-1 ring-green-100 shadow-[0_12px_30px_-12px_rgba(22,163,74,0.3)]">
+            <div className="bg-gradient-to-b from-green-50 to-white rounded-2xl border-2 border-green-300 p-6 h-full ring-4 ring-green-100 shadow-[0_22px_55px_-12px_rgba(22,163,74,0.5)]">
               <h3 className="font-black text-gray-900 mb-5 text-base">😌 Com o Acabou?</h3>
               <div className="space-y-3">
                 {[
