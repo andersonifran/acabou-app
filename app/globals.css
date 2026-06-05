@@ -195,6 +195,25 @@ input, select, textarea {
   .animate-float { animation: none; }
 }
 
+/* ═══ BRILHO PULSANTE (LED) — destaque do plano MELHOR VALOR ═══ */
+@keyframes pulseGlow {
+  0%, 100% {
+    box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.55),
+      0 18px 45px -14px rgba(22, 163, 74, 0.45);
+  }
+  50% {
+    box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.7),
+      0 0 36px 8px rgba(22, 163, 74, 0.45),
+      0 22px 55px -10px rgba(22, 163, 74, 0.65);
+  }
+}
+.pulse-glow {
+  animation: pulseGlow 2.4s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .pulse-glow { animation: none; }
+}
+
 /* ═══ APP — TRANSIÇÃO DE PÁGINA ═══ */
 /* Slide-up suave (telas que não são abas). SEM fade de opacity — a página
    entra OPACA, cobrindo a anterior (evita a sensação de "2 páginas juntas"

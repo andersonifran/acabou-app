@@ -402,8 +402,8 @@ function PlanosContent() {
           <div
             key={plan.id}
             className={cn(
-              "bg-white rounded-2xl border shadow-sm overflow-hidden",
-              plan.highlight ? "border-green-400 ring-2 ring-green-100" : "border-gray-100"
+              "bg-white rounded-2xl border overflow-hidden",
+              plan.highlight ? "border-green-500 pulse-glow relative z-10" : "border-gray-200 shadow-sm"
             )}
           >
             {plan.badge && (

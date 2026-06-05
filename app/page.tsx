@@ -62,16 +62,16 @@ export default function LandingPage() {
         {/* Floating emojis */}
         <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
           {[
-            // MOBILE+DESKTOP (4) — emolduram o celular, bem espacados
-            { emoji: "🛒", x: "2%", y: "58%", size: "1.9rem", opacity: 0.26, dur: "10s" },
-            { emoji: "☕", x: "93%", y: "58%", size: "1.8rem", opacity: 0.26, dur: "8.5s" },
-            { emoji: "🥛", x: "2%", y: "88%", size: "1.8rem", opacity: 0.26, dur: "11.5s" },
-            { emoji: "📦", x: "93%", y: "88%", size: "1.8rem", opacity: 0.26, dur: "9s" },
-            // SÓ DESKTOP (escondidos no mobile) — preenchem a area superior na tela larga
-            { emoji: "🍎", x: "3%", y: "16%", size: "1.8rem", opacity: 0.24, dur: "11s", hideMobile: true },
-            { emoji: "🥦", x: "93%", y: "16%", size: "1.7rem", opacity: 0.24, dur: "12s", hideMobile: true },
-            { emoji: "🖊️", x: "6%", y: "40%", size: "1.6rem", opacity: 0.24, dur: "9.5s", hideMobile: true },
-            { emoji: "🍌", x: "92%", y: "40%", size: "1.7rem", opacity: 0.24, dur: "10.5s", hideMobile: true },
+            // MOBILE+DESKTOP (4) — 🛒☕ no topo + 🍎🖊️ ao lado do celular, ALTURAS DIFERENTES (vida propria)
+            { emoji: "🛒", x: "3%", y: "6%", size: "1.9rem", opacity: 0.26, dur: "10s" },
+            { emoji: "☕", x: "90%", y: "12%", size: "1.8rem", opacity: 0.26, dur: "8.5s" },
+            { emoji: "🍎", x: "2%", y: "62%", size: "1.8rem", opacity: 0.26, dur: "11s" },
+            { emoji: "🖊️", x: "93%", y: "80%", size: "1.7rem", opacity: 0.26, dur: "12s" },
+            // SÓ DESKTOP (escondidos no mobile) — preenchem a tela larga
+            { emoji: "🥦", x: "3%", y: "32%", size: "1.7rem", opacity: 0.24, dur: "9.5s", hideMobile: true },
+            { emoji: "🍌", x: "92%", y: "34%", size: "1.7rem", opacity: 0.24, dur: "10.5s", hideMobile: true },
+            { emoji: "🥛", x: "6%", y: "88%", size: "1.8rem", opacity: 0.24, dur: "11.5s", hideMobile: true },
+            { emoji: "📦", x: "90%", y: "88%", size: "1.8rem", opacity: 0.24, dur: "9s", hideMobile: true },
           ].map((f, i) => (
             <span
               key={i}
@@ -248,7 +248,7 @@ export default function LandingPage() {
               <span className="bg-blue-100 text-blue-700 text-xs font-bold px-3 py-1.5 rounded-full">＋ Quero comprar</span>
             </div>
             <p className="text-center text-sm text-gray-500 mb-10">
-              Tudo como <strong>&ldquo;Acabou&rdquo;</strong> ou <strong>&ldquo;Quero comprar&rdquo;</strong> vai direto para a lista — automaticamente.
+              Tudo como <strong>&ldquo;Acabou&rdquo;</strong>, <strong>&ldquo;Acabando&rdquo;</strong> ou <strong>&ldquo;Quero comprar&rdquo;</strong> vai direto para a lista de compras — automaticamente.
             </p>
           </RevealOnScroll>
 
@@ -419,7 +419,7 @@ export default function LandingPage() {
               },
             ].map((plan) => (
               <RevealOnScroll key={plan.name}>
-                <div className={`rounded-2xl border overflow-hidden transition-transform h-full flex flex-col ${plan.highlight ? "relative z-10 bg-gradient-to-b from-green-50 to-white border-green-500 ring-4 ring-green-200 shadow-[0_26px_66px_-12px_rgba(22,163,74,0.6)] md:-translate-y-3 md:scale-[1.04]" : "bg-white border-gray-200 shadow-[0_14px_40px_-14px_rgba(15,23,42,0.18)] hover:scale-[1.01]"}`}>
+                <div className={`rounded-2xl border overflow-hidden transition-transform h-full flex flex-col ${plan.highlight ? "relative z-10 bg-gradient-to-b from-green-50 to-white border-green-500 pulse-glow md:-translate-y-3 md:scale-[1.04]" : "bg-white border-gray-200 shadow-[0_14px_40px_-14px_rgba(15,23,42,0.18)] hover:scale-[1.01]"}`}>
                   {plan.badge && <div className="bg-green-600 text-white text-center py-2.5 text-xs font-bold px-3">{plan.badge}</div>}
                   <div className="p-6 flex flex-col flex-1">
                     <h3 className="font-bold text-gray-700 text-sm mb-1">{plan.name}</h3>
