@@ -45,8 +45,14 @@ const nextConfig: NextConfig = {
 export default withSentryConfig(nextConfig, {
   org: "grupo-kazin",
   project: "javascript-nextjs",
-  // Sem upload de source maps: não exige token e evita atrito com o Turbopack.
-  sourcemaps: { disable: true },
+  sourcemaps: {
+    // Só envia source maps quando o token existe (na Vercel). Localmente, sem
+    // token, fica desligado — build limpo, sem atrito.
+    disable: !process.env.SENTRY_AUTH_TOKEN,
+    // Apaga os source maps do output público após o upload — os erros ficam
+    // legíveis no Sentry, mas o código NÃO fica exposto pros usuários.
+    deleteSourcemapsAfterUpload: true,
+  },
   // Não envia telemetria do próprio Sentry.
   telemetry: false,
   // Reduz logs no build (mostra só em CI).
