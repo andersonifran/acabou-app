@@ -62,16 +62,16 @@ export default function LandingPage() {
         {/* Floating emojis */}
         <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
           {[
-            // Esquerda (4) — itens recorrentes variados (mercado + limpeza + higiene)
-            { emoji: "🛒", x: "2%", y: "8%", size: "2.2rem", opacity: 0.3, dur: "10s" },
-            { emoji: "🧻", x: "1%", y: "49%", size: "1.7rem", opacity: 0.22, dur: "11s" },
-            { emoji: "🥚", x: "4%", y: "67%", size: "1.5rem", opacity: 0.2, dur: "12s" },
-            { emoji: "🧴", x: "2%", y: "86%", size: "1.6rem", opacity: 0.24, dur: "9s" },
-            // Direita (4)
-            { emoji: "☕", x: "93%", y: "7%", size: "2rem", opacity: 0.3, dur: "8.5s" },
-            { emoji: "🍞", x: "94%", y: "47%", size: "1.7rem", opacity: 0.22, dur: "10.5s" },
-            { emoji: "🪥", x: "92%", y: "66%", size: "1.5rem", opacity: 0.2, dur: "11.5s" },
-            { emoji: "🍎", x: "93%", y: "85%", size: "1.7rem", opacity: 0.24, dur: "9.5s" },
+            // Esquerda — variado (mercado + empresa/estoque + limpeza), espalhado
+            { emoji: "🛒", x: "2%", y: "20%", size: "2.3rem", opacity: 0.34, dur: "10s" },
+            { emoji: "📦", x: "12%", y: "6%", size: "1.7rem", opacity: 0.3, dur: "11.5s" },
+            { emoji: "🧻", x: "3%", y: "54%", size: "1.7rem", opacity: 0.26, dur: "11s" },
+            { emoji: "🧴", x: "6%", y: "87%", size: "1.7rem", opacity: 0.3, dur: "9s" },
+            // Direita
+            { emoji: "☕", x: "94%", y: "8%", size: "2rem", opacity: 0.34, dur: "8.5s" },
+            { emoji: "🍞", x: "95%", y: "42%", size: "1.7rem", opacity: 0.26, dur: "10.5s" },
+            { emoji: "🍎", x: "92%", y: "67%", size: "1.8rem", opacity: 0.3, dur: "12s" },
+            { emoji: "🪥", x: "87%", y: "90%", size: "1.6rem", opacity: 0.26, dur: "9.5s" },
           ].map((f, i) => (
             <span
               key={i}
@@ -320,7 +320,7 @@ export default function LandingPage() {
               },
             ].map((dep, i) => (
               <RevealOnScroll key={dep.name} delay={i * 100}>
-                <div className="bg-gray-50 rounded-2xl p-6 border border-gray-100 h-full">
+                <div className="bg-white rounded-2xl p-6 border border-gray-200/80 shadow-[0_10px_30px_-12px_rgba(0,0,0,0.18)] h-full">
                   <div className="flex gap-1 mb-3">
                     {Array.from({ length: 5 }).map((_, j) => (
                       <span key={j} className="text-amber-400 text-sm">★</span>
@@ -361,7 +361,7 @@ export default function LandingPage() {
               { title: "✅ Acabou?", items: ["Todo mundo vê", "Status em tempo real", "Lista automática", "WhatsApp + offline", "Lembrete diário"], bad: false },
             ].map((col, i) => (
               <RevealOnScroll key={col.title} delay={i * 100}>
-                <div className={`rounded-2xl p-5 border h-full ${col.bad ? "bg-white border-gray-100" : "brand-grad border-green-700 text-white"}`}>
+                <div className={`rounded-2xl p-5 border h-full ${col.bad ? "bg-white border-gray-200/80 shadow-[0_6px_20px_-10px_rgba(0,0,0,0.15)]" : "brand-grad border-green-700 text-white shadow-xl shadow-green-600/25"}`}>
                   <h4 className={`font-bold text-sm mb-4 ${col.bad ? "text-gray-900" : "text-white"}`}>{col.title}</h4>
                   <div className="space-y-2.5">
                     {col.items.map((item) => (
@@ -419,7 +419,7 @@ export default function LandingPage() {
               },
             ].map((plan) => (
               <RevealOnScroll key={plan.name}>
-                <div className={`bg-white rounded-2xl border overflow-hidden shadow-sm transition-transform hover:scale-[1.01] h-full flex flex-col ${plan.highlight ? "border-green-400 ring-2 ring-green-100" : "border-gray-100"}`}>
+                <div className={`bg-white rounded-2xl border overflow-hidden transition-transform hover:scale-[1.01] h-full flex flex-col ${plan.highlight ? "border-green-400 ring-2 ring-green-200 shadow-[0_18px_50px_-15px_rgba(22,163,74,0.45)]" : "border-gray-200 shadow-[0_10px_30px_-14px_rgba(0,0,0,0.18)]"}`}>
                   {plan.badge && <div className="bg-green-600 text-white text-center py-2.5 text-xs font-bold px-3">{plan.badge}</div>}
                   <div className="p-6 flex flex-col flex-1">
                     <h3 className="font-bold text-gray-700 text-sm mb-1">{plan.name}</h3>

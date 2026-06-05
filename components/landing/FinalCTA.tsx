@@ -8,16 +8,16 @@ export function FinalCTA() {
       {/* Floating emojis */}
       <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
         {[
-          // Esquerda (4) — variado vs Hero (mercado + limpeza + higiene)
-          { emoji: "🥛", x: "4%", y: "10%", size: "2rem", opacity: 0.26, dur: "9s", delay: "0s" },
-          { emoji: "🧼", x: "3%", y: "39%", size: "1.7rem", opacity: 0.22, dur: "11s", delay: "-2s" },
-          { emoji: "🍞", x: "5%", y: "64%", size: "1.8rem", opacity: 0.24, dur: "10s", delay: "-4s" },
-          { emoji: "🧹", x: "4%", y: "88%", size: "1.7rem", opacity: 0.22, dur: "12s", delay: "-1s" },
-          // Direita (4)
-          { emoji: "🧻", x: "93%", y: "12%", size: "1.9rem", opacity: 0.26, dur: "10.5s", delay: "-3s" },
-          { emoji: "🥚", x: "94%", y: "40%", size: "1.6rem", opacity: 0.2, dur: "9.5s", delay: "-5s" },
-          { emoji: "🍌", x: "92%", y: "64%", size: "1.8rem", opacity: 0.24, dur: "11.5s", delay: "-2.5s" },
-          { emoji: "🧀", x: "93%", y: "88%", size: "1.7rem", opacity: 0.24, dur: "8.5s", delay: "-4.5s" },
+          // Esquerda — variado vs Hero (mercado + limpeza + empresa/nota), espalhado
+          { emoji: "🥛", x: "5%", y: "11%", size: "2rem", opacity: 0.28, dur: "9s", delay: "0s" },
+          { emoji: "🧼", x: "13%", y: "5%", size: "1.6rem", opacity: 0.24, dur: "11s", delay: "-2s" },
+          { emoji: "🍞", x: "4%", y: "62%", size: "1.8rem", opacity: 0.24, dur: "10s", delay: "-4s" },
+          { emoji: "🧹", x: "7%", y: "90%", size: "1.7rem", opacity: 0.24, dur: "12s", delay: "-1s" },
+          // Direita
+          { emoji: "🧻", x: "93%", y: "13%", size: "1.9rem", opacity: 0.28, dur: "10.5s", delay: "-3s" },
+          { emoji: "🧾", x: "85%", y: "6%", size: "1.6rem", opacity: 0.24, dur: "9.5s", delay: "-5s" },
+          { emoji: "🍌", x: "94%", y: "62%", size: "1.8rem", opacity: 0.24, dur: "11.5s", delay: "-2.5s" },
+          { emoji: "🧀", x: "90%", y: "90%", size: "1.7rem", opacity: 0.24, dur: "8.5s", delay: "-4.5s" },
         ].map((f, i) => (
           <span key={i} className="absolute animate-float" style={{ left: f.x, top: f.y, fontSize: f.size, opacity: f.opacity, animationDuration: f.dur, animationDelay: f.delay }}>
             {f.emoji}
@@ -45,9 +45,9 @@ export function FinalCTA() {
           <InstallButton />
         </div>
 
-        {/* PS */}
-        <div className="mt-12 pt-8 border-t border-green-500/30 text-left max-w-md mx-auto">
-          <p className="text-green-200 text-sm leading-relaxed">
+        {/* PS — balão frosted (destaca sobre o verde) */}
+        <div className="mt-10 bg-white/10 border border-white/25 rounded-2xl p-5 text-left max-w-md mx-auto shadow-lg shadow-green-900/20">
+          <p className="text-green-50 text-sm leading-relaxed">
             <strong className="text-white">PS:</strong> O único risco é continuar esquecendo itens no mercado. Teste grátis e veja como é viver sem o &ldquo;como eu esqueci?&rdquo;
           </p>
         </div>
