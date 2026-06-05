@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { withSentryConfig } from "@sentry/nextjs";
 
 const nextConfig: NextConfig = {
   images: {
@@ -41,4 +42,13 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+export default withSentryConfig(nextConfig, {
+  org: "grupo-kazin",
+  project: "javascript-nextjs",
+  // Sem upload de source maps: não exige token e evita atrito com o Turbopack.
+  sourcemaps: { disable: true },
+  // Não envia telemetria do próprio Sentry.
+  telemetry: false,
+  // Reduz logs no build (mostra só em CI).
+  silent: !process.env.CI,
+});
