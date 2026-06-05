@@ -62,19 +62,20 @@ export default function LandingPage() {
         {/* Floating emojis */}
         <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
           {[
-            // Set fixo (casa + empresa) — MESMA vida (opacidade uniforme), fora do titulo
-            { emoji: "🛒", x: "3%", y: "5%", size: "1.9rem", opacity: 0.24, dur: "10s" },
-            { emoji: "☕", x: "90%", y: "5%", size: "1.8rem", opacity: 0.24, dur: "8.5s" },
-            { emoji: "🍎", x: "2%", y: "55%", size: "1.7rem", opacity: 0.24, dur: "11s" },
-            { emoji: "🖊️", x: "96%", y: "53%", size: "1.7rem", opacity: 0.24, dur: "12s" },
-            { emoji: "🥦", x: "2%", y: "72%", size: "1.7rem", opacity: 0.24, dur: "9.5s" },
-            { emoji: "🍌", x: "96%", y: "70%", size: "1.7rem", opacity: 0.24, dur: "10.5s" },
-            { emoji: "🥛", x: "5%", y: "91%", size: "1.8rem", opacity: 0.24, dur: "11.5s" },
-            { emoji: "📦", x: "90%", y: "91%", size: "1.8rem", opacity: 0.24, dur: "9s" },
+            // MOBILE+DESKTOP (4) — emolduram o celular, bem espacados
+            { emoji: "🛒", x: "2%", y: "58%", size: "1.9rem", opacity: 0.26, dur: "10s" },
+            { emoji: "☕", x: "93%", y: "58%", size: "1.8rem", opacity: 0.26, dur: "8.5s" },
+            { emoji: "🥛", x: "2%", y: "88%", size: "1.8rem", opacity: 0.26, dur: "11.5s" },
+            { emoji: "📦", x: "93%", y: "88%", size: "1.8rem", opacity: 0.26, dur: "9s" },
+            // SÓ DESKTOP (escondidos no mobile) — preenchem a area superior na tela larga
+            { emoji: "🍎", x: "3%", y: "16%", size: "1.8rem", opacity: 0.24, dur: "11s", hideMobile: true },
+            { emoji: "🥦", x: "93%", y: "16%", size: "1.7rem", opacity: 0.24, dur: "12s", hideMobile: true },
+            { emoji: "🖊️", x: "6%", y: "40%", size: "1.6rem", opacity: 0.24, dur: "9.5s", hideMobile: true },
+            { emoji: "🍌", x: "92%", y: "40%", size: "1.7rem", opacity: 0.24, dur: "10.5s", hideMobile: true },
           ].map((f, i) => (
             <span
               key={i}
-              className="absolute animate-float"
+              className={`absolute animate-float ${f.hideMobile ? "hidden md:block" : ""}`}
               style={{ left: f.x, top: f.y, fontSize: f.size, opacity: f.opacity, animationDuration: f.dur, animationDelay: `${-i * 1.5}s` }}
             >
               {f.emoji}
@@ -418,7 +419,7 @@ export default function LandingPage() {
               },
             ].map((plan) => (
               <RevealOnScroll key={plan.name}>
-                <div className={`bg-white rounded-2xl border overflow-hidden transition-transform h-full flex flex-col ${plan.highlight ? "relative z-10 border-green-500 ring-2 ring-green-300 shadow-[0_30px_70px_-14px_rgba(22,163,74,0.55)] md:-translate-y-3 md:scale-[1.03]" : "border-gray-200 shadow-[0_14px_40px_-14px_rgba(15,23,42,0.18)] hover:scale-[1.01]"}`}>
+                <div className={`rounded-2xl border overflow-hidden transition-transform h-full flex flex-col ${plan.highlight ? "relative z-10 bg-gradient-to-b from-green-50 to-white border-green-500 ring-4 ring-green-200 shadow-[0_26px_66px_-12px_rgba(22,163,74,0.6)] md:-translate-y-3 md:scale-[1.04]" : "bg-white border-gray-200 shadow-[0_14px_40px_-14px_rgba(15,23,42,0.18)] hover:scale-[1.01]"}`}>
                   {plan.badge && <div className="bg-green-600 text-white text-center py-2.5 text-xs font-bold px-3">{plan.badge}</div>}
                   <div className="p-6 flex flex-col flex-1">
                     <h3 className="font-bold text-gray-700 text-sm mb-1">{plan.name}</h3>
