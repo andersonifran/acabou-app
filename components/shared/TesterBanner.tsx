@@ -38,8 +38,9 @@ export function TesterBanner() {
       </button>
 
       <div className="flex items-start gap-3 pr-5">
-        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white/20 text-2xl">
-          🚀
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white p-1.5 shadow-sm">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/google-play-icon.png" alt="Google Play" width={32} height={32} className="h-8 w-8" />
         </div>
         <div className="min-w-0">
           <p className="text-sm font-bold leading-snug">
