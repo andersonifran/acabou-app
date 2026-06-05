@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { X } from "lucide-react";
 
 // Link de opt-in do teste fechado (Play Console → Teste fechado → Testadores)
-const OPT_IN_URL = "https://play.google.com/apps/testing/br.com.acabouapp.www.twa";
+const OPT_IN_URL = "https://play.google.com/apps/testing/br.com.acabouapp.www.twa?hl=pt-BR";
 const DISMISS_KEY = "tester_banner_dismissed_v1";
 
 /**
