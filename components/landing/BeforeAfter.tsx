@@ -37,10 +37,10 @@ export function BeforeAfter() {
           {/* VS */}
           <RevealOnScroll>
             <div className="hidden md:flex items-center justify-center">
-              <span className="text-2xl font-black text-gray-300 bg-gray-100 w-12 h-12 rounded-full flex items-center justify-center">VS</span>
+              <span className="brand-grad text-xl font-black text-white w-12 h-12 rounded-full flex items-center justify-center shadow-lg shadow-green-600/25 ring-4 ring-white">VS</span>
             </div>
-            <div className="md:hidden text-center py-1">
-              <span className="text-lg font-black text-gray-300">VS</span>
+            <div className="md:hidden flex justify-center py-1">
+              <span className="brand-grad inline-flex items-center justify-center text-sm font-black text-white w-9 h-9 rounded-full shadow-md shadow-green-600/25 ring-2 ring-white">VS</span>
             </div>
           </RevealOnScroll>
 

@@ -190,6 +190,10 @@ input, select, textarea {
   animation: float 10s ease-in-out infinite;
   will-change: transform;
 }
+/* Acessibilidade: desliga a flutuação para quem prefere menos movimento */
+@media (prefers-reduced-motion: reduce) {
+  .animate-float { animation: none; }
+}
 
 /* ═══ APP — TRANSIÇÃO DE PÁGINA ═══ */
 /* Slide-up suave (telas que não são abas). SEM fade de opacity — a página
