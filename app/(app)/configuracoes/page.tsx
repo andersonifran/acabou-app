@@ -18,6 +18,7 @@ import { ThemeToggle } from "@/components/shared/ThemeToggle";
 import { PremiumTeaser } from "@/components/shared/PremiumTeaser";
 import { useRole } from "@/hooks/useRole";
 import { ProfileAvatar } from "@/components/shared/ProfileAvatar";
+import { ReminderTimePicker } from "@/components/shared/ReminderTimePicker";
 
 export default function ConfiguracoesPage() {
   const router = useRouter();
@@ -475,13 +476,12 @@ export default function ConfiguracoesPage() {
                   </div>
 
                   {reminderEnabled && (
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-700">Horário</span>
-                      <input
-                        type="time"
+                    <div className="space-y-2">
+                      <span className="text-sm font-medium text-gray-700">Horário do lembrete</span>
+                      <ReminderTimePicker
                         value={reminderTime}
-                        onChange={(e) => saveReminderSettings(true, e.target.value)}
-                        className="bg-gray-50 border border-gray-200 rounded-lg px-3 py-1.5 text-sm text-gray-700"
+                        onChange={(v) => saveReminderSettings(true, v)}
+                        disabled={savingReminder}
                       />
                     </div>
                   )}
