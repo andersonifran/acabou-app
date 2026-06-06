@@ -250,25 +250,19 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         // tela do sistema → esta tela React = parece UMA tela só.
         background: "#1E9839",
       }}
-      className={`fixed inset-0 z-[100] flex flex-col items-center justify-center overflow-hidden text-white transition-opacity duration-[280ms] ease-out ${
+      className={`fixed inset-0 z-[100] flex items-center justify-center transition-opacity duration-[280ms] ease-out ${
         isReady ? "pointer-events-none opacity-0" : "opacity-100"
       }`}
     >
-      {/* Ícones flutuantes emoldurando a tela (vida própria) — é animação CSS,
-          renderiza junto com o splash, SEM delay nenhum. */}
-      <div aria-hidden="true" className="pointer-events-none absolute inset-0 select-none">
-        <span className="absolute left-7 top-24 text-4xl opacity-[0.18] animate-float" style={{ animationDuration: "9s" }}>🛒</span>
-        <span className="absolute right-8 top-32 text-3xl opacity-[0.18] animate-float" style={{ animationDuration: "11s", animationDelay: "-2s" }}>☕</span>
-        <span className="absolute left-9 bottom-32 text-3xl opacity-[0.18] animate-float" style={{ animationDuration: "10s", animationDelay: "-4s" }}>🍅</span>
-        <span className="absolute right-7 bottom-28 text-4xl opacity-[0.18] animate-float" style={{ animationDuration: "12s", animationDelay: "-1s" }}>📦</span>
-      </div>
-      {/* A marca branca oficial (casa + ? + checklist), SEM o quadrado — centro */}
+      {/* SÓ a marca branca, no MESMO tamanho da tela do sistema (v3) — sem
+          ícones flutuantes e sem sombra, pra emendar invisível com a tela
+          nativa do Android e parecer UMA tela só (sem o efeito de "ampliar"). */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src="/logo-mark.png"
         alt="Acabou?"
-        style={{ width: 200, height: "auto" }}
-        className="relative z-10 drop-shadow-[0_8px_24px_rgba(0,0,0,0.18)]"
+        style={{ height: 150, width: "auto" }}
+        className="select-none"
       />
     </div>
   ) : null;
