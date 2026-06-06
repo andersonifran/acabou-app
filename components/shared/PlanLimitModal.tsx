@@ -12,7 +12,10 @@ interface PlanLimitModalProps {
 
 const FREE_ITEMS = PLAN_LIMITS.free.max_items;
 
-const messages = {
+const messages: Record<
+  PlanLimitModalProps["reason"],
+  { title: string; description: string; emoji: string; image?: string }
+> = {
   items: {
     title: `Limite de ${FREE_ITEMS} itens atingido`,
     description: `No plano grátis você pode ter até ${FREE_ITEMS} itens na despensa.`,
@@ -22,6 +25,7 @@ const messages = {
     title: "Convide sua família!",
     description: "No plano grátis apenas você pode usar o app.",
     emoji: "👨‍👩‍👧‍👦",
+    image: "/familia.png",
   },
   houses: {
     title: "Adicione vários locais",
@@ -43,9 +47,14 @@ export function PlanLimitModal({ isOpen, onClose, reason }: PlanLimitModalProps)
         {/* Header */}
         <div className="flex items-start justify-between mb-4">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center text-2xl">
-              {msg.emoji}
-            </div>
+            {msg.image ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={msg.image} alt="" aria-hidden="true" className="h-12 w-12 shrink-0 object-contain" />
+            ) : (
+              <div className="w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center text-2xl">
+                {msg.emoji}
+              </div>
+            )}
             <div>
               <h2 className="font-bold text-gray-900 text-base">{msg.title}</h2>
               <p className="text-sm text-gray-500">{msg.description}</p>

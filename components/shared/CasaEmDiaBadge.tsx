@@ -13,22 +13,15 @@ import { hapticSuccess } from "@/lib/haptics";
  * Só aparece após confirmar dados (ready) — nunca mostra estado errado do cache.
  */
 
-const EM_DIA_LABEL: Record<string, string> = {
-  casa: "Casa em dia",
-  apartamento: "Apê em dia",
-  praia: "Praia em dia",
-  veraneio: "Sítio em dia",
-  empresa: "Empresa em dia",
-  outro: "Local em dia",
-};
-
 export function CasaEmDiaBadge({
   shoppingCount,
   ready,
-  propertyType = "casa",
 }: {
   shoppingCount: number;
   ready: boolean;
+  // Mantido por compatibilidade com o caller; NÃO é mais usado. A saudação agora
+  // é universal ("Tudo em dia") e não presume o tipo de local — uma "casa de
+  // veraneio" pode ser sítio, chácara, fazenda, casa de praia, etc.
   propertyType?: string;
 }) {
   const emDia = shoppingCount === 0;
@@ -59,8 +52,7 @@ export function CasaEmDiaBadge({
   // ── Estado: TUDO EM DIA → joinha + streak ──
   if (days < 1) return null;
 
-  const label = EM_DIA_LABEL[propertyType] ?? EM_DIA_LABEL.casa;
-  const title = days === 1 ? `${label}! ✨` : `${label} há ${days} dias! 🏆`;
+  const title = days === 1 ? "Tudo em dia! ✨" : `Tudo em dia há ${days} dias! 🏆`;
   const subtitle =
     days === 1
       ? "Tudo abastecido, nada faltando."
