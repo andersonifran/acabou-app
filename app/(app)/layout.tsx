@@ -10,7 +10,7 @@ import { AddItemModal } from "@/components/items/AddItemModal";
 import { PlanLimitModal } from "@/components/shared/PlanLimitModal";
 import { PWAInstallBanner } from "@/components/shared/PWAInstallBanner";
 import { PushPermissionBanner } from "@/components/shared/PushPermissionBanner";
-import { TesterBanner } from "@/components/shared/TesterBanner";
+// import { TesterBanner } from "@/components/shared/TesterBanner"; // DESATIVADO 06/06/2026 (ver nota no render)
 import { useItems } from "@/hooks/useItems";
 import { useSubscription } from "@/hooks/useSubscription";
 import { ItemStatus, House } from "@/types";
@@ -312,7 +312,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       {splashOverlay}
       {isReady && (
       <div className="min-h-screen app-bg pb-16">
-      <TesterBanner />
+      {/* Banner de recrutamento de testadores DESATIVADO (06/06/2026): ele
+          aparecia pra TODOS os usuários web (inclusive os que vêm do Facebook
+          Ads), que NÃO são testadores cadastrados e cairiam num beco sem saída
+          na página do Google. Recrutamento agora é só pessoal (família/amigos).
+          REATIVAR só quando o app for público + Play Billing 100% funcionando. */}
       <PushPermissionBanner />
       <SwipeNavigator tabs={swipeTabs} disabled={isAddItemModalOpen}>
         {children}
