@@ -365,8 +365,10 @@ function OnboardingContent() {
           </p>
         </div>
 
-        {/* Meio: rola só se precisar — nada fica escondido atrás do botão */}
-        <div className="flex-1 overflow-y-auto px-6 max-w-md mx-auto w-full space-y-4 pb-3">
+        {/* Meio: centraliza o conteúdo (preenche a tela, equilibrado) e rola só
+            se a tela for pequena — nada fica escondido atrás do botão. */}
+        <div className="flex-1 overflow-y-auto flex flex-col">
+          <div className="my-auto w-full max-w-md mx-auto px-6 py-5 space-y-4">
           {/* Tipo de imóvel */}
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -416,6 +418,7 @@ function OnboardingContent() {
             <p className="text-sm text-green-800">
               💡 Depois você pode convidar sua família e adicionar mais locais.
             </p>
+          </div>
           </div>
         </div>
 

@@ -765,6 +765,7 @@ export default function CasaPage() {
         {dataSyncComplete && isOwner && !isPaid && (
           <PremiumTeaser
             emoji="👨‍👩‍👧"
+            image="/familia.png"
             title="Convide sua família"
             subtitle="Compartilhe a casa com quem mora com você. Todo mundo marca o que acabou e a lista fica pronta sozinha."
             benefits={[

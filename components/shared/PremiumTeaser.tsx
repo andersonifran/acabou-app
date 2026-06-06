@@ -13,6 +13,9 @@ import { Lock, Sparkles, Check } from "lucide-react";
 
 interface PremiumTeaserProps {
   emoji: string;
+  /** Imagem PNG opcional no lugar do emoji — colorida e igual em todo aparelho
+      (o emoji de família renderiza preto/quebrado em alguns Androids). */
+  image?: string;
   title: string;
   subtitle: string;
   benefits: string[];
@@ -20,7 +23,7 @@ interface PremiumTeaserProps {
   cta?: string;
 }
 
-export function PremiumTeaser({ emoji, title, subtitle, benefits, cta = "Assinar Plano Família" }: PremiumTeaserProps) {
+export function PremiumTeaser({ emoji, image, title, subtitle, benefits, cta = "Assinar Plano Família" }: PremiumTeaserProps) {
   return (
     <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
       {/* Topo — função + selo de cadeado */}
@@ -29,7 +32,12 @@ export function PremiumTeaser({ emoji, title, subtitle, benefits, cta = "Assinar
           <Lock size={12} className="text-amber-500" />
           <span className="text-[11px] font-bold text-amber-600">Plano Família</span>
         </div>
-        <div className="text-5xl mb-2">{emoji}</div>
+        {image ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={image} alt="" aria-hidden="true" className="mx-auto mb-2 h-20 w-20 select-none object-contain pointer-events-none drop-shadow-sm" />
+        ) : (
+          <div className="text-5xl mb-2">{emoji}</div>
+        )}
         <h3 className="font-black text-gray-900 text-lg">{title}</h3>
         <p className="text-sm text-gray-600 mt-1 max-w-xs mx-auto leading-relaxed">{subtitle}</p>
       </div>
