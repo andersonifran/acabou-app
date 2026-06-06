@@ -5,6 +5,7 @@ import { useSubscription } from "@/hooks/useSubscription";
 import { Header } from "@/components/layout/Header";
 import { CheckoutTransition } from "@/components/shared/CheckoutTransition";
 import { PaymentTrust } from "@/components/shared/PaymentTrust";
+import { isPlayBillingAvailable, purchaseSubscription } from "@/lib/play-billing";
 import { Check, Star, Home, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useSearchParams } from "next/navigation";
@@ -98,6 +99,10 @@ function PlanosContent() {
   const motivo = searchParams.get("motivo");
   const status = searchParams.get("status");
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
+  // Tela-ponte de confiança do Mercado Pago — só aparece no fluxo WEB/PWA.
+  // No app Android (Google Play Billing) NÃO mostramos (o sheet nativo do Google
+  // aparece por cima; mostrar a marca do MP ali seria errado).
+  const [mpCheckout, setMpCheckout] = useState(false);
   const [cancelOpen, setCancelOpen] = useState(false);
   const [cancelling, setCancelling] = useState(false);
 
@@ -175,6 +180,54 @@ function PlanosContent() {
     if (plan.ctaDisabled || !plan.priceId || loadingPlan) return;
 
     setLoadingPlan(plan.id);
+
+    // ─────────────────────────────────────────────────────────────
+    // 1) APP ANDROID (TWA com Play Billing) → Google Play (exigência do Google)
+    // ─────────────────────────────────────────────────────────────
+    try {
+      if (await isPlayBillingAvailable()) {
+        let purchase;
+        try {
+          purchase = await purchaseSubscription(plan.id as "monthly" | "yearly");
+        } catch (err: any) {
+          // Usuário fechou o sheet do Google sem comprar → não é erro.
+          if (err?.name === "AbortError") { setLoadingPlan(null); return; }
+          throw err;
+        }
+        // null = compra cancelada / sem token → reseta sem alarde (pode tentar de novo).
+        if (!purchase) { setLoadingPlan(null); return; }
+
+        // O BACKEND valida com o Google e libera o premium (anti-burla — nunca
+        // confiamos no cliente). plan_expires_at = data REAL devolvida pelo Google.
+        const res = await fetch("/api/play-billing/verificar", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(purchase),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || !data.ok || !data.active) {
+          throw new Error(
+            data.error ??
+              "Não conseguimos confirmar sua assinatura agora. Se você foi cobrado, abra o app novamente em instantes — vamos liberar automaticamente."
+          );
+        }
+
+        // Sucesso → recarrega já premium. Reusa o fluxo de sucesso existente
+        // (confirmar-pagamento dá curto-circuito em 'plano já ativo' e NEM toca
+        // no Mercado Pago, então é seguro pro Google).
+        window.location.href = "/planos?status=sucesso";
+        return;
+      }
+    } catch (err: any) {
+      alert(err.message ?? "Erro ao processar a assinatura. Tente novamente.");
+      setLoadingPlan(null);
+      return;
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // 2) WEB / PWA (navegador) → Mercado Pago (fluxo atual)
+    // ─────────────────────────────────────────────────────────────
+    setMpCheckout(true);
     const startedAt = Date.now();
 
     try {
@@ -207,6 +260,7 @@ function PlanosContent() {
     } catch (err: any) {
       alert(err.message ?? "Erro ao iniciar pagamento. Tente novamente.");
       setLoadingPlan(null);
+      setMpCheckout(false);
     }
   }
 
@@ -214,7 +268,7 @@ function PlanosContent() {
 
   return (
     <div>
-      {checkoutPlan && <CheckoutTransition planName={checkoutPlan.name} price={checkoutPlan.price} />}
+      {mpCheckout && checkoutPlan && <CheckoutTransition planName={checkoutPlan.name} price={checkoutPlan.price} />}
 
       {/* Modal de confirmação de cancelamento */}
       {cancelOpen && (
