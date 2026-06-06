@@ -75,6 +75,16 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     }
   }, [isReady, splashGone]);
 
+  // Truque premium: o loader (spinner) só aparece se o carregamento passar de
+  // ~250ms. Em conexão normal, o app abre antes disso → o usuário vê SÓ a tela
+  // verde nativa → o app, sem spinner nenhum (parece instantâneo). O spinner
+  // discreto só surge em internet lenta. É o que os apps bons fazem.
+  const [showSpinner, setShowSpinner] = useState(false);
+  useEffect(() => {
+    const t = setTimeout(() => setShowSpinner(true), 250);
+    return () => clearTimeout(t);
+  }, []);
+
   async function loadHouseData(houseId: string) {
     const { data: { user } } = await supabase.auth.getUser();
 
@@ -241,29 +251,22 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   // tudo enquanto carrega e SOME com um fade RÁPIDO quando os dados ficam prontos
   // (sem "pisca" e sem delay perceptível). É renderizado na MESMA posição da
   // árvore antes e depois de "isReady" pra o fade funcionar (não pode "saltar").
+  // A ÚNICA tela de abertura é a NATIVA do Android (verde #1E9839 + logo, do
+  // .aab v3) — ocupa a tela inteira. NÃO repetimos uma "segunda tela verde"
+  // (isso causava barras brancas + logo menor, porque o app web usa barras
+  // brancas). No "vão" até os dados chegarem, mostramos o PRÓPRIO app abrindo:
+  // mesmo fundo das telas do app (.app-bg) + um loader discreto. Assim parece
+  // que o app já abriu e está só preenchendo — elegante, sem "2ª tela".
   const splashOverlay = !splashGone ? (
     <div
       aria-hidden={isReady}
-      style={{
-        // Verde SÓLIDO #1E9839 — idêntico ao ícone e à tela do sistema do
-        // Android (que só faz cor sólida). Assim a abertura emenda invisível:
-        // tela do sistema → esta tela React = parece UMA tela só.
-        background: "#1E9839",
-      }}
-      className={`fixed inset-0 z-[100] flex items-center justify-center transition-opacity duration-[280ms] ease-out ${
+      className={`fixed inset-0 z-[100] flex items-center justify-center app-bg transition-opacity duration-[200ms] ease-out ${
         isReady ? "pointer-events-none opacity-0" : "opacity-100"
       }`}
     >
-      {/* SÓ a marca branca, no MESMO tamanho da tela do sistema (v3) — sem
-          ícones flutuantes e sem sombra, pra emendar invisível com a tela
-          nativa do Android e parecer UMA tela só (sem o efeito de "ampliar"). */}
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src="/logo-mark.png"
-        alt="Acabou?"
-        style={{ height: 150, width: "auto" }}
-        className="select-none"
-      />
+      {showSpinner && (
+        <div className="h-9 w-9 rounded-full border-[3px] border-green-200/70 border-t-green-600 animate-spin" />
+      )}
     </div>
   ) : null;
 
