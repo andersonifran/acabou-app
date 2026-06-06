@@ -65,6 +65,16 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     } catch { return false; }
   });
 
+  // Splash de abertura sai com FADE suave (não "pisca" / não parece bug).
+  // splashGone remove o overlay do DOM só depois que o fade termina.
+  const [splashGone, setSplashGone] = useState(false);
+  useEffect(() => {
+    if (isReady && !splashGone) {
+      const t = setTimeout(() => setSplashGone(true), 320);
+      return () => clearTimeout(t);
+    }
+  }, [isReady, splashGone]);
+
   async function loadHouseData(houseId: string) {
     const { data: { user } } = await supabase.auth.getUser();
 
@@ -227,30 +237,32 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     loadData();
   }, []);
 
-  if (!isReady) {
-    return (
-      <div className="min-h-screen brand-grad relative flex flex-col items-center justify-center gap-5 overflow-hidden text-white">
-        {/* Itens flutuantes de fundo (vibe do app enquanto abre) */}
-        <div aria-hidden="true" className="pointer-events-none absolute inset-0 select-none">
-          <span className="absolute left-6 top-20 text-4xl opacity-20 animate-float" style={{ animationDuration: "9s" }}>🛒</span>
-          <span className="absolute right-8 top-28 text-3xl opacity-20 animate-float" style={{ animationDuration: "11s", animationDelay: "-2s" }}>☕</span>
-          <span className="absolute left-10 bottom-28 text-3xl opacity-20 animate-float" style={{ animationDuration: "10s", animationDelay: "-4s" }}>🥛</span>
-          <span className="absolute right-7 bottom-24 text-4xl opacity-20 animate-float" style={{ animationDuration: "12s", animationDelay: "-1s" }}>🧻</span>
-        </div>
-        {/* Logo branca + nome */}
-        <div className="relative flex flex-col items-center gap-3">
-          <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-white/15 backdrop-blur-sm">
-            <svg width="36" height="36" viewBox="0 0 64 64" fill="none" stroke="white" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M14 30 L32 14 L50 30 V52 H14 Z" />
-              <path d="M24 38 H40 M24 46 H36" />
-            </svg>
-          </div>
-          <p className="text-2xl font-black">Acabou?</p>
-          <div className="h-7 w-7 animate-spin rounded-full border-[3px] border-white/30 border-t-white" />
-        </div>
-      </div>
-    );
-  }
+  // Splash de abertura — overlay FIXO (verde do logo + a marca branca) que cobre
+  // tudo enquanto carrega e SOME com um fade RÁPIDO quando os dados ficam prontos
+  // (sem "pisca" e sem delay perceptível). É renderizado na MESMA posição da
+  // árvore antes e depois de "isReady" pra o fade funcionar (não pode "saltar").
+  const splashOverlay = !splashGone ? (
+    <div
+      aria-hidden={isReady}
+      style={{
+        background:
+          "radial-gradient(125% 125% at 50% 42%, #2BA043 0%, #1E9839 46%, #137D2A 80%, #0A5E1D 100%)",
+      }}
+      className={`fixed inset-0 z-[100] flex flex-col items-center justify-center overflow-hidden text-white transition-opacity duration-[280ms] ease-out ${
+        isReady ? "pointer-events-none opacity-0" : "opacity-100"
+      }`}
+    >
+      {/* Só a marca branca oficial (casa + ? + checklist), SEM o quadrado —
+          estilo Netflix. Fundo todo no verde do logo. */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src="/logo-mark.png"
+        alt="Acabou?"
+        style={{ width: 200, height: "auto" }}
+        className="drop-shadow-[0_8px_24px_rgba(0,0,0,0.18)]"
+      />
+    </div>
+  ) : null;
 
   // ── BLOQUEIO DE MEMBRO CONVIDADO ────────────────────────────
   // Convites são exclusivos do Plano Família. Se o dono caiu para o
@@ -263,6 +275,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   if (blockGuestMember || accessPaused) {
     return (
+      <>
+      {splashOverlay}
       <div className="min-h-screen app-bg flex flex-col items-center justify-center px-6 text-center gap-4">
         <div className="w-16 h-16 rounded-full bg-amber-100 flex items-center justify-center text-3xl">🔒</div>
         <h1 className="text-xl font-bold text-gray-900">Acesso pausado</h1>
@@ -283,6 +297,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           Sair da conta
         </button>
       </div>
+      </>
     );
   }
 
@@ -293,7 +308,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     : ["/home", "/despensa", "/lista", "/configuracoes"];
 
   return (
-    <div className="min-h-screen app-bg pb-16">
+    <>
+      {splashOverlay}
+      {isReady && (
+      <div className="min-h-screen app-bg pb-16">
       <TesterBanner />
       <PushPermissionBanner />
       <SwipeNavigator tabs={swipeTabs} disabled={isAddItemModalOpen}>
@@ -326,6 +344,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         onClose={() => setShowPlanLimit(false)}
         reason="items"
       />
-    </div>
+      </div>
+      )}
+    </>
   );
 }
