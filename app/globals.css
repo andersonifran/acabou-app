@@ -200,6 +200,19 @@ input, select, textarea {
   .animate-float { animation: none; }
 }
 
+/* Estado vazio (lista limpa) — ilustração 3D flutua com um respiro leve (premium) */
+@keyframes emptyBob {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-10px) scale(1.035); }
+}
+.animate-empty-bob {
+  animation: emptyBob 3.2s ease-in-out infinite;
+  will-change: transform;
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-empty-bob { animation: none; }
+}
+
 /* ═══ BRILHO PULSANTE (LED) — destaque do plano MELHOR VALOR ═══ */
 @keyframes pulseGlow {
   0%, 100% {

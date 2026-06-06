@@ -203,7 +203,7 @@ export default function ListaPage() {
       <div className="max-w-lg mx-auto px-4 py-4">
         {shoppingListItems.length === 0 ? (
           <EmptyState
-            mascot="done"
+            image="/lista-vazia.png"
             title="Tudo em dia! 🎉"
             description="Nenhum item para comprar agora. Quando algo acabar, é só marcar e aparece aqui automaticamente."
             action={

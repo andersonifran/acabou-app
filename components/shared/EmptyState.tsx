@@ -5,6 +5,8 @@ interface EmptyStateProps {
   icon?: string;
   /** Mostra o Sacolino (mascote) no lugar do emoji */
   mascot?: "happy" | "search" | "done";
+  /** Ilustração 3D (PNG) com animação suave de flutuar — premium. Prioridade sobre mascot/icon. */
+  image?: string;
   title: string;
   description?: string;
   action?: React.ReactNode;
@@ -18,10 +20,21 @@ const MOOD: Record<NonNullable<EmptyStateProps["mascot"]>, MascoteMood> = {
   done: "feliz",
 };
 
-export function EmptyState({ icon, mascot, title, description, action, className }: EmptyStateProps) {
+export function EmptyState({ icon, mascot, image, title, description, action, className }: EmptyStateProps) {
   return (
     <div className={cn("flex flex-col items-center justify-center py-12 px-6 text-center", className)}>
-      {mascot ? (
+      {image ? (
+        <div className="mb-4">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={image}
+            alt=""
+            aria-hidden="true"
+            className="animate-empty-bob select-none pointer-events-none drop-shadow-[0_12px_22px_rgba(22,163,74,0.18)]"
+            style={{ width: 150, height: "auto" }}
+          />
+        </div>
+      ) : mascot ? (
         <div className="mb-4">
           <Mascote mood={MOOD[mascot]} size={140} />
         </div>
