@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { X } from "lucide-react";
+import { Mascote } from "@/components/shared/Mascote";
 
 // Link de opt-in do teste fechado (Play Console → Teste fechado → Testadores)
 const OPT_IN_URL = "https://play.google.com/apps/testing/br.com.acabouapp.www.twa?hl=pt-BR";
@@ -93,25 +94,27 @@ export function TesterBanner() {
           onClick={() => setShowGuide(false)}
         >
           <div
-            className="w-full max-w-sm rounded-3xl bg-white p-5 shadow-2xl"
+            className="relative max-h-[92vh] w-full max-w-sm overflow-y-auto rounded-3xl bg-white p-5 shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-green-50 p-1.5">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/google-play-icon.png" alt="Google Play" width={32} height={32} className="h-8 w-8" />
-              </div>
-              <div className="min-w-0">
-                <h3 className="text-base font-black text-gray-900">Quase lá! Falta 1 passo 💚</h3>
-                <p className="text-xs text-gray-500">Leva menos de 1 minuto</p>
-              </div>
-              <button
-                onClick={() => setShowGuide(false)}
-                aria-label="Fechar"
-                className="ml-auto p-1 text-gray-400 hover:text-gray-600"
-              >
-                <X size={18} />
-              </button>
+            <button
+              onClick={() => setShowGuide(false)}
+              aria-label="Fechar"
+              className="absolute right-3 top-3 z-10 p-1 text-gray-400 hover:text-gray-600"
+            >
+              <X size={18} />
+            </button>
+
+            {/* Sacolino acenando — boas-vindas calorosas, dá confiança */}
+            <div className="flex flex-col items-center text-center">
+              <Mascote mood="acenando" size={104} />
+              <h3 className="mt-1 text-lg font-black leading-tight text-gray-900">
+                Oi! Falta só 1 passinho 💚
+              </h3>
+              <p className="mt-1.5 px-2 text-sm leading-relaxed text-gray-600">
+                Você vai virar <strong className="text-gray-800">testador oficial</strong> e ajudar o
+                Acabou? a crescer. Eu te guio — é rapidinho! 🙏
+              </p>
             </div>
 
             <div className="mt-4 rounded-2xl bg-amber-50 p-3 text-xs leading-relaxed text-amber-900 ring-1 ring-amber-200">
@@ -162,6 +165,12 @@ export function TesterBanner() {
             >
               Agora não
             </button>
+
+            <div className="mt-3 flex items-center justify-center gap-1.5 text-[11px] text-gray-400">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/google-play-icon.png" alt="" width={14} height={14} className="h-3.5 w-3.5" />
+              <span>Teste oficial e seguro pelo Google Play</span>
+            </div>
           </div>
         </div>
       )}
