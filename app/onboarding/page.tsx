@@ -355,19 +355,21 @@ function OnboardingContent() {
   // Step de configurar a casa (para quem entrou pelo Google)
   if (needsSetup) {
     return (
-      <div className="min-h-screen bg-white flex flex-col pb-28">
-        <div className="px-6 pt-10 pb-6 flex flex-col items-center text-center">
-          <Mascote mood="acenando" size={120} className="mb-3" />
-          <h1 className="text-2xl font-black text-gray-900 mb-2">Oi! Eu sou o Sacolino 👋</h1>
-          <p className="text-gray-500 text-sm max-w-xs">
+      <div className="h-[100dvh] bg-white flex flex-col overflow-hidden">
+        {/* Topo compacto (não rola) */}
+        <div className="shrink-0 px-6 pt-6 pb-3 flex flex-col items-center text-center">
+          <Mascote mood="acenando" size={92} className="mb-2" />
+          <h1 className="text-xl font-black text-gray-900 mb-1">Oi! Eu sou o Sacolino 👋</h1>
+          <p className="text-gray-500 text-sm max-w-xs leading-snug">
             Vou te ajudar a nunca mais esquecer nada no mercado. Vamos configurar seu local? Você pode mudar tudo depois.
           </p>
         </div>
 
-        <div className="flex-1 px-6 max-w-md mx-auto w-full space-y-5">
+        {/* Meio: rola só se precisar — nada fica escondido atrás do botão */}
+        <div className="flex-1 overflow-y-auto px-6 max-w-md mx-auto w-full space-y-4 pb-3">
           {/* Tipo de imóvel */}
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-3">
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
               Que tipo de lugar é esse?
             </label>
             <div className="grid grid-cols-3 gap-2">
@@ -376,13 +378,13 @@ function OnboardingContent() {
                   key={p.id}
                   onClick={() => setSetupPropertyType(p.id)}
                   className={cn(
-                    "flex flex-col items-center gap-1.5 py-3.5 rounded-2xl border-2 transition-all active:scale-95",
+                    "flex flex-col items-center gap-1 py-3 rounded-2xl border-2 transition-all active:scale-95",
                     setupPropertyType === p.id
                       ? "border-green-500 bg-green-50"
                       : "border-gray-200 bg-white hover:border-green-300"
                   )}
                 >
-                  <LocationIcon type={p.id} size={52} className={cn("transition-transform", setupPropertyType === p.id && "scale-110")} />
+                  <LocationIcon type={p.id} size={44} className={cn("transition-transform", setupPropertyType === p.id && "scale-110")} />
                   <span className={cn(
                     "text-xs font-semibold",
                     setupPropertyType === p.id ? "text-green-700" : "text-gray-600"
@@ -406,19 +408,19 @@ function OnboardingContent() {
               onKeyDown={(e) => e.key === "Enter" && handleCreateHouse()}
               placeholder="Ex: Casa da Ana, Família Silva, Meu Apê..."
               maxLength={60}
-              className="w-full px-4 py-3.5 rounded-xl border border-gray-200 bg-gray-50 focus:outline-none focus:border-green-400 focus:bg-white transition-colors text-gray-900"
+              className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 focus:outline-none focus:border-green-400 focus:bg-white transition-colors text-gray-900"
             />
           </div>
 
-          <div className="bg-green-50 rounded-xl p-4">
+          <div className="bg-green-50 rounded-xl p-3">
             <p className="text-sm text-green-800">
               💡 Depois você pode convidar sua família e adicionar mais locais.
             </p>
           </div>
         </div>
 
-        {/* CTA fixo no rodapé — sempre visível, sem precisar rolar (igual à 2ª etapa) */}
-        <div className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur border-t border-gray-100 px-4 py-4 shadow-lg">
+        {/* Botão pinado no rodapé — parte do layout, NUNCA sobrepõe o conteúdo */}
+        <div className="shrink-0 bg-white border-t border-gray-100 px-4 py-3">
           <div className="max-w-md mx-auto">
             <button
               onClick={handleCreateHouse}
