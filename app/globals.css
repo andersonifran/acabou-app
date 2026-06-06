@@ -53,6 +53,14 @@ input, select, textarea {
   font-size: 16px;
 }
 
+/* Área segura inferior (barra de gestos do Android/iOS).
+   A barra de abas (BottomNav) usa esta classe pra o fundo BRANCO encostar
+   na borda de baixo e os ícones ficarem ACIMA do "risquinho" de gestos —
+   sem faixa de outra cor embaixo. Funciona em edge-to-edge (Android 15+). */
+.safe-area-pb {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
 /* ═══════════════════════════════════════════════════════
    DARK MODE — Visual profissional inspirado em apps grandes
    Paleta: Slate tones (sofisticado, descansado para os olhos)

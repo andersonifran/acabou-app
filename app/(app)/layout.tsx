@@ -245,8 +245,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     <div
       aria-hidden={isReady}
       style={{
-        background:
-          "radial-gradient(125% 125% at 50% 42%, #2BA043 0%, #1E9839 46%, #137D2A 80%, #0A5E1D 100%)",
+        // Verde SÓLIDO #1E9839 — idêntico ao ícone e à tela do sistema do
+        // Android (que só faz cor sólida). Assim a abertura emenda invisível:
+        // tela do sistema → esta tela React = parece UMA tela só.
+        background: "#1E9839",
       }}
       className={`fixed inset-0 z-[100] flex flex-col items-center justify-center overflow-hidden text-white transition-opacity duration-[280ms] ease-out ${
         isReady ? "pointer-events-none opacity-0" : "opacity-100"
