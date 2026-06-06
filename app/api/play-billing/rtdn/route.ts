@@ -8,8 +8,9 @@
 //   • Renovou → estende plan_expires_at (NÃO corta quem pagou).
 //   • Expirou / cancelou e venceu / estornou → vira grátis (anti-burla).
 //
-// Segurança: o endpoint só aceita chamadas com ?key=<CRON_SECRET> (configurado
-// na URL de push do Pub/Sub). Quem não tem a chave leva 401.
+// Segurança: o endpoint só aceita chamadas com ?key=<PLAY_RTDN_SECRET> (segredo
+// exclusivo do RTDN, configurado na URL de push do Pub/Sub). Quem não tem a
+// chave leva 401. Se a env var não existir, TUDO é recusado (default seguro).
 //
 // Idempotente: reprocessar o mesmo aviso dá o mesmo resultado (usa a data real
 // do Google, nunca soma período).
@@ -36,8 +37,10 @@ type RtdnPayload = {
 };
 
 export async function POST(request: NextRequest) {
-  // 1) Autenticação simples por chave na URL (configurada no push do Pub/Sub)
-  if (request.nextUrl.searchParams.get("key") !== process.env.CRON_SECRET) {
+  // 1) Autenticação simples por chave na URL (configurada no push do Pub/Sub).
+  //    Segredo dedicado ao RTDN (não reaproveita o CRON_SECRET).
+  const expected = process.env.PLAY_RTDN_SECRET;
+  if (!expected || request.nextUrl.searchParams.get("key") !== expected) {
     return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
   }
 
