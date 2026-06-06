@@ -45,11 +45,11 @@ export default function LandingPage() {
             <Link href="/login" className="hidden sm:block text-gray-600 hover:text-gray-900 text-sm font-medium">
               Entrar
             </Link>
-            <div className="flex flex-col items-end gap-1 sm:block">
+            <div className="flex flex-col items-end gap-2 sm:block">
               <Link href="/cadastro" className="bg-green-600 text-white text-sm font-bold px-5 py-2.5 rounded-xl hover:bg-green-700 transition-colors">
                 Testar grátis
               </Link>
-              <Link href="/login" className="sm:hidden text-xs text-gray-500 font-medium border border-gray-200 px-3 py-1 rounded-lg hover:border-green-300 hover:text-green-700 transition-colors">
+              <Link href="/login" className="sm:hidden text-sm font-bold text-green-700 bg-green-50 border-2 border-green-200 px-5 py-2 rounded-xl hover:bg-green-100 active:scale-95 transition-colors">
                 Entrar
               </Link>
             </div>

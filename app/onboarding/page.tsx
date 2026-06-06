@@ -356,19 +356,21 @@ function OnboardingContent() {
   if (needsSetup) {
     return (
       <div className="h-[100dvh] bg-white flex flex-col overflow-hidden">
-        {/* Topo compacto (não rola) */}
-        <div className="shrink-0 px-6 pt-6 pb-3 flex flex-col items-center text-center">
-          <Mascote mood="acenando" size={92} className="mb-2" />
-          <h1 className="text-xl font-black text-gray-900 mb-1">Oi! Eu sou o Sacolino 👋</h1>
-          <p className="text-gray-500 text-sm max-w-xs leading-snug">
-            Vou te ajudar a nunca mais esquecer nada no mercado. Vamos configurar seu local? Você pode mudar tudo depois.
-          </p>
-        </div>
-
-        {/* Meio: centraliza o conteúdo (preenche a tela, equilibrado) e rola só
-            se a tela for pequena — nada fica escondido atrás do botão. */}
+        {/* Tudo num bloco único que CENTRALIZA junto (Sacolino + formulário),
+            sem vão entre a saudação e os locais. Rola só em telas pequenas. */}
         <div className="flex-1 overflow-y-auto flex flex-col">
-          <div className="my-auto w-full max-w-md mx-auto px-6 py-5 space-y-4">
+          <div className="my-auto w-full max-w-md mx-auto px-6 py-6">
+          {/* Sacolino + saudação */}
+          <div className="mb-5 flex flex-col items-center text-center">
+            <Mascote mood="acenando" size={112} className="mb-2" />
+            <h1 className="text-2xl font-black text-gray-900 mb-1">Oi! Eu sou o Sacolino 👋</h1>
+            <p className="text-gray-500 text-sm max-w-xs leading-snug">
+              Vou te ajudar a nunca mais esquecer nada no mercado. Vamos configurar seu local? Você pode mudar tudo depois.
+            </p>
+          </div>
+
+          {/* Formulário */}
+          <div className="space-y-4">
           {/* Tipo de imóvel */}
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -418,6 +420,7 @@ function OnboardingContent() {
             <p className="text-sm text-green-800">
               💡 Depois você pode convidar sua família e adicionar mais locais.
             </p>
+          </div>
           </div>
           </div>
         </div>
