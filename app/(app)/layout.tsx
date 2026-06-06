@@ -252,14 +252,21 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         isReady ? "pointer-events-none opacity-0" : "opacity-100"
       }`}
     >
-      {/* Só a marca branca oficial (casa + ? + checklist), SEM o quadrado —
-          estilo Netflix. Fundo todo no verde do logo. */}
+      {/* Ícones flutuantes emoldurando a tela (vida própria) — é animação CSS,
+          renderiza junto com o splash, SEM delay nenhum. */}
+      <div aria-hidden="true" className="pointer-events-none absolute inset-0 select-none">
+        <span className="absolute left-7 top-24 text-4xl opacity-[0.18] animate-float" style={{ animationDuration: "9s" }}>🛒</span>
+        <span className="absolute right-8 top-32 text-3xl opacity-[0.18] animate-float" style={{ animationDuration: "11s", animationDelay: "-2s" }}>☕</span>
+        <span className="absolute left-9 bottom-32 text-3xl opacity-[0.18] animate-float" style={{ animationDuration: "10s", animationDelay: "-4s" }}>🍅</span>
+        <span className="absolute right-7 bottom-28 text-4xl opacity-[0.18] animate-float" style={{ animationDuration: "12s", animationDelay: "-1s" }}>📦</span>
+      </div>
+      {/* A marca branca oficial (casa + ? + checklist), SEM o quadrado — centro */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src="/logo-mark.png"
         alt="Acabou?"
         style={{ width: 200, height: "auto" }}
-        className="drop-shadow-[0_8px_24px_rgba(0,0,0,0.18)]"
+        className="relative z-10 drop-shadow-[0_8px_24px_rgba(0,0,0,0.18)]"
       />
     </div>
   ) : null;

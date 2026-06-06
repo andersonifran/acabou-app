@@ -31,6 +31,10 @@ body {
   font-family: var(--font-geist-sans), system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   -webkit-tap-highlight-color: transparent;
   letter-spacing: -0.01em;
+  /* Desativa o "puxar pra atualizar" (pull-to-refresh) — ele recarregava a
+     página e fazia a tela de abertura piscar ao deslizar. App sincroniza em
+     tempo real, então refresh manual é desnecessário. Cara de app nativo. */
+  overscroll-behavior-y: contain;
 }
 
 * {
@@ -41,6 +45,7 @@ body {
 /* Scrollbar suave */
 html {
   scroll-behavior: smooth;
+  overscroll-behavior-y: contain;
 }
 
 /* Previne zoom em inputs no iOS */
