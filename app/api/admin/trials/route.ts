@@ -35,12 +35,18 @@ async function getAdmin() {
 }
 
 export async function GET(request: NextRequest) {
-  const user = await getAdmin();
-  if (!user) {
-    return NextResponse.json(
-      { error: "Acesso só pra admin (logado com o e-mail de admin)." },
-      { status: 403 }
-    );
+  // Acesso: (a) admin logado por e-mail, OU (b) chave secreta na URL (mesma do
+  // RTDN) — permite rodar a auditoria/correção de forma controlada via servidor.
+  const key = request.nextUrl.searchParams.get("key");
+  const viaSecret = !!key && !!process.env.PLAY_RTDN_SECRET && key === process.env.PLAY_RTDN_SECRET;
+  if (!viaSecret) {
+    const user = await getAdmin();
+    if (!user) {
+      return NextResponse.json(
+        { error: "Acesso só pra admin (logado com o e-mail de admin) ou com a chave." },
+        { status: 403 }
+      );
+    }
   }
 
   const admin = createAdminClient();
