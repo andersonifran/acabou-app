@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/server";
-import { sendPlanExpiringEmail } from "@/lib/emails";
+import { sendPlanExpiringEmail, sendAdminLeakAlert } from "@/lib/emails";
 import { preApproval } from "@/lib/mercadopago";
 import { syncSubscriptionFromPreapproval } from "@/lib/subscription-sync";
 
@@ -175,11 +175,46 @@ export async function GET(request: NextRequest) {
       console.error("[Cron] erro na reconciliação:", e);
     }
 
+    // =============================================
+    // PARTE 4: ALARME DE FUMAÇA — vazamento residual
+    // Depois de todo o downgrade, NÃO deveria sobrar nenhuma casa com plano
+    // pago/trial JÁ vencido e ainda não-inativa. Se sobrar (anomalia / status
+    // fora do esperado que a Parte 2 não pegou), congela na hora (self-heal) E
+    // avisa o admin por e-mail. Na operação normal não dispara nada.
+    // =============================================
+    let leakAlert = 0;
+    try {
+      const { data: leaks } = await supabase
+        .from("houses")
+        .select("id, name, plan, plan_expires_at")
+        .neq("plan", "free")
+        .lt("plan_expires_at", nowISO)
+        .neq("plan_status", "inactive");
+
+      if (leaks && leaks.length > 0) {
+        leakAlert = leaks.length;
+        for (const h of leaks) {
+          await supabase.from("houses").update({ plan_status: "inactive" }).eq("id", h.id);
+          await supabase
+            .from("house_members")
+            .update({ status: "frozen" })
+            .eq("house_id", h.id as string)
+            .neq("role", "owner")
+            .eq("status", "active");
+        }
+        await sendAdminLeakAlert(leaks as any);
+        console.error(`[Cron] 🚨 ${leaks.length} vazamento(s) residual(is) — congelado(s) + alerta enviado`);
+      }
+    } catch (e) {
+      console.error("[Cron] erro no alarme de vazamento:", e);
+    }
+
     const message = [
       downgraded > 0 ? `${downgraded} plano(s) expirado(s)` : null,
       emailsSent > 0 ? `${emailsSent} email(s) de renovação` : null,
       reconciled > 0 ? `${reconciled} reconciliado(s)` : null,
-      downgraded === 0 && emailsSent === 0 && reconciled === 0 ? "Nenhuma ação necessária" : null,
+      leakAlert > 0 ? `${leakAlert} vazamento(s) corrigido(s) + alerta` : null,
+      downgraded === 0 && emailsSent === 0 && reconciled === 0 && leakAlert === 0 ? "Nenhuma ação necessária" : null,
     ].filter(Boolean).join(", ");
 
     return NextResponse.json({
@@ -188,6 +223,7 @@ export async function GET(request: NextRequest) {
       downgraded,
       emails_sent: emailsSent,
       reconciled,
+      leak_alert: leakAlert,
     });
   } catch (err) {
     console.error("[Cron Subscriptions Error]", err);

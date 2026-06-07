@@ -413,18 +413,34 @@ export default function ConfiguracoesPage() {
                     </button>
                   </div>
                   <button
-                    onClick={async () => {
+                    onClick={async (e) => {
+                      const btn = e.currentTarget;
+                      btn.disabled = true;
                       try {
                         const r = await fetch("/api/push/test", { method: "POST" });
                         const d = await r.json();
-                        alert(d.message ?? (d.ok ? "Push de teste enviado!" : "Falhou — reative as notificações."));
+                        alert(d.message ?? (d.ok ? "Pronto! O Sacolino mandou um oi pro seu celular. 👋" : "Não consegui enviar — reative as notificações."));
                       } catch {
-                        alert("Erro ao testar. Tente de novo.");
+                        alert("Ops, não rolou agora. Tente de novo. 🙏");
+                      } finally {
+                        btn.disabled = false;
                       }
                     }}
-                    className="w-full py-2 border border-green-200 text-green-700 text-xs font-semibold rounded-xl hover:bg-green-50 transition-colors"
+                    className="w-full flex items-center gap-3 p-3 border border-green-200 rounded-xl hover:bg-green-50 active:scale-[0.99] transition-all text-left disabled:opacity-60"
                   >
-                    🔔 Enviar notificação de teste
+                    <img
+                      src="/mascote/sacolino-acenando.png"
+                      alt="Sacolino acenando"
+                      className="w-11 h-11 shrink-0 object-contain"
+                    />
+                    <span className="min-w-0">
+                      <span className="block text-sm font-semibold text-green-700">
+                        Receber um “oi” do Sacolino 👋
+                      </span>
+                      <span className="block text-xs text-gray-500">
+                        Toque para conferir se as notificações chegam no seu celular.
+                      </span>
+                    </span>
                   </button>
                 </div>
               ) : (

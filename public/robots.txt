@@ -11,5 +11,6 @@ Disallow: /configuracoes
 Disallow: /onboarding
 Disallow: /planos
 Disallow: /feedback
+Disallow: /admin
 
 Sitemap: https://www.acabouapp.com.br/sitemap.xml

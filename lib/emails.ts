@@ -13,9 +13,23 @@ import { Resend } from "resend";
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://www.acabouapp.com.br";
 const FROM = "Acabou? App <notificacoes@acabouapp.com.br>";
+// Quando o usuário "responde este e-mail", a resposta cai NESTE Gmail (que de
+// fato lê), e não no notificacoes@ (Resend é só envio, não recebe).
+const REPLY_TO = "suporteacabou@gmail.com";
+// Alertas internos (vazamento, etc.) vão para os e-mails de admin.
+const ADMIN_EMAILS = ["anderson.ifran15@gmail.com", "anderson.ifran26@gmail.com"];
 
 function getResend() {
   return new Resend(process.env.RESEND_API_KEY);
+}
+
+// Escapa HTML de conteúdo dinâmico (nome de casa é input do usuário).
+function esc(s: unknown): string {
+  return String(s ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
 }
 
 // Layout base para todos os emails
@@ -66,6 +80,7 @@ export async function sendWelcomeEmail(email: string, name: string, houseName: s
   await resend.emails.send({
     from: FROM,
     to: email,
+    replyTo: REPLY_TO,
     subject: `Bem-vindo(a) ao Acabou?, ${firstName}! 🏠`,
     html: emailLayout(`
       ${greenHeader("Acabou?", "Sua despensa inteligente")}
@@ -132,6 +147,7 @@ export async function sendPaymentApprovedEmail(
   await resend.emails.send({
     from: FROM,
     to: email,
+    replyTo: REPLY_TO,
     subject: `Pagamento aprovado! Seu Plano Familia esta ativo 🎉`,
     html: emailLayout(`
       ${greenHeader("Pagamento Aprovado!", "Seu plano foi ativado com sucesso")}
@@ -243,6 +259,7 @@ export async function sendPlanExpiringEmail(
   await resend.emails.send({
     from: FROM,
     to: email,
+    replyTo: REPLY_TO,
     subject: daysLeft <= 1
       ? `⚠️ ${firstName}, seu plano expira amanha!`
       : `${firstName}, seu plano expira em ${daysLeft} dias`,
@@ -296,4 +313,67 @@ export async function sendPlanExpiringEmail(
   });
 
   console.log(`[Email] ✅ Plano expirando enviado para ${email} (${daysLeft} dias)`);
+}
+
+// =============================================
+// 4. ALERTA DE VAZAMENTO (interno — só admin)
+// =============================================
+// Disparado pela faxina diária (check-subscriptions) SE — depois de congelar
+// tudo — ainda sobrar alguma casa com plano pago/trial vencido e não-inativa
+// (não deveria sobrar nenhuma). É o "alarme de fumaça": só chega quando há algo
+// de fato fora do lugar. Vai para os e-mails de admin.
+export async function sendAdminLeakAlert(
+  leaks: { name?: string | null; plan?: string | null; plan_expires_at?: string | null }[],
+  isTeste = false
+) {
+  if (!process.env.RESEND_API_KEY) return;
+  const resend = getResend();
+
+  const linhas = leaks.slice(0, 50).map((l) => {
+    const venc = l.plan_expires_at
+      ? new Date(l.plan_expires_at).toLocaleDateString("pt-BR")
+      : "—";
+    return `<tr>
+      <td style="padding:8px 12px;border-bottom:1px solid #f0f0f0;">${esc(l.name) || "—"}</td>
+      <td style="padding:8px 12px;border-bottom:1px solid #f0f0f0;">${esc(l.plan) || "—"}</td>
+      <td style="padding:8px 12px;border-bottom:1px solid #f0f0f0;color:#dc2626;">${venc}</td>
+    </tr>`;
+  }).join("");
+
+  await resend.emails.send({
+    from: FROM,
+    to: ADMIN_EMAILS,
+    replyTo: REPLY_TO,
+    subject: isTeste
+      ? `✅ Teste do alerta de vazamento (tudo certo)`
+      : `🚨 Acabou? — ${leaks.length} casa(s) com acesso indevido`,
+    html: emailLayout(`
+      ${isTeste
+        ? greenHeader("Teste do alerta ✅", "É só um teste — o alarme está funcionando")
+        : amberHeader("Alerta de vazamento 🚨", `${leaks.length} casa(s) precisam de atenção`)}
+      <div style="padding: 32px; border: 1px solid #e5e7eb; border-top: none;">
+        <p style="margin: 0 0 16px; font-size: 15px; color: #4b5563; line-height: 1.7;">
+          ${isTeste
+            ? "Se você está lendo isto, o alerta automático de vazamento <strong>chega no seu e-mail</strong>. Na operação normal você não recebe nada — só quando houver algo fora do lugar."
+            : "A faxina diária encontrou casa(s) com plano <strong>vencido</strong> que ainda <strong>não foram congeladas</strong> (acesso premium indevido). Já tentei congelar automaticamente; confira no painel."}
+        </p>
+        ${leaks.length > 0 ? `
+        <table style="width:100%;border-collapse:collapse;font-size:14px;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;">
+          <thead>
+            <tr style="background:#f9fafb;text-align:left;">
+              <th style="padding:8px 12px;">Casa</th>
+              <th style="padding:8px 12px;">Plano</th>
+              <th style="padding:8px 12px;">Venceu em</th>
+            </tr>
+          </thead>
+          <tbody>${linhas}</tbody>
+        </table>` : `<p style="color:#16a34a;font-weight:700;">Nenhum vazamento no momento — tudo certo. ✅</p>`}
+        <div style="text-align:center;margin:28px 0 8px;">
+          <a href="${APP_URL}/admin" style="display:inline-block;background:#16a34a;color:#fff;text-decoration:none;font-weight:700;font-size:15px;padding:12px 32px;border-radius:12px;">Abrir painel /admin</a>
+        </div>
+      </div>
+    `),
+  });
+
+  console.log(`[Email] ${isTeste ? "🧪 Teste de alerta" : "🚨 Alerta de vazamento"} enviado (${leaks.length})`);
 }

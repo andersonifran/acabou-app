@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
+import { sendAdminLeakAlert } from "@/lib/emails";
 
 // =============================================================
 // Ferramenta de ADMIN (só Anderson) — auditoria + correção de trials.
@@ -114,6 +115,19 @@ export async function GET(request: NextRequest) {
       acao: "congelar_vencidos",
       congeladas,
       message: `${congeladas} casa(s) vencida(s) congelada(s) + convidados bloqueados.`,
+    });
+  }
+
+  // ── TESTE: dispara um e-mail de alerta de exemplo pros admins ──
+  if (acao === "testar_alerta") {
+    await sendAdminLeakAlert(
+      [{ name: "Casa de Teste", plan: "Mensal", plan_expires_at: nowISO }],
+      true
+    );
+    return NextResponse.json({
+      ok: true,
+      acao: "testar_alerta",
+      message: "E-mail de teste enviado para anderson.ifran15@ e anderson.ifran26@. Confira a caixa de entrada (e o spam).",
     });
   }
 
