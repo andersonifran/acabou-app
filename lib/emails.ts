@@ -13,9 +13,17 @@ import { Resend } from "resend";
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://www.acabouapp.com.br";
 const FROM = "Acabou? App <notificacoes@acabouapp.com.br>";
-// Quando o usuário "responde este e-mail", a resposta cai NESTE Gmail (que de
-// fato lê), e não no notificacoes@ (Resend é só envio, não recebe).
-const REPLY_TO = "suporteacabou@gmail.com";
+// Quando o usuário "responde este e-mail", a resposta vai para o e-mail PÚBLICO
+// e profissional contato@acabouapp.com.br. O ImprovMX (grátis) encaminha isso
+// pro Gmail interno suporteacabou@gmail.com — que NUNCA aparece pro usuário.
+const REPLY_TO = "contato@acabouapp.com.br";
+// Mascotes (Sacolino) hospedados publicamente — usados no topo dos e-mails.
+const MASCOTE = {
+  acenando: `${process.env.NEXT_PUBLIC_APP_URL ?? "https://www.acabouapp.com.br"}/mascote/sacolino-acenando.png`,
+  comemorando: `${process.env.NEXT_PUBLIC_APP_URL ?? "https://www.acabouapp.com.br"}/mascote/sacolino-comemorando.png`,
+  alerta: `${process.env.NEXT_PUBLIC_APP_URL ?? "https://www.acabouapp.com.br"}/mascote/sacolino-alerta.png`,
+  feliz: `${process.env.NEXT_PUBLIC_APP_URL ?? "https://www.acabouapp.com.br"}/mascote/sacolino-feliz.png`,
+};
 // Alertas internos (vazamento, etc.) vão para os e-mails de admin.
 const ADMIN_EMAILS = ["anderson.ifran15@gmail.com", "anderson.ifran26@gmail.com"];
 
@@ -50,18 +58,27 @@ function emailLayout(content: string) {
   `;
 }
 
-function greenHeader(title: string, subtitle?: string) {
+function mascoteImg(url?: string) {
+  if (!url) return "";
+  // width/height fixos + display block: o Sacolino aparece igual em todo cliente
+  // de e-mail (Gmail, Outlook). Fundo do header é colorido, PNG transparente cai bem.
+  return `<img src="${url}" alt="Sacolino" width="92" height="92" style="display:block;margin:0 auto 14px;width:92px;height:92px;object-fit:contain;" />`;
+}
+
+function greenHeader(title: string, subtitle?: string, mascote?: string) {
   return `
-    <div style="background: linear-gradient(135deg, #16a34a, #15803d); padding: 40px 32px; text-align: center; border-radius: 12px 12px 0 0;">
+    <div style="background: linear-gradient(135deg, #16a34a, #15803d); padding: 36px 32px; text-align: center; border-radius: 12px 12px 0 0;">
+      ${mascoteImg(mascote)}
       <h1 style="margin: 0; font-size: 32px; color: white;">${title}</h1>
       ${subtitle ? `<p style="margin: 8px 0 0; font-size: 16px; color: rgba(255,255,255,0.9);">${subtitle}</p>` : ""}
     </div>
   `;
 }
 
-function amberHeader(title: string, subtitle?: string) {
+function amberHeader(title: string, subtitle?: string, mascote?: string) {
   return `
-    <div style="background: linear-gradient(135deg, #d97706, #b45309); padding: 40px 32px; text-align: center; border-radius: 12px 12px 0 0;">
+    <div style="background: linear-gradient(135deg, #d97706, #b45309); padding: 36px 32px; text-align: center; border-radius: 12px 12px 0 0;">
+      ${mascoteImg(mascote)}
       <h1 style="margin: 0; font-size: 32px; color: white;">${title}</h1>
       ${subtitle ? `<p style="margin: 8px 0 0; font-size: 16px; color: rgba(255,255,255,0.9);">${subtitle}</p>` : ""}
     </div>
@@ -83,7 +100,7 @@ export async function sendWelcomeEmail(email: string, name: string, houseName: s
     replyTo: REPLY_TO,
     subject: `Bem-vindo(a) ao Acabou?, ${firstName}! 🏠`,
     html: emailLayout(`
-      ${greenHeader("Acabou?", "Sua despensa inteligente")}
+      ${greenHeader("Acabou?", "Sua despensa inteligente", MASCOTE.acenando)}
       <div style="padding: 40px 32px; border: 1px solid #e5e7eb; border-top: none;">
         <h2 style="margin: 0 0 16px; font-size: 22px; color: #111827;">
           Ei, ${firstName}! Que bom ter voc&ecirc; aqui! 🎉
@@ -150,7 +167,7 @@ export async function sendPaymentApprovedEmail(
     replyTo: REPLY_TO,
     subject: `Pagamento aprovado! Seu Plano Familia esta ativo 🎉`,
     html: emailLayout(`
-      ${greenHeader("Pagamento Aprovado!", "Seu plano foi ativado com sucesso")}
+      ${greenHeader("Pagamento Aprovado!", "Seu plano foi ativado com sucesso", MASCOTE.comemorando)}
       <div style="padding: 40px 32px; border: 1px solid #e5e7eb; border-top: none;">
         <h2 style="margin: 0 0 16px; font-size: 22px; color: #111827;">
           Parab&eacute;ns, ${firstName}! 🎉
@@ -264,7 +281,7 @@ export async function sendPlanExpiringEmail(
       ? `⚠️ ${firstName}, seu plano expira amanha!`
       : `${firstName}, seu plano expira em ${daysLeft} dias`,
     html: emailLayout(`
-      ${amberHeader("Plano Expirando", `Seu plano vence ${daysText}`)}
+      ${amberHeader("Plano Expirando", `Seu plano vence ${daysText}`, MASCOTE.alerta)}
       <div style="padding: 40px 32px; border: 1px solid #e5e7eb; border-top: none;">
         <h2 style="margin: 0 0 16px; font-size: 22px; color: #111827;">
           ${firstName}, seu plano est&aacute; acabando! ⏳
@@ -349,8 +366,8 @@ export async function sendAdminLeakAlert(
       : `🚨 Acabou? — ${leaks.length} casa(s) com acesso indevido`,
     html: emailLayout(`
       ${isTeste
-        ? greenHeader("Teste do alerta ✅", "É só um teste — o alarme está funcionando")
-        : amberHeader("Alerta de vazamento 🚨", `${leaks.length} casa(s) precisam de atenção`)}
+        ? greenHeader("Teste do alerta ✅", "É só um teste — o alarme está funcionando", MASCOTE.feliz)
+        : amberHeader("Alerta de vazamento 🚨", `${leaks.length} casa(s) precisam de atenção`, MASCOTE.alerta)}
       <div style="padding: 32px; border: 1px solid #e5e7eb; border-top: none;">
         <p style="margin: 0 0 16px; font-size: 15px; color: #4b5563; line-height: 1.7;">
           ${isTeste
