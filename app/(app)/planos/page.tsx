@@ -391,7 +391,7 @@ function PlanosContent() {
           <p className="text-gray-500 text-sm">
             Plano atual: <span className="font-semibold text-gray-800">
               {isTrialing
-                ? "Teste grátis (7 dias)"
+                ? "Teste grátis (14 dias)"
                 : trialExpired
                   ? "Trial expirado"
                   : isFrozen

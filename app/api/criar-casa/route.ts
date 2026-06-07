@@ -80,7 +80,7 @@ export async function POST(request: NextRequest) {
       // Herda plano pago ou trial existente
       inheritedPlan = { plan: paidHouse.plan, plan_status: paidHouse.plan_status, plan_expires_at: paidHouse.plan_expires_at ?? undefined };
     } else {
-      // Trial de 7 dias SÓ para conta GENUINAMENTE nova: sem casa própria E que
+      // Trial de 14 dias SÓ para conta GENUINAMENTE nova: sem casa própria E que
       // NUNCA foi membro de nenhuma casa. Assim, um CONVIDADO (que já entrou via
       // convite e usou o premium do dono) NÃO ganha um novo trial ao criar a
       // própria casa — entra no plano grátis. Também evita farm de trial.
@@ -102,9 +102,12 @@ export async function POST(request: NextRequest) {
         (memberCount === 0 || memberCount === null);
 
       if (isBrandNew) {
-        // Conta nova de verdade — trial de 7 dias
+        // Conta nova de verdade — trial de 14 dias (mais tempo de teste = mais
+        // chance de ver o valor e converter; cobre quem faz mercado semanal,
+        // quinzenal, etc.). Anti-burla: o corte é por DATA (plan_expires_at),
+        // então o fim do trial é sempre respeitado, em qualquer duração.
         const trialEnd = new Date();
-        trialEnd.setDate(trialEnd.getDate() + 7);
+        trialEnd.setDate(trialEnd.getDate() + 14);
         inheritedPlan = { plan: "monthly", plan_status: "trialing", plan_expires_at: trialEnd.toISOString() };
         // Marca o trial como usado PRA SEMPRE (sobrevive a apagar a casa) — sem
         // isso dá pra farmar trial apagando e recriando. Falha silenciosa se a

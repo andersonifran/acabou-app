@@ -38,7 +38,7 @@ export function PainSection() {
         <RevealOnScroll>
           <p className="text-center text-sm text-gray-500 mt-8">
             Se isso já aconteceu com você →{" "}
-            <a href="/cadastro" className="text-green-600 font-bold hover:underline">teste grátis por 7 dias</a>
+            <a href="/cadastro" className="text-green-600 font-bold hover:underline">teste grátis por 14 dias</a>
           </p>
         </RevealOnScroll>
       </div>

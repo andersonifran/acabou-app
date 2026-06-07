@@ -248,11 +248,11 @@ export default function CadastroPage() {
             {hasInvite ? "Aceitar convite" : step === 1 ? "Crie sua conta grátis" : "Oi! Eu sou o Sacolino 👋"}
           </h1>
           <p className="text-gray-500 text-sm mt-1">
-            {hasInvite ? "Crie sua conta para aceitar o convite" : step === 1 ? "Comece agora os 7 dias grátis com acesso total." : "Vamos configurar seu primeiro local? Você pode mudar tudo depois."}
+            {hasInvite ? "Crie sua conta para aceitar o convite" : step === 1 ? "Comece agora os 14 dias grátis com acesso total." : "Vamos configurar seu primeiro local? Você pode mudar tudo depois."}
           </p>
           {step === 1 && (
             <span className="inline-flex items-center bg-green-100 text-green-700 text-xs font-bold px-3 py-1 rounded-full mt-2">
-              ✨ 7 dias grátis · sem cartão
+              ✨ 14 dias grátis · sem cartão
             </span>
           )}
         </div>

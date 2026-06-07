@@ -247,13 +247,13 @@ export function NotificationShowcase() {
                 No plano anual. Cancele quando quiser.
               </p>
               <p className="text-xs text-amber-600 font-bold mt-2 mb-4">
-                🎁 Comece com 7 dias grátis — sem cartão
+                🎁 Comece com 14 dias grátis — sem cartão
               </p>
               <Link
                 href="/cadastro"
                 className="inline-flex items-center gap-2 bg-green-600 text-white font-bold px-8 py-3.5 rounded-2xl hover:bg-green-700 transition-all hover:scale-105 active:scale-95 shadow-lg shadow-green-200 text-sm"
               >
-                Testar 7 dias grátis
+                Testar 14 dias grátis
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                   <path d="M3 8h10m0 0L9 4m4 4L9 12" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>

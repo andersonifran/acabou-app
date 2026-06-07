@@ -53,7 +53,7 @@ export function MobileStickyBar() {
         href="/cadastro"
         className="block w-full bg-green-600 text-white text-center font-bold py-3.5 rounded-xl text-sm hover:bg-green-700 transition-colors shadow-lg shadow-green-200"
       >
-        Testar 7 dias grátis →
+        Testar 14 dias grátis →
       </Link>
     </div>
   );

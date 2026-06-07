@@ -31,10 +31,10 @@ export function FinalCTA() {
           Sua família merece uma{" "}<br className="md:hidden" />casa&nbsp;onde&nbsp;nada&nbsp;falta.
         </h2>
         <p className="text-green-100 mb-4 text-lg leading-relaxed">
-          Crie sua casa em 30 segundos e teste o Plano Família por 7 dias. Sem cartão, sem risco.
+          Crie sua casa em 30 segundos e teste o Plano Família por 14 dias. Sem cartão, sem risco.
         </p>
         <p className="text-green-200 mb-8 text-sm font-semibold">
-          🎁 7 dias grátis — sem cartão, sem risco
+          🎁 14 dias grátis — sem cartão, sem risco
         </p>
         <Link href="/cadastro" className="inline-block bg-white text-green-700 font-black px-12 py-4 rounded-2xl hover:bg-green-50 transition-all hover:scale-105 text-lg shadow-2xl">
           Organizar minha casa agora →
@@ -51,7 +51,7 @@ export function FinalCTA() {
         </div>
 
         <div className="flex justify-center gap-4 sm:gap-6 mt-8 text-green-200 text-sm flex-wrap">
-          <span>✅ 7 dias grátis</span>
+          <span>✅ 14 dias grátis</span>
           <span>✅ Sem cartão</span>
           <span>✅ 30 segundos</span>
           <span>✅ Funciona offline</span>

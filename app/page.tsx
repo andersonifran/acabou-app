@@ -92,7 +92,7 @@ export default function LandingPage() {
                   🇧🇷 Feito pra famílias brasileiras
                 </span>
                 <span className="inline-flex items-center gap-1.5 bg-amber-100 text-amber-700 text-xs font-bold px-3 py-1.5 rounded-full animate-pulse">
-                  🎁 7 dias grátis
+                  🎁 14 dias grátis
                 </span>
               </div>
 
@@ -254,7 +254,7 @@ export default function LandingPage() {
 
           <div className="space-y-8">
             {[
-              { n: "1", emoji: "✅", title: "Crie sua conta em 30 segundos", desc: "Só nome e e-mail. Sem cartão, sem burocracia. Google? Também dá. E já ganha 7 dias grátis do Plano Família." },
+              { n: "1", emoji: "✅", title: "Crie sua conta em 30 segundos", desc: "Só nome e e-mail. Sem cartão, sem burocracia. Google? Também dá. E já ganha 14 dias grátis do Plano Família." },
               { n: "2", emoji: "🏠", title: "Monte sua despensa rapidinho", desc: "Escolha os itens que você costuma ter. Mais de 50 sugestões prontas por categoria — é só tocar e selecionar." },
               { n: "3", emoji: "📲", title: "Acabou? Marca em 1 toque", desc: "Abriu o último pacote de café? Toque em \"Acabou\" e pronto. O item vai direto pra lista de compras. Qualquer pessoa da casa pode fazer." },
               { n: "4", emoji: "🛒", title: "Vai ao mercado sem esquecer nada", desc: "A lista já está pronta, organizada e compartilhável pelo WhatsApp. Comprou? Marca. O item volta pro status de \"tem em casa\"." },
@@ -406,10 +406,10 @@ export default function LandingPage() {
                 cta: "Começar grátis", color: "bg-gray-100 text-gray-800 hover:bg-gray-200",
               },
               {
-                name: "Família Mensal", price: "R$ 8,90", period: "/mês", highlight: false, badge: "🎁 7 DIAS GRÁTIS",
+                name: "Família Mensal", price: "R$ 8,90", period: "/mês", highlight: false, badge: "🎁 14 DIAS GRÁTIS",
                 features: ["Tudo do Grátis +", "Pessoas ilimitadas", "Itens ilimitados", "Locais ilimitados", "Compartilhar no WhatsApp", "Lembrete diário", "Lembretes recorrentes", "Histórico completo"],
                 notIncluded: [],
-                cta: "Testar 7 dias grátis", color: "bg-gray-900 text-white hover:bg-gray-800",
+                cta: "Testar 14 dias grátis", color: "bg-gray-900 text-white hover:bg-gray-800",
               },
               {
                 name: "Família Anual", price: "R$ 59,90", period: "/ano", highlight: true, badge: "🔥 MELHOR VALOR — R$ 4,99/mês",
@@ -453,7 +453,7 @@ export default function LandingPage() {
           <RevealOnScroll>
             <div className="mt-10 bg-green-50 border-2 border-green-200 rounded-2xl p-6 md:p-8 text-center max-w-2xl mx-auto">
               <span className="text-4xl mb-3 block">🛡️</span>
-              <h3 className="font-black text-gray-900 text-xl mb-3">Teste por 7 dias. Sem cartão. Sem pegadinha.</h3>
+              <h3 className="font-black text-gray-900 text-xl mb-3">Teste por 14 dias. Sem cartão. Sem pegadinha.</h3>
               <p className="text-gray-600 text-sm md:text-base leading-relaxed">
                 Acesse o Plano Família completo. Se não assinar, volta pro grátis automaticamente. <strong>Sem cobrança, sem burocracia.</strong>
               </p>
