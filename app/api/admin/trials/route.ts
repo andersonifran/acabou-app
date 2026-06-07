@@ -133,26 +133,66 @@ export async function GET(request: NextRequest) {
     .eq("plan_status", "trialing")
     .gt("plan_expires_at", nowISO);
 
-  const { count: pagantesAtivos } = await admin
+  // PAGANTES (detalhe): plano pago, ativo e ainda válido. Pega dono p/ exibir.
+  const { data: pagantesRows } = await admin
     .from("houses")
-    .select("id", { count: "exact", head: true })
+    .select("id, name, plan, plan_status, plan_expires_at, owner_id")
     .in("plan", ["monthly", "yearly"])
     .eq("plan_status", "active")
     .gt("plan_expires_at", nowISO);
+
+  const ownerIds = [...new Set((pagantesRows ?? []).map((h) => h.owner_id as string))];
+  const { data: ownerProfiles } = ownerIds.length
+    ? await admin.from("profiles").select("user_id, full_name, email").in("user_id", ownerIds)
+    : { data: [] as any[] };
+  const profById = new Map(
+    (ownerProfiles ?? []).map((p: any) => [p.user_id, p])
+  );
+  const pagantes_detalhe = (pagantesRows ?? []).map((h: any) => ({
+    casa: h.name,
+    plano: h.plan === "yearly" ? "Anual" : "Mensal",
+    dono: profById.get(h.owner_id)?.full_name || "—",
+    email: profById.get(h.owner_id)?.email || "—",
+    vence_em: h.plan_expires_at,
+  }));
+
+  // Visão geral da base
+  const { count: totalProfiles } = await admin
+    .from("profiles")
+    .select("user_id", { count: "exact", head: true });
+  const { count: totalHouses } = await admin
+    .from("houses")
+    .select("id", { count: "exact", head: true });
+  const { count: contasFree } = await admin
+    .from("houses")
+    .select("id", { count: "exact", head: true })
+    .eq("plan", "free");
+  const { count: congeladas } = await admin
+    .from("houses")
+    .select("id", { count: "exact", head: true })
+    .eq("plan_status", "inactive");
 
   const leaks = vazamentos ?? [];
   return NextResponse.json({
     gerado_em: nowISO,
     resumo: {
+      total_contas: totalProfiles ?? 0,
+      total_casas: totalHouses ?? 0,
       trial_ativos: trialAtivos ?? 0,
-      pagantes_ativos: pagantesAtivos ?? 0,
+      pagantes_ativos: (pagantesRows ?? []).length,
+      contas_free: contasFree ?? 0,
+      congeladas_inativas: congeladas ?? 0,
       vazamentos: leaks.length,
     },
     status:
       leaks.length === 0
         ? "✅ Nenhum vazamento — ninguém com benefício indevido. Blindagem OK."
         : `⚠️ ${leaks.length} casa(s) com plano vencido mas não congelado — verificar.`,
+    pagantes_detalhe,
     vazamentos_detalhe: leaks,
-    dica: "Pra estender os trials antigos pra 14 dias: abra esta mesma URL com ?acao=estender14",
+    acoes: {
+      estender_trials_14: "?acao=estender14",
+      congelar_vencidos_agora: "?acao=congelar_vencidos",
+    },
   });
 }
