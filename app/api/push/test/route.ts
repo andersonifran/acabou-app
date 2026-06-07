@@ -44,8 +44,9 @@ async function handle() {
   await Promise.all(
     subs.map(async (sub) => {
       const r = await sendPushNotification(sub, {
-        title: "🔔 Notificação de teste — Acabou?",
-        body: "Funcionou! Suas notificações estão ativas. 💚",
+        title: "Oi! Sou o Sacolino 👋",
+        body: "Suas notificações estão ativas! Vou te lembrar do que falta em casa. 💚",
+        icon: "/mascote/sacolino-acenando.png",
         url: "/home",
         tag: "teste-push",
       });
