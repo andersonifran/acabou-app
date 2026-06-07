@@ -247,25 +247,22 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     loadData();
   }, []);
 
-  // Splash de abertura — overlay FIXO (verde do logo + a marca branca) que cobre
-  // tudo enquanto carrega e SOME com um fade RÁPIDO quando os dados ficam prontos
-  // (sem "pisca" e sem delay perceptível). É renderizado na MESMA posição da
-  // árvore antes e depois de "isReady" pra o fade funcionar (não pode "saltar").
-  // A ÚNICA tela de abertura é a NATIVA do Android (verde #1E9839 + logo, do
-  // .aab v3) — ocupa a tela inteira. NÃO repetimos uma "segunda tela verde"
-  // (isso causava barras brancas + logo menor, porque o app web usa barras
-  // brancas). No "vão" até os dados chegarem, mostramos o PRÓPRIO app abrindo:
-  // mesmo fundo das telas do app (.app-bg) + um loader discreto. Assim parece
-  // que o app já abriu e está só preenchendo — elegante, sem "2ª tela".
+  // Splash/carregamento — overlay com o MESMO verde da tela nativa do Android
+  // (#1E9839), FIXO no claro e no escuro. Importante: NÃO usar `.app-bg` aqui,
+  // porque no modo escuro ele vira quase preto (#0f172a) e aparecia como
+  // "tarjas pretas". Verde fixo → emenda invisível com o splash nativo (v3):
+  // na maioria das vezes (carregamento rápido) o usuário vê só o verde → o app,
+  // UMA tela só. O spinner branco só aparece se o carregamento passar de ~250ms.
   const splashOverlay = !splashGone ? (
     <div
       aria-hidden={isReady}
-      className={`fixed inset-0 z-[100] flex items-center justify-center app-bg transition-opacity duration-[200ms] ease-out ${
+      style={{ background: "#1E9839" }}
+      className={`fixed inset-0 z-[100] flex items-center justify-center transition-opacity duration-[200ms] ease-out ${
         isReady ? "pointer-events-none opacity-0" : "opacity-100"
       }`}
     >
       {showSpinner && (
-        <div className="h-9 w-9 rounded-full border-[3px] border-green-200/70 border-t-green-600 animate-spin" />
+        <div className="h-9 w-9 rounded-full border-[3px] border-white/30 border-t-white animate-spin" />
       )}
     </div>
   ) : null;
