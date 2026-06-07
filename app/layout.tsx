@@ -39,6 +39,11 @@ export const viewport: Viewport = {
   // que o "Forçar Modo escuro p/ conteúdo web" (Chrome/Samsung) escureça o app
   // à força — era isso que deixava o fundo (atrás das barras) preto.
   colorScheme: "light",
+  // Quando o teclado do celular sobe, ele EMPURRA o conteúdo pra cima (em vez de
+  // cobrir). Assim o campo digitado + as sugestões ficam SEMPRE visíveis acima do
+  // teclado — é o comportamento dos apps grandes. Resolve o teclado tampando o
+  // modal de adicionar item.
+  interactiveWidget: "resizes-content",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

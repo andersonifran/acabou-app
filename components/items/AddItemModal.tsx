@@ -5,8 +5,10 @@ import { X, Search, Plus } from "lucide-react";
 import { Item, ItemStatus, Category, STATUS_LABELS, SHOPPING_LIST_STATUSES } from "@/types";
 import { cn } from "@/lib/utils";
 
-// Itens sugeridos para busca — unifica todos os tipos de local
-export const SUGGESTED_ITEMS: { name: string; category: string }[] = [
+// Itens sugeridos para busca — unifica todos os tipos de local.
+// aliases = como as pessoas costumam DIGITAR (apelidos/sem acento/marcas), pra
+// busca achar mesmo escrito diferente.
+export const SUGGESTED_ITEMS: { name: string; category: string; aliases?: string[] }[] = [
   // ── Alimentos ──
   { name: "Arroz", category: "Alimentos" },
   { name: "Feijão", category: "Alimentos" },
@@ -132,7 +134,90 @@ export const SUGGESTED_ITEMS: { name: string; category: string }[] = [
   { name: "Pilha", category: "Utilidades" },
   { name: "Vela", category: "Utilidades" },
   { name: "Isqueiro", category: "Utilidades" },
+  { name: "Fósforo", category: "Utilidades" },
+  { name: "Lâmpada", category: "Utilidades" },
+  // ── Mais alimentos comuns ──
+  { name: "Iogurte", category: "Alimentos" },
+  { name: "Margarina", category: "Alimentos" },
+  { name: "Requeijão", category: "Alimentos", aliases: ["catupiry"] },
+  { name: "Biscoito", category: "Alimentos", aliases: ["bolacha"] },
+  { name: "Maionese", category: "Alimentos" },
+  { name: "Ketchup", category: "Alimentos", aliases: ["catchup"] },
+  { name: "Mostarda", category: "Alimentos" },
+  { name: "Atum", category: "Alimentos" },
+  { name: "Sardinha", category: "Alimentos" },
+  { name: "Milho em lata", category: "Alimentos" },
+  { name: "Ervilha", category: "Alimentos" },
+  { name: "Extrato de tomate", category: "Alimentos", aliases: ["massa de tomate"] },
+  { name: "Aveia", category: "Alimentos" },
+  { name: "Tapioca", category: "Alimentos" },
+  { name: "Fubá", category: "Alimentos" },
+  { name: "Azeite", category: "Alimentos" },
+  { name: "Vinagre", category: "Alimentos" },
+  { name: "Tempero pronto", category: "Alimentos", aliases: ["caldo", "tempero"] },
+  { name: "Achocolatado em pó", category: "Alimentos", aliases: ["nescau", "toddy"] },
+  { name: "Gelatina", category: "Alimentos" },
+  { name: "Tomate", category: "Alimentos" },
+  { name: "Banana", category: "Alimentos" },
+  { name: "Maçã", category: "Alimentos" },
+  { name: "Cenoura", category: "Alimentos" },
+  { name: "Linguiça toscana", category: "Alimentos" },
+  { name: "Salsicha", category: "Alimentos" },
+  // ── Mais limpeza ──
+  { name: "Lustra móveis", category: "Limpeza" },
+  { name: "Limpa vidro", category: "Limpeza" },
+  { name: "Desengordurante", category: "Limpeza" },
+  { name: "Pano de chão", category: "Limpeza" },
+  { name: "Pano de prato", category: "Limpeza" },
+  { name: "Inseticida", category: "Limpeza" },
+  { name: "Sabão líquido", category: "Limpeza" },
+  // ── Mais higiene ──
+  { name: "Fio dental", category: "Higiene" },
+  { name: "Cotonete", category: "Higiene" },
+  { name: "Lâmina de barbear", category: "Higiene", aliases: ["gilete", "aparelho de barbear"] },
+  { name: "Espuma de barbear", category: "Higiene" },
+  { name: "Hidratante", category: "Higiene" },
+  { name: "Enxaguante bucal", category: "Higiene", aliases: ["listerine"] },
 ];
+
+// Apelidos extras por NOME (sem precisar editar cada item acima). Cobre como as
+// pessoas digitam de verdade (marcas, "pasta de dente", sem acento já é tratado).
+const NAME_ALIASES: Record<string, string[]> = {
+  "Creme dental": ["pasta de dente", "pasta dental"],
+  "Papel higiênico": ["papel hig"],
+  "Refrigerante": ["refri", "coca cola", "guarana"],
+  "Sabão em pó": ["omo", "sabao po"],
+  "Amaciante": ["downy", "comfort"],
+  "Molho de tomate": ["molho tomate"],
+  "Detergente": ["ype", "limpol"],
+  "Água sanitária": ["candida", "agua sanitaria", "cloro"],
+  "Papel toalha": ["papel cozinha"],
+};
+
+// Tira acento + maiúscula → "Açúcar" e "acucar" viram a mesma coisa.
+function normalize(s: string): string {
+  return s
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .trim();
+}
+
+// Pontua a relevância (0 = não casa). Começa-com > palavra-começa > contém.
+// Busca no nome + apelidos do item, tudo sem acento.
+function matchScore(name: string, extraAliases: string[] | undefined, query: string): number {
+  const q = normalize(query);
+  if (!q) return 1; // sem busca → tudo passa (neutro)
+  const fields = [name, ...(extraAliases ?? []), ...(NAME_ALIASES[name] ?? [])].map(normalize);
+  let score = 0;
+  for (const f of fields) {
+    if (f === q) score = Math.max(score, 100);
+    else if (f.startsWith(q)) score = Math.max(score, 80);
+    else if (f.split(/\s+/).some((w) => w.startsWith(q))) score = Math.max(score, 60);
+    else if (f.includes(q)) score = Math.max(score, 40);
+  }
+  return score;
+}
 
 interface AddItemModalProps {
   isOpen: boolean;
@@ -171,6 +256,8 @@ export function AddItemModal({
   const [loading, setLoading] = useState(false);
   // Item existente sendo editado (null = criando item novo)
   const [editingItem, setEditingItem] = useState<Item | null>(null);
+  // Mostra o autocomplete embaixo do campo "Nome do item" (só enquanto digita).
+  const [showNameSug, setShowNameSug] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -181,6 +268,7 @@ export function AddItemModal({
       setNewNote("");
       setNewQty("");
       setEditingItem(null);
+      setShowNameSug(false);
       if (categories.length > 0) setNewCategoryId(categories[0].id);
     }
   }, [isOpen, initialStatus, categories]);
@@ -201,15 +289,22 @@ export function AddItemModal({
     };
   }, [isOpen, onClose]);
 
-  const filteredExisting = existingItems.filter((item) =>
-    item.name.toLowerCase().includes(search.toLowerCase())
-  );
+  // Busca inteligente: sem acento + ranking (começa-com aparece primeiro).
+  const filteredExisting = existingItems
+    .map((item) => ({ item, score: matchScore(item.name, undefined, search) }))
+    .filter((x) => x.score > 0)
+    .sort((a, b) => b.score - a.score || a.item.name.localeCompare(b.item.name, "pt-BR"))
+    .map((x) => x.item);
 
-  const filteredSuggested = SUGGESTED_ITEMS.filter(
-    (s) =>
-      s.name.toLowerCase().includes(search.toLowerCase()) &&
-      !existingItems.some((e) => e.name.toLowerCase() === s.name.toLowerCase())
-  );
+  const filteredSuggested = SUGGESTED_ITEMS
+    .map((s) => ({ s, score: matchScore(s.name, s.aliases, search) }))
+    .filter(
+      (x) =>
+        x.score > 0 &&
+        !existingItems.some((e) => normalize(e.name) === normalize(x.s.name))
+    )
+    .sort((a, b) => b.score - a.score || a.s.name.localeCompare(b.s.name, "pt-BR"))
+    .map((x) => x.s);
 
   // Clicar num item existente abre o formulário pré-preenchido,
   // para o usuário revisar/ajustar status e observação antes de confirmar.
@@ -220,6 +315,7 @@ export function AddItemModal({
     setNewStatus(initialStatus);
     setNewNote(item.note ?? "");
     setNewQty(item.quantity_text ?? "");
+    setShowNameSug(false);
     setMode("create");
   }
 
@@ -231,7 +327,26 @@ export function AddItemModal({
     setNewStatus(initialStatus);
     setNewNote("");
     setNewQty("");
+    setShowNameSug(false);
     setMode("create");
+  }
+
+  // Sugestões enquanto digita o NOME (só quando criando item novo). Auto-completa
+  // o nome + já escolhe a categoria certa ao tocar.
+  const nameSuggestions =
+    showNameSug && newName.trim() && !editingItem
+      ? SUGGESTED_ITEMS.map((s) => ({ s, score: matchScore(s.name, s.aliases, newName) }))
+          .filter((x) => x.score >= 40 && normalize(x.s.name) !== normalize(newName))
+          .sort((a, b) => b.score - a.score || a.s.name.localeCompare(b.s.name, "pt-BR"))
+          .slice(0, 5)
+          .map((x) => x.s)
+      : [];
+
+  function pickNameSuggestion(s: { name: string; category: string }) {
+    const cat = categories.find((c) => c.name === s.category);
+    setNewName(s.name);
+    if (cat) setNewCategoryId(cat.id);
+    setShowNameSug(false);
   }
 
   async function handleCreate() {
@@ -384,17 +499,36 @@ export function AddItemModal({
         ) : (
           /* Formulário de criação */
           <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
-            <div>
+            <div className="relative">
               <label className="block text-sm font-medium text-gray-700 mb-1.5">
                 Nome do item *
               </label>
               <input
                 type="text"
                 value={newName}
-                onChange={(e) => setNewName(e.target.value)}
+                onChange={(e) => { setNewName(e.target.value); setShowNameSug(true); }}
+                onFocus={() => setShowNameSug(true)}
                 placeholder="Ex: Café, Detergente..."
+                autoComplete="off"
                 className="w-full px-4 py-3 bg-gray-50 rounded-xl border border-gray-200 focus:outline-none focus:border-green-400 text-gray-900"
               />
+              {/* Autocomplete: aparece flutuando sobre os campos de baixo (não
+                  empurra o formulário) — fecha ao escolher. */}
+              {nameSuggestions.length > 0 && (
+                <div className="absolute left-0 right-0 top-full mt-1 z-20 bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden max-h-60 overflow-y-auto">
+                  {nameSuggestions.map((s) => (
+                    <button
+                      key={s.name}
+                      type="button"
+                      onClick={() => pickNameSuggestion(s)}
+                      className="w-full text-left px-4 py-3 hover:bg-green-50 border-b border-gray-50 last:border-b-0 transition-colors"
+                    >
+                      <span className="font-medium text-gray-900">{s.name}</span>
+                      <span className="ml-2 text-sm text-gray-400">{s.category}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
 
             <div>
