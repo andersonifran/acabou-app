@@ -426,21 +426,17 @@ export default function ConfiguracoesPage() {
                         btn.disabled = false;
                       }
                     }}
-                    className="w-full flex items-center gap-3 p-3 border border-green-200 rounded-xl hover:bg-green-50 active:scale-[0.99] transition-all text-left disabled:opacity-60"
+                    className="w-full flex items-center gap-3 p-3 bg-green-50 border border-green-200 rounded-xl hover:bg-green-100 active:scale-[0.98] transition-all disabled:opacity-60"
                   >
                     <img
                       src="/mascote/sacolino-acenando.png"
-                      alt="Sacolino acenando"
-                      className="w-11 h-11 shrink-0 object-contain"
+                      alt="Sacolino"
+                      className="w-10 h-10 shrink-0 object-contain"
                     />
-                    <span className="min-w-0">
-                      <span className="block text-sm font-semibold text-green-700">
-                        Receber um “oi” do Sacolino 👋
-                      </span>
-                      <span className="block text-xs text-gray-500">
-                        Toque para conferir se as notificações chegam no seu celular.
-                      </span>
+                    <span className="flex-1 text-left text-sm font-bold text-green-800">
+                      Testar notificação
                     </span>
+                    <span className="text-green-600 text-xl leading-none shrink-0">→</span>
                   </button>
                 </div>
               ) : (
