@@ -399,16 +399,32 @@ export default function ConfiguracoesPage() {
                   </p>
                 </div>
               ) : push.isSubscribed ? (
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-green-500 rounded-full" />
-                    <span className="text-sm text-green-700 font-medium">Ativado</span>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 bg-green-500 rounded-full" />
+                      <span className="text-sm text-green-700 font-medium">Ativado</span>
+                    </div>
+                    <button
+                      onClick={push.unsubscribe}
+                      className="text-xs text-gray-500 underline hover:text-gray-700"
+                    >
+                      Desativar
+                    </button>
                   </div>
                   <button
-                    onClick={push.unsubscribe}
-                    className="text-xs text-gray-500 underline hover:text-gray-700"
+                    onClick={async () => {
+                      try {
+                        const r = await fetch("/api/push/test", { method: "POST" });
+                        const d = await r.json();
+                        alert(d.message ?? (d.ok ? "Push de teste enviado!" : "Falhou — reative as notificações."));
+                      } catch {
+                        alert("Erro ao testar. Tente de novo.");
+                      }
+                    }}
+                    className="w-full py-2 border border-green-200 text-green-700 text-xs font-semibold rounded-xl hover:bg-green-50 transition-colors"
                   >
-                    Desativar
+                    🔔 Enviar notificação de teste
                   </button>
                 </div>
               ) : (
