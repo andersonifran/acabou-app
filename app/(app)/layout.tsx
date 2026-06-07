@@ -52,25 +52,29 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   // Convidado cujo dono deixou o plano expirar → membership vira "frozen" (no
   // banco) e a RLS bloqueia o acesso. Mostramos a tela "Acesso pausado".
   const [accessPaused, setAccessPaused] = useState(false);
-  // Verifica DIRETAMENTE no localStorage se tem casa — evita depender do timing do Zustand.
-  // Isso garante que NUNCA mostramos spinner quando o usuário já estava logado.
-  const [isReady, setIsReady] = useState(() => {
+  // Verifica DIRETAMENTE no localStorage se já tem casa em cache (app já usado).
+  // Se tem, o app abre INSTANTÂNEO no conteúdo — sem spinner, sem overlay verde
+  // (a splash nativa do Android já cobriu a abertura). É o caso de ~99% das
+  // aberturas (usuário recorrente). Só não-cacheado (1ª vez/cache limpo) mostra
+  // a tela de carregamento.
+  const hasCachedHouse = () => {
     if (typeof window === "undefined") return false;
     if (currentHouse) return true;
     try {
       const raw = localStorage.getItem("acabou-app-cache");
       if (!raw) return false;
-      const cached = JSON.parse(raw);
-      return !!cached.currentHouse;
+      return !!JSON.parse(raw).currentHouse;
     } catch { return false; }
-  });
+  };
+  const [isReady, setIsReady] = useState(hasCachedHouse);
 
-  // Splash de abertura sai com FADE suave (não "pisca" / não parece bug).
-  // splashGone remove o overlay do DOM só depois que o fade termina.
-  const [splashGone, setSplashGone] = useState(false);
+  // CHAVE DA FLUIDEZ: se já está pronto no 1º paint (cache), a splash já está
+  // "ida" — ZERO overlay, ZERO fantasma. Sem cache, o overlay aparece e sai com
+  // um fade curto quando os dados chegam.
+  const [splashGone, setSplashGone] = useState(hasCachedHouse);
   useEffect(() => {
     if (isReady && !splashGone) {
-      const t = setTimeout(() => setSplashGone(true), 320);
+      const t = setTimeout(() => setSplashGone(true), 160);
       return () => clearTimeout(t);
     }
   }, [isReady, splashGone]);
