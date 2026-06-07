@@ -85,6 +85,16 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     return () => clearTimeout(t);
   }, []);
 
+  // Edge-to-edge: no Android novo as barras do sistema são TRANSPARENTES e
+  // mostram o fundo do <html> atrás delas. Durante o splash deixamos o <html>
+  // VERDE → as barras ficam verdes → splash VERDE de ponta a ponta (sem tarja).
+  // Quando o app abre, voltamos ao padrão (branco) → barras limpas no app.
+  useEffect(() => {
+    const html = document.documentElement;
+    html.style.backgroundColor = splashGone ? "" : "#1E9839";
+    return () => { html.style.backgroundColor = ""; };
+  }, [splashGone]);
+
   async function loadHouseData(houseId: string) {
     const { data: { user } } = await supabase.auth.getUser();
 

@@ -35,6 +35,10 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   themeColor: "#FFFFFF",
+  // O app tem o PRÓPRIO modo escuro (classe .dark). Declarar color-scheme evita
+  // que o "Forçar Modo escuro p/ conteúdo web" (Chrome/Samsung) escureça o app
+  // à força — era isso que deixava o fundo (atrás das barras) preto.
+  colorScheme: "light",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
