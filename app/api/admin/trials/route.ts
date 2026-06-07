@@ -83,6 +83,40 @@ export async function GET(request: NextRequest) {
     });
   }
 
+  // ── LIMPEZA: congela na hora as casas vencidas (= o que o cron faz às 6h) ──
+  if (acao === "congelar_vencidos") {
+    const { data: vencidas } = await admin
+      .from("houses")
+      .select("id")
+      .neq("plan", "free")
+      .lt("plan_expires_at", nowISO)
+      .neq("plan_status", "inactive");
+
+    let congeladas = 0;
+    for (const h of vencidas ?? []) {
+      await admin.from("houses").update({ plan_status: "inactive" }).eq("id", h.id);
+      await admin
+        .from("subscriptions")
+        .update({ status: "inactive", updated_at: nowISO })
+        .eq("house_id", h.id as string)
+        .eq("status", "active");
+      // Congela convidados (não-donos) — acesso compartilhado é premium.
+      await admin
+        .from("house_members")
+        .update({ status: "frozen" })
+        .eq("house_id", h.id as string)
+        .neq("role", "owner")
+        .eq("status", "active");
+      congeladas++;
+    }
+    return NextResponse.json({
+      ok: true,
+      acao: "congelar_vencidos",
+      congeladas,
+      message: `${congeladas} casa(s) vencida(s) congelada(s) + convidados bloqueados.`,
+    });
+  }
+
   // ── AUDITORIA (relatório) ──
   // Vazamentos = plano != free, JÁ vencido, mas status não está "inactive"
   // (deveriam estar congelados). O esperado é ZERO.
