@@ -1,5 +1,5 @@
 // Service Worker — Acabou? v3
-const CACHE = "acabou-v140";
+const CACHE = "acabou-v141";
 
 // ── Instalação ──
 self.addEventListener("install", (event) => {
@@ -117,7 +117,7 @@ self.addEventListener("push", function(event) {
   var options = {
     body: payload.body || "",
     icon: payload.icon || "/web-app-manifest-192x192.png",
-    badge: payload.badge || "/web-app-manifest-192x192.png",
+    badge: payload.badge || "/badge.png",
     tag: payload.tag || "acabou-default",
     renotify: true,
     vibrate: [200, 100, 200],

@@ -36,7 +36,7 @@ export async function sendPushNotification(
     title: payload.title,
     body: payload.body,
     icon: payload.icon ?? "/web-app-manifest-192x192.png",
-    badge: payload.badge ?? "/web-app-manifest-192x192.png",
+    badge: payload.badge ?? "/badge.png",
     url: payload.url ?? "/home",
     tag: payload.tag,
     data: payload.data ?? {},

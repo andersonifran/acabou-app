@@ -76,12 +76,12 @@ export async function GET(request: NextRequest) {
       const reminderMinutes = rh * 60 + rm;
       if (reminderMinutes < slotStart || reminderMinutes >= slotStart + 15) continue;
 
-      // Já enviou lembrete hoje? (evita duplicata)
+      // Já recebeu QUALQUER notificação hoje? (regra de ouro: máx 1/dia por usuário)
+      if (notifiedToday.has(house.owner_id)) continue;
       const { data: existing } = await admin
         .from("notifications")
         .select("id")
-        .eq("house_id", house.id)
-        .eq("type", "reminder")
+        .eq("user_id", house.owner_id)
         .gte("created_at", todayStartISO)
         .limit(1);
       if (existing && existing.length > 0) {
@@ -128,6 +128,16 @@ export async function GET(request: NextRequest) {
       const { data: subs } = await admin.from("push_subscriptions").select("user_id");
       const pushUserIds = [...new Set((subs ?? []).map((s: { user_id: string }) => s.user_id))];
 
+      // Mapa dono → uma casa (pra registrar o nudge em notifications: dedup + histórico).
+      const { data: nudgeHouses } = await admin
+        .from("houses")
+        .select("id, owner_id")
+        .in("owner_id", pushUserIds.length > 0 ? pushUserIds : ["__none__"]);
+      const ownerToHouse = new Map<string, string>();
+      for (const h of (nudgeHouses ?? []) as { id: string; owner_id: string }[]) {
+        if (!ownerToHouse.has(h.owner_id)) ownerToHouse.set(h.owner_id, h.id);
+      }
+
       if (pushUserIds.length > 0) {
         const { data: profs } = await admin
           .from("profiles")
@@ -153,24 +163,35 @@ export async function GET(request: NextRequest) {
           : dayOfWeek === 0 ? NUDGE_SUNDAY
           : NUDGE_PHRASES[dayOfYear % NUDGE_PHRASES.length];
 
-        const MAX_INACTIVE = 21 * 24 * 60 * 60 * 1000;
+        const MAX_INACTIVE = 30 * 24 * 60 * 60 * 1000;
 
         for (const prof of profs ?? []) {
           const uid = (prof as { user_id: string }).user_id;
           const la = (prof as { last_active_at: string | null }).last_active_at;
 
-          if (notifiedToday.has(uid)) continue;        // já recebeu algo hoje
-          if (!la) continue;                            // sem dado de atividade
-          const laTime = new Date(la).getTime();
-          if (laTime >= todayStart.getTime()) continue; // abriu o app hoje
-          if (now - laTime > MAX_INACTIVE) continue;    // sumiu há +21 dias
+          if (notifiedToday.has(uid)) continue;        // regra de ouro: máx 1/dia
+          // MODELO DUOLINGO: manda o lembrete diário pra TODOS com push, MESMO
+          // quem abriu o app hoje (mantém engajado). Só pula quem sumiu há +30d.
+          if (la && now - new Date(la).getTime() > MAX_INACTIVE) continue;
 
           await sendPushToUser(admin, uid, {
             title: phrase.title,
             body: phrase.body,
+            icon: "/mascote/sacolino-acenando.png",
             url: "/despensa",
             tag: `nudge-${uid}`,
           });
+          // Registra o nudge (dedup entre execuções + histórico in-app).
+          const hid = ownerToHouse.get(uid);
+          if (hid) {
+            await admin.from("notifications").insert({
+              user_id: uid,
+              house_id: hid,
+              type: "nudge",
+              title: phrase.title,
+              body: phrase.body,
+            });
+          }
           notifiedToday.add(uid);
           nudgesSent++;
         }
