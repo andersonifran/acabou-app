@@ -18,11 +18,13 @@ const FROM = "Acabou? App <notificacoes@acabouapp.com.br>";
 // pro Gmail interno suporteacabou@gmail.com — que NUNCA aparece pro usuário.
 const REPLY_TO = "contato@acabouapp.com.br";
 // Mascotes (Sacolino) hospedados publicamente — usados no topo dos e-mails.
+// Versões "-sm" (184px, ~50KB) pra carregar QUASE instantâneo no e-mail (as
+// originais têm ~230KB e demoravam alguns segundos pra aparecer no Gmail).
 const MASCOTE = {
-  acenando: `${process.env.NEXT_PUBLIC_APP_URL ?? "https://www.acabouapp.com.br"}/mascote/sacolino-acenando.png`,
-  comemorando: `${process.env.NEXT_PUBLIC_APP_URL ?? "https://www.acabouapp.com.br"}/mascote/sacolino-comemorando.png`,
-  alerta: `${process.env.NEXT_PUBLIC_APP_URL ?? "https://www.acabouapp.com.br"}/mascote/sacolino-alerta.png`,
-  feliz: `${process.env.NEXT_PUBLIC_APP_URL ?? "https://www.acabouapp.com.br"}/mascote/sacolino-feliz.png`,
+  acenando: `${process.env.NEXT_PUBLIC_APP_URL ?? "https://www.acabouapp.com.br"}/mascote/sacolino-acenando-sm.png`,
+  comemorando: `${process.env.NEXT_PUBLIC_APP_URL ?? "https://www.acabouapp.com.br"}/mascote/sacolino-comemorando-sm.png`,
+  alerta: `${process.env.NEXT_PUBLIC_APP_URL ?? "https://www.acabouapp.com.br"}/mascote/sacolino-alerta-sm.png`,
+  feliz: `${process.env.NEXT_PUBLIC_APP_URL ?? "https://www.acabouapp.com.br"}/mascote/sacolino-feliz-sm.png`,
 };
 // Alertas internos (vazamento, etc.) vão para os e-mails de admin.
 const ADMIN_EMAILS = ["anderson.ifran15@gmail.com", "anderson.ifran26@gmail.com"];
