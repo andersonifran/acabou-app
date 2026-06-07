@@ -1,5 +1,5 @@
 // Service Worker — Acabou? v3
-const CACHE = "acabou-v137";
+const CACHE = "acabou-v138";
 
 // ── Instalação ──
 self.addEventListener("install", (event) => {
@@ -52,22 +52,17 @@ self.addEventListener("fetch", (event) => {
       return;
     }
 
-    // Demais navegações: STALE-WHILE-REVALIDATE — responde do CACHE na HORA
-    // (abertura INSTANTÂNEA, sem a barra azul de "esperar a internet") e atualiza
-    // a página em segundo plano pra próxima abertura. Os dados dinâmicos (casas,
-    // itens) continuam vindo frescos pela API; aqui é só o "esqueleto" do app.
-    // Cai pro offline só se não houver cache E a rede falhar.
     event.respondWith(
-      caches.match(event.request).then(function(cached) {
-        var network = fetch(event.request)
-          .then(function(response) {
-            if (response.ok) {
-              var clone = response.clone();
-              caches.open(CACHE).then(function(cache) { cache.put(event.request, clone); });
-            }
-            return response;
-          })
-          .catch(function() {
+      fetch(event.request)
+        .then(function(response) {
+          if (response.ok) {
+            var clone = response.clone();
+            caches.open(CACHE).then(function(cache) { cache.put(event.request, clone); });
+          }
+          return response;
+        })
+        .catch(function() {
+          return caches.match(event.request).then(function(cached) {
             return cached || new Response(
               '<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Sem conexão</title></head>' +
               '<body style="font-family:system-ui;text-align:center;padding:60px 20px">' +
@@ -78,9 +73,7 @@ self.addEventListener("fetch", (event) => {
               { status: 503, headers: { "Content-Type": "text/html" } }
             );
           });
-        // Tem cache? abre na hora (e atualiza em segundo plano). Senão, espera a rede.
-        return cached || network;
-      })
+        })
     );
     return;
   }
