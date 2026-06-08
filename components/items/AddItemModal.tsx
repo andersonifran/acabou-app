@@ -5,6 +5,7 @@ import { X, Search, Plus } from "lucide-react";
 import { Item, ItemStatus, Category, STATUS_LABELS, SHOPPING_LIST_STATUSES } from "@/types";
 import { cn } from "@/lib/utils";
 import { SUGGESTED_ITEMS } from "@/lib/item-catalog";
+import { recordItemUse, getLearnedItems, type LearnedItem } from "@/lib/learned-items";
 
 // Tira acento + maiúscula → "Açúcar" e "acucar" viram a mesma coisa.
 function normalize(s: string): string {
@@ -70,6 +71,8 @@ export function AddItemModal({
   const [editingItem, setEditingItem] = useState<Item | null>(null);
   // Mostra o autocomplete embaixo do campo "Nome do item" (só enquanto digita).
   const [showNameSug, setShowNameSug] = useState(false);
+  // Itens que o usuário aprende a usar (entre TODAS as casas) — carregados ao abrir.
+  const [learned, setLearned] = useState<LearnedItem[]>([]);
 
   useEffect(() => {
     if (isOpen) {
@@ -81,6 +84,7 @@ export function AddItemModal({
       setNewQty("");
       setEditingItem(null);
       setShowNameSug(false);
+      setLearned(getLearnedItems());
       if (categories.length > 0) setNewCategoryId(categories[0].id);
     }
   }, [isOpen, initialStatus, categories]);
@@ -108,15 +112,36 @@ export function AddItemModal({
     .sort((a, b) => b.score - a.score || a.item.name.localeCompare(b.item.name, "pt-BR"))
     .map((x) => x.item);
 
-  const filteredSuggested = SUGGESTED_ITEMS
-    .map((s) => ({ s, score: matchScore(s.name, s.aliases, search) }))
-    .filter(
-      (x) =>
-        x.score > 0 &&
-        !existingItems.some((e) => normalize(e.name) === normalize(x.s.name))
-    )
-    .sort((a, b) => b.score - a.score || a.s.name.localeCompare(b.s.name, "pt-BR"))
-    .map((x) => x.s);
+  // Pool de sugestões = catálogo + itens que VOCÊ já usou e não estão no catálogo
+  // (aprende entre todas as suas casas). E um mapa de uso pra ranquear.
+  const learnedByName = new Map(learned.map((l) => [normalize(l.name), l]));
+  const catalogNorm = new Set(SUGGESTED_ITEMS.map((s) => normalize(s.name)));
+  const suggestionPool: { name: string; category: string; aliases?: string[] }[] = [
+    ...SUGGESTED_ITEMS,
+    ...learned
+      .filter((l) => !catalogNorm.has(normalize(l.name)))
+      .map((l) => ({ name: l.name, category: l.category })),
+  ];
+
+  // Ranqueia o pool por uma busca: relevância + boost de quem você MAIS usa.
+  function rankPool(query: string) {
+    return suggestionPool
+      .map((s) => {
+        const base = matchScore(s.name, s.aliases, query);
+        if (base === 0) return { s, score: 0 };
+        const used = learnedByName.get(normalize(s.name));
+        const boost = used ? Math.min(18, 6 + used.count * 2) : 0; // mais usado = mais alto
+        return { s, score: base + boost };
+      })
+      .filter(
+        (x) =>
+          x.score > 0 && !existingItems.some((e) => normalize(e.name) === normalize(x.s.name))
+      )
+      .sort((a, b) => b.score - a.score || a.s.name.localeCompare(b.s.name, "pt-BR"))
+      .map((x) => x.s);
+  }
+
+  const filteredSuggested = rankPool(search);
 
   // Clicar num item existente abre o formulário pré-preenchido,
   // para o usuário revisar/ajustar status e observação antes de confirmar.
@@ -147,11 +172,7 @@ export function AddItemModal({
   // o nome + já escolhe a categoria certa ao tocar.
   const nameSuggestions =
     showNameSug && newName.trim() && !editingItem
-      ? SUGGESTED_ITEMS.map((s) => ({ s, score: matchScore(s.name, s.aliases, newName) }))
-          .filter((x) => x.score >= 40 && normalize(x.s.name) !== normalize(newName))
-          .sort((a, b) => b.score - a.score || a.s.name.localeCompare(b.s.name, "pt-BR"))
-          .slice(0, 5)
-          .map((x) => x.s)
+      ? rankPool(newName).filter((s) => normalize(s.name) !== normalize(newName)).slice(0, 5)
       : [];
 
   function pickNameSuggestion(s: { name: string; category: string }) {
@@ -185,6 +206,9 @@ export function AddItemModal({
           quantity_text: newQty || undefined,
         });
       }
+      // Aprende: registra o uso (alimenta sugestões entre casas + ranking).
+      const catName = categories.find((c) => c.id === newCategoryId)?.name ?? "";
+      recordItemUse(newName.trim(), catName);
       onClose();
     } finally {
       setLoading(false);
