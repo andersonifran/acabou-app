@@ -5,6 +5,7 @@ import { useSubscription } from "@/hooks/useSubscription";
 import { Header } from "@/components/layout/Header";
 import { CheckoutTransition } from "@/components/shared/CheckoutTransition";
 import { PaymentTrust } from "@/components/shared/PaymentTrust";
+import { PlayStoreTrust } from "@/components/shared/PlayStoreTrust";
 import { isPlayBillingAvailable, purchaseSubscription } from "@/lib/play-billing";
 import { Check, Star, Home, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -562,9 +563,13 @@ function PlanosContent() {
           </div>
         ))}
 
-        {/* Selo do Mercado Pago: SÓ na web/PWA. No app da Play Store é proibido
-            (Google exige pagamento exclusivo do Google). */}
-        {!isTwa && <PaymentTrust className="pt-2 pb-2" />}
+        {/* Selo de pagamento: no app da Play Store mostra "Google Play" (confiança
+            + exigência do Google); na web/PWA mostra o Mercado Pago. */}
+        {isTwa ? (
+          <PlayStoreTrust className="pt-2 pb-2" />
+        ) : (
+          <PaymentTrust className="pt-2 pb-2" />
+        )}
 
         <p className="text-center text-xs text-gray-400 pb-4">
           Cancelamento a qualquer momento. Sem multa.
