@@ -38,15 +38,21 @@ export function useHouse() {
 
   const removeMember = useCallback(
     async (memberId: string) => {
-      const { error } = await supabase
-        .from("house_members")
-        .update({ status: "removed" })
-        .eq("id", memberId);
-
-      if (error) throw error;
+      // Removido via rota server-side (service_role): o trigger anti-burla
+      // guard_member_status bloqueia UPDATE de status pelo cliente. A rota só
+      // deixa o DONO remover, e remover sempre REDUZ acesso (seguro).
+      const res = await fetch("/api/remover-membro", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ memberId }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error ?? "Erro ao remover membro");
+      }
       setMembers(members.filter((m) => m.id !== memberId));
     },
-    [supabase, members, setMembers]
+    [members, setMembers]
   );
 
   const updateHouseName = useCallback(
