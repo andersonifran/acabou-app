@@ -31,6 +31,7 @@ self.addEventListener("fetch", (event) => {
   if (url.origin !== self.location.origin) return;
 
   // ── PEDIDOS RSC do Next (navegação LEVE entre abas / prefetch) ──────────────
+  // ⚠️ NÃO REMOVER — protegido pelo guard de build scripts/check-sw-rsc.mjs.
   // SEMPRE rede, NUNCA cache. O Next já faz cache-busting com ?_rsc=<hash>, mas
   // esse hash NÃO depende do build. Se o SW (cache-first) servir um RSC cacheado
   // de um BUILD ANTIGO, o cliente detecta build divergente e cai pra navegação
