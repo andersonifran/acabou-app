@@ -328,7 +328,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     <>
       {splashOverlay}
       {isReady && (
-      <div className="min-h-screen app-bg pb-16">
+      <div className="min-h-screen app-bg pb-[calc(4rem+env(safe-area-inset-bottom))]">
       {/* Banner de recrutamento de testadores DESATIVADO (06/06/2026): ele
           aparecia pra TODOS os usuários web (inclusive os que vêm do Facebook
           Ads), que NÃO são testadores cadastrados e cairiam num beco sem saída

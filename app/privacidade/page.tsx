@@ -49,10 +49,12 @@ export default function PrivacidadePage() {
           <ul className="text-gray-600 space-y-2 list-disc pl-5">
             <li>Para fornecer o serviço do Acabou? (lista, despensa, membros, planos).</li>
             <li>Para enviar comunicações relacionadas ao serviço (ex: confirmação de e-mail).</li>
-            <li>Para análise agregada e anônima de uso (ex: categorias mais populares) visando melhorar o produto.</li>
+            <li>Para análise agregada de uso (ex: categorias mais populares) visando melhorar o produto.</li>
+            <li>Para medir a eficácia dos nossos anúncios e campanhas de marketing (medição de conversão) e para diagnosticar e corrigir falhas do app.</li>
           </ul>
           <p className="text-gray-600 mt-3">
-            <strong>Não vendemos seus dados pessoais a terceiros.</strong>
+            <strong>Não vendemos seus dados pessoais a terceiros.</strong> Compartilhamos dados apenas
+            com os provedores listados abaixo, nas finalidades descritas.
           </p>
         </section>
 
@@ -60,12 +62,22 @@ export default function PrivacidadePage() {
           <h2 className="text-xl font-bold text-gray-900 mb-3">4. Compartilhamento de dados</h2>
           <p className="text-gray-600">
             Seus dados são compartilhados apenas com outros membros da sua casa (que você convidou) e com os
-            provedores de serviço essenciais ao funcionamento do app:
+            provedores de serviço abaixo, cada um na sua finalidade:
           </p>
           <ul className="text-gray-600 space-y-1 list-disc pl-5 mt-2">
             <li><strong>Supabase</strong> — banco de dados e autenticação (hospedado na AWS).</li>
-            <li><strong>Mercado Pago</strong> — processamento de pagamentos (quando aplicável).</li>
+            <li><strong>Mercado Pago</strong> — processamento de pagamentos na web (quando aplicável).</li>
+            <li><strong>Google</strong> — login com Google (opcional), pagamentos pelo Google Play (no app Android) e medição de conversão de anúncios (Google Ads).</li>
+            <li><strong>Meta (Facebook / Instagram)</strong> — medição de desempenho e conversão de anúncios (Meta Pixel).</li>
+            <li><strong>Vercel</strong> — hospedagem do aplicativo e métricas de uso agregadas (Vercel Analytics).</li>
+            <li><strong>Sentry</strong> — monitoramento e diagnóstico de erros, para corrigir falhas do app.</li>
+            <li><strong>Resend</strong> — envio dos e-mails do serviço (boas-vindas, avisos de plano).</li>
           </ul>
+          <p className="text-gray-600 mt-3">
+            Para fins de publicidade e análise, alguns identificadores (como cookies e identificadores
+            de dispositivo) podem ser compartilhados com Meta e Google. Você pode limitar a publicidade
+            personalizada nas configurações de anúncios do seu dispositivo ou navegador.
+          </p>
         </section>
 
         <section className="mb-8">

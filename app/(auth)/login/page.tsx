@@ -210,6 +210,13 @@ export default function LoginPage() {
         <span>✅ Sem anúncios</span>
         <span>🇧🇷 Feito no Brasil</span>
       </div>
+
+      {/* Privacidade / Termos */}
+      <p className="text-white/70 text-xs mt-3 text-center">
+        <Link href="/privacidade" className="hover:underline">Política de Privacidade</Link>
+        <span className="mx-1.5">·</span>
+        <Link href="/termos" className="hover:underline">Termos de Uso</Link>
+      </p>
     </div>
   );
 }

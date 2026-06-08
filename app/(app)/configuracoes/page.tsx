@@ -156,7 +156,10 @@ export default function ConfiguracoesPage() {
   const [deletingAccount, setDeletingAccount] = useState(false);
 
   async function handleDeleteAccount() {
-    if (!confirm("Tem certeza que deseja excluir sua conta?\n\nTodos os seus dados, casas, itens e membros convidados serão removidos PERMANENTEMENTE.\n\nEssa ação não pode ser desfeita.")) return;
+    const msg = isOwner
+      ? "Tem certeza que deseja excluir sua conta?\n\nTodos os seus dados, casas, itens e membros convidados serão removidos PERMANENTEMENTE.\n\nEssa ação não pode ser desfeita."
+      : "Tem certeza que deseja excluir sua conta?\n\nVocê sairá de todas as casas que participa e seu perfil será removido PERMANENTEMENTE.\n\nEssa ação não pode ser desfeita.";
+    if (!confirm(msg)) return;
     if (!confirm("ÚLTIMA CONFIRMAÇÃO: Excluir conta e todos os dados?")) return;
 
     setDeletingAccount(true);
@@ -361,15 +364,32 @@ export default function ConfiguracoesPage() {
               </>
             )}
 
-            {/* Membro convidado: pode sair da conta (não excluir) */}
+            {/* Membro convidado: pode sair da conta E excluir a própria conta
+                (Google exige que QUALQUER usuário consiga excluir os dados). */}
             {isMember && (
-              <button
-                onClick={handleLogout}
-                className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl bg-red-50 border border-red-200 text-red-600 hover:bg-red-100 transition-colors font-semibold text-sm"
-              >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-                Sair da conta
-              </button>
+              <>
+                <button
+                  onClick={handleLogout}
+                  className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl bg-red-50 border border-red-200 text-red-600 hover:bg-red-100 transition-colors font-semibold text-sm"
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                  Sair da conta
+                </button>
+                <button
+                  onClick={handleDeleteAccount}
+                  disabled={deletingAccount}
+                  className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl border border-red-100 text-red-500 hover:bg-red-50 transition-colors font-medium text-sm disabled:opacity-50"
+                >
+                  {deletingAccount ? (
+                    <><div className="w-4 h-4 border-2 border-red-400 border-t-transparent rounded-full animate-spin" /> Excluindo...</>
+                  ) : (
+                    <><Trash2 size={16} /> Excluir minha conta</>
+                  )}
+                </button>
+                <p className="text-xs text-gray-400 text-center">
+                  Ao excluir sua conta, você sai de todas as casas e seu perfil é removido permanentemente.
+                </p>
+              </>
             )}
           </div>
         )}
