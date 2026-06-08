@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useAppStore } from "@/store/appStore";
 import { useItems } from "@/hooks/useItems";
@@ -51,13 +51,17 @@ export default function ListaPage() {
     return () => clearTimeout(t);
   }, [partialMsg]);
 
-  // Agrupar por categoria
-  const byCategory = shoppingListItems.reduce<Record<string, Item[]>>((acc, item) => {
-    const cat = item.category?.name ?? "Outros";
-    if (!acc[cat]) acc[cat] = [];
-    acc[cat].push(item);
-    return acc;
-  }, {});
+  // Agrupar por categoria (memoizado: só recalcula quando a lista muda)
+  const byCategory = useMemo(
+    () =>
+      shoppingListItems.reduce<Record<string, Item[]>>((acc, item) => {
+        const cat = item.category?.name ?? "Outros";
+        if (!acc[cat]) acc[cat] = [];
+        acc[cat].push(item);
+        return acc;
+      }, {}),
+    [shoppingListItems]
+  );
 
   function toggleCheck(id: string) {
     setCheckedIds((prev) => {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, useMemo, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { useAppStore } from "@/store/appStore";
 import { useItems } from "@/hooks/useItems";
@@ -85,18 +85,27 @@ function DespensaContent() {
   }, [searchParams]);
   const [showPlanLimit, setShowPlanLimit] = useState(false);
 
-  const filtered = items.filter((item) => {
-    const matchStatus = filter === "todos" || item.status === filter;
-    const matchSearch = !search || item.name.toLowerCase().includes(search.toLowerCase());
-    return matchStatus && matchSearch;
-  });
+  // Memoizado: só refiltra quando itens/filtro/busca mudam (não a cada render).
+  const filtered = useMemo(
+    () =>
+      items.filter((item) => {
+        const matchStatus = filter === "todos" || item.status === filter;
+        const matchSearch = !search || item.name.toLowerCase().includes(search.toLowerCase());
+        return matchStatus && matchSearch;
+      }),
+    [items, filter, search]
+  );
 
-  const filteredByCategory = filtered.reduce<Record<string, Item[]>>((acc, item) => {
-    const cat = item.category?.name ?? "Outros";
-    if (!acc[cat]) acc[cat] = [];
-    acc[cat].push(item);
-    return acc;
-  }, {});
+  const filteredByCategory = useMemo(
+    () =>
+      filtered.reduce<Record<string, Item[]>>((acc, item) => {
+        const cat = item.category?.name ?? "Outros";
+        if (!acc[cat]) acc[cat] = [];
+        acc[cat].push(item);
+        return acc;
+      }, {}),
+    [filtered]
+  );
 
   function openAdd() {
     if (!canAddItem) {

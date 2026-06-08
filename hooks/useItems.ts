@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback } from "react";
+import { useCallback, useMemo } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useAppStore } from "@/store/appStore";
 import { Item, ItemStatus, SHOPPING_LIST_STATUSES, RecurrenceType } from "@/types";
@@ -11,16 +11,22 @@ export function useItems() {
   const { items, currentHouse, updateItem, addItem, removeItem, userId } = useAppStore();
   const supabase = createClient();
 
-  const shoppingListItems = items.filter((i) =>
-    SHOPPING_LIST_STATUSES.includes(i.status as any)
+  // Memoizado: só recalcula quando os itens mudam (não a cada render).
+  const shoppingListItems = useMemo(
+    () => items.filter((i) => SHOPPING_LIST_STATUSES.includes(i.status as any)),
+    [items]
   );
 
-  const itemsByCategory = items.reduce<Record<string, Item[]>>((acc, item) => {
-    const catName = item.category?.name ?? "Outros";
-    if (!acc[catName]) acc[catName] = [];
-    acc[catName].push(item);
-    return acc;
-  }, {});
+  const itemsByCategory = useMemo(
+    () =>
+      items.reduce<Record<string, Item[]>>((acc, item) => {
+        const catName = item.category?.name ?? "Outros";
+        if (!acc[catName]) acc[catName] = [];
+        acc[catName].push(item);
+        return acc;
+      }, {}),
+    [items]
+  );
 
   const changeStatus = useCallback(
     async (itemId: string, newStatus: ItemStatus) => {
