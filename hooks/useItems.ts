@@ -8,7 +8,10 @@ import { hapticSuccess } from "@/lib/haptics";
 import { getNextReminderDate } from "@/lib/utils";
 
 export function useItems() {
-  const { items, currentHouse, updateItem, addItem, removeItem, userId } = useAppStore();
+  // `items` (reativo) alimenta a UI + os useMemo. Os SETTERS do Zustand são
+  // referências ESTÁVEIS (definidos uma vez), então podem ficar nas deps dos
+  // callbacks sem desestabilizá-los.
+  const { items, updateItem, addItem, removeItem } = useAppStore();
   const supabase = createClient();
 
   // Memoizado: só recalcula quando os itens mudam (não a cada render).
@@ -28,20 +31,24 @@ export function useItems() {
     [items]
   );
 
+  // IMPORTANTE (performance em lista grande, ex.: empresa com 150–300 itens):
+  // os callbacks abaixo NÃO fecham sobre `items`/`currentHouse`/`userId` — eles
+  // leem o estado fresco via `useAppStore.getState()` no momento da chamada.
+  // Assim ficam com referência ESTÁVEL → o `memo()` do ItemCard segura e mudar
+  // 1 item NÃO re-renderiza a lista inteira. A lógica (otimista + reverter) é
+  // preservada porque capturamos o ORIGINAL ANTES de alterar.
+
   const changeStatus = useCallback(
     async (itemId: string, newStatus: ItemStatus) => {
-      const item = items.find((i) => i.id === itemId);
+      const { items: cur, currentHouse, userId } = useAppStore.getState();
+      const item = cur.find((i) => i.id === itemId);
       if (!item) return;
 
-      // FEEDBACK IMEDIATO primeiro (sem esperar a rede) — usa o userId já
-      // cacheado no store (setado pelo layout), eliminando o getUser() que
-      // travava o toque.
+      // Feedback imediato (otimista) — usa userId já cacheado, sem getUser().
       updateItem(itemId, { status: newStatus });
       hapticSuccess();
 
-      // Se um item RECORRENTE foi recomprado (status "tem"), avança o ciclo:
-      // agenda o próximo lembrete. Sem isso, ele voltaria a cutucar logo após a
-      // compra, em vez de esperar a próxima semana/quinzena/mês.
+      // Item RECORRENTE recomprado (status "tem") → agenda próximo lembrete.
       const updatePayload: Record<string, unknown> = {
         status: newStatus,
         updated_by: userId,
@@ -58,7 +65,7 @@ export function useItems() {
         .eq("id", itemId);
 
       if (error) {
-        // Reverte em caso de erro
+        // Reverte para o status original (capturado antes).
         updateItem(itemId, { status: item.status });
         throw error;
       }
@@ -67,7 +74,7 @@ export function useItems() {
         updateItem(itemId, { next_reminder_at: updatePayload.next_reminder_at as string });
       }
 
-      // Registra evento
+      // Registra evento (a notificação ao dono é disparada pelo webhook do banco).
       if (userId && currentHouse) {
         await supabase.from("item_events").insert({
           house_id: currentHouse.id,
@@ -78,23 +85,19 @@ export function useItems() {
           new_status: newStatus,
           source: "app",
         });
-
-        // A notificação para o dono ("alguém marcou um item como acabou") agora
-        // é disparada pelo SERVIDOR via Database Webhook do Supabase na tabela
-        // `items` (ver /api/webhooks/item-changed). Antes era um timer de 3s no
-        // cliente, que morria quando o celular era bloqueado/app saía de foco —
-        // por isso falhava. O servidor garante o envio de forma confiável.
       }
     },
-    [items, currentHouse, supabase, updateItem, userId]
+    [supabase, updateItem]
   );
 
   const markPurchased = useCallback(
     async (itemId: string) => {
+      // Captura o status ANTES de mudar (pro evento "purchased").
+      const before = useAppStore.getState().items.find((i) => i.id === itemId);
       await changeStatus(itemId, "tem");
 
-      const item = items.find((i) => i.id === itemId);
-      if (!item || !currentHouse) return;
+      const { currentHouse, userId } = useAppStore.getState();
+      if (!before || !currentHouse) return;
 
       if (userId) {
         await supabase.from("item_events").insert({
@@ -102,19 +105,18 @@ export function useItems() {
           item_id: itemId,
           user_id: userId,
           event_type: "purchased",
-          old_status: item.status,
+          old_status: before.status,
           new_status: "tem",
           source: "app",
         });
 
-        // Atualiza last_purchased_at
         await supabase
           .from("items")
           .update({ last_purchased_at: new Date().toISOString() })
           .eq("id", itemId);
       }
     },
-    [items, currentHouse, supabase, changeStatus, userId]
+    [supabase, changeStatus]
   );
 
   const createItem = useCallback(
@@ -125,10 +127,12 @@ export function useItems() {
       note?: string;
       quantity_text?: string;
     }) => {
+      const { currentHouse, userId } = useAppStore.getState();
       if (!currentHouse) throw new Error("Nenhuma casa selecionada");
       if (!userId) throw new Error("Não autenticado");
 
-      // Verificação server-side do limite de itens (anti-bypass)
+      // Verificação server-side do limite (anti-bypass). A trava REAL é o trigger
+      // do banco (enforce_item_limit); isto é só pra mensagem amigável.
       try {
         const checkRes = await fetch("/api/verificar-limite", {
           method: "POST",
@@ -141,7 +145,6 @@ export function useItems() {
         }
       } catch (err: any) {
         if (err.message?.includes("Limite")) throw err;
-        // Se a API falhar (rede), continua (fallback para client-side check que já existe)
         console.warn("[createItem] Verificação server-side falhou, usando client-side:", err);
       }
 
@@ -158,8 +161,6 @@ export function useItems() {
         .single();
 
       if (error) {
-        // A trava de limite vive no banco (trigger enforce_item_limit).
-        // Traduz a rejeição para uma mensagem amigável → a UI abre o upgrade.
         if (error.message?.includes("ITEM_LIMIT_REACHED")) {
           throw new Error("Limite de itens atingido. Faça upgrade para o Plano Família.");
         }
@@ -168,7 +169,6 @@ export function useItems() {
 
       addItem(item as Item);
 
-      // Registra evento
       await supabase.from("item_events").insert({
         house_id: currentHouse.id,
         item_id: item.id,
@@ -180,7 +180,7 @@ export function useItems() {
 
       return item as Item;
     },
-    [currentHouse, supabase, addItem, userId]
+    [supabase, addItem]
   );
 
   const deleteItem = useCallback(
@@ -194,7 +194,7 @@ export function useItems() {
 
   const updateQuantity = useCallback(
     async (itemId: string, quantity: string) => {
-      const item = items.find((i) => i.id === itemId);
+      const item = useAppStore.getState().items.find((i) => i.id === itemId);
       if (!item) return;
 
       const trimmed = quantity.trim();
@@ -211,7 +211,7 @@ export function useItems() {
         throw error;
       }
     },
-    [items, supabase, updateItem]
+    [supabase, updateItem]
   );
 
   const renameItem = useCallback(
@@ -219,6 +219,8 @@ export function useItems() {
       const trimmed = newName.trim();
       if (!trimmed) throw new Error("Nome inválido");
 
+      // Captura o original ANTES da alteração otimista (pra reverter em erro).
+      const original = useAppStore.getState().items.find((i) => i.id === itemId);
       updateItem(itemId, { name: trimmed });
 
       const { data: { user } } = await supabase.auth.getUser();
@@ -228,13 +230,11 @@ export function useItems() {
         .eq("id", itemId);
 
       if (error) {
-        // Reverte
-        const original = items.find((i) => i.id === itemId);
         if (original) updateItem(itemId, { name: original.name });
         throw error;
       }
     },
-    [items, supabase, updateItem]
+    [supabase, updateItem]
   );
 
   const editItem = useCallback(
@@ -242,10 +242,10 @@ export function useItems() {
       const trimmed = data.name.trim();
       if (!trimmed) throw new Error("Nome inválido");
 
-      const original = items.find((i) => i.id === itemId);
+      // Captura o original ANTES da alteração otimista (pra reverter em erro).
+      const original = useAppStore.getState().items.find((i) => i.id === itemId);
       if (!original) return;
 
-      // Atualiza otimisticamente
       updateItem(itemId, {
         name: trimmed,
         note: data.note?.trim() || undefined,
@@ -264,7 +264,6 @@ export function useItems() {
         .eq("id", itemId);
 
       if (error) {
-        // Reverte
         updateItem(itemId, {
           name: original.name,
           note: original.note,
@@ -273,7 +272,7 @@ export function useItems() {
         throw error;
       }
     },
-    [items, supabase, updateItem]
+    [supabase, updateItem]
   );
 
   return {
