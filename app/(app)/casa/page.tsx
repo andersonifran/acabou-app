@@ -53,6 +53,7 @@ export default function CasaPage() {
   const [inviteUrl, setInviteUrl] = useState("");
   const [loadingInvite, setLoadingInvite] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [addingMemberId, setAddingMemberId] = useState<string | null>(null);
   const [currentUserId, setCurrentUserId] = useState<string>(storeUserId ?? "");
 
   // Perfil do usuário atual — inicia do store (cache instantâneo, sem flash de "Sem nome")
@@ -397,7 +398,8 @@ export default function CasaPage() {
 
   // ── ADICIONAR MEMBRO EXISTENTE A ESTA CASA ──────────────
   async function handleAddExistingMember(userId: string, memberData: any) {
-    if (!currentHouse) return;
+    if (!currentHouse || addingMemberId) return; // guarda contra double-click (duplicado/23505)
+    setAddingMemberId(userId);
     try {
       const { error } = await supabase
         .from("house_members")
@@ -445,6 +447,8 @@ export default function CasaPage() {
         console.error("Erro ao adicionar membro:", err);
         alert("Erro ao adicionar membro. Tente novamente.");
       }
+    } finally {
+      setAddingMemberId(null);
     }
   }
 
@@ -962,9 +966,10 @@ export default function CasaPage() {
                       </div>
                       <button
                         onClick={() => handleAddExistingMember(m.user_id, m)}
-                        className="shrink-0 bg-blue-600 text-white text-xs font-semibold px-3 py-1.5 rounded-lg hover:bg-blue-700 transition-colors"
+                        disabled={addingMemberId === m.user_id}
+                        className="shrink-0 bg-blue-600 text-white text-xs font-semibold px-3 py-1.5 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-60"
                       >
-                        Adicionar
+                        {addingMemberId === m.user_id ? "Adicionando..." : "Adicionar"}
                       </button>
                     </div>
                   ))}

@@ -217,6 +217,9 @@ export function AddItemModal({
       const catName = categories.find((c) => c.id === newCategoryId)?.name ?? "";
       recordItemUse(newName.trim(), catName);
       onClose();
+    } catch (err: any) {
+      // Sem isto, um erro de rede/limite deixava o modal travado e mudo.
+      alert(err?.message ?? "Não consegui salvar agora. Verifique a conexão e tente de novo. 🙏");
     } finally {
       setLoading(false);
     }

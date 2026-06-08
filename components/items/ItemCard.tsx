@@ -175,7 +175,7 @@ export const ItemCard = memo(function ItemCard({
               ) : (
                 <div>
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="font-semibold text-gray-900">{item.name}</span>
+                    <span className="font-semibold text-gray-900 break-words min-w-0">{item.name}</span>
                     {item.is_recurring && (
                       <span className="text-xs text-purple-600 bg-purple-50 px-2 py-0.5 rounded-full">
                         🔄 Recorrente

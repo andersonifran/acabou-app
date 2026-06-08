@@ -40,6 +40,7 @@ export default function ListaPage() {
   const [finishing, setFinishing] = useState(false);
   const [done, setDone] = useState(false);
   const [showPurchasedModal, setShowPurchasedModal] = useState<string | null>(null);
+  const [purchasing, setPurchasing] = useState(false);
   const [showPlanLimit, setShowPlanLimit] = useState(false);
   const [partialMsg, setPartialMsg] = useState<string | null>(null);
   const { canAddItem, isPaid } = useSubscription();
@@ -77,17 +78,22 @@ export default function ListaPage() {
   }
 
   async function confirmPurchased(putAsHas: boolean) {
-    if (!showPurchasedModal) return;
+    if (!showPurchasedModal || purchasing) return; // guarda contra double-submit
     // Era o último item da lista? Então a compra "zerou" → momento de celebrar.
     const wasLast =
       shoppingListItems.length === 1 && shoppingListItems[0].id === showPurchasedModal;
-    if (putAsHas) {
-      await markPurchased(showPurchasedModal);
-    }
-    setShowPurchasedModal(null);
-    if (putAsHas && wasLast) {
-      hapticSuccess();
-      setDone(true);
+    setPurchasing(true);
+    try {
+      if (putAsHas) {
+        await markPurchased(showPurchasedModal);
+      }
+      setShowPurchasedModal(null);
+      if (putAsHas && wasLast) {
+        hapticSuccess();
+        setDone(true);
+      }
+    } finally {
+      setPurchasing(false);
     }
   }
 
@@ -266,7 +272,7 @@ export default function ListaPage() {
                           )}
                         </button>
                         <div className="flex-1 min-w-0">
-                          <p className={cn("font-medium text-gray-900", checkedIds.has(item.id) && "line-through text-gray-500")}>
+                          <p className={cn("font-medium text-gray-900 break-words", checkedIds.has(item.id) && "line-through text-gray-500")}>
                             {item.name}
                           </p>
                           {(item.note || item.quantity_text) && (
@@ -318,13 +324,15 @@ export default function ListaPage() {
             <div className="flex gap-3">
               <button
                 onClick={() => confirmPurchased(false)}
-                className="flex-1 py-3 rounded-xl border border-gray-200 text-gray-700 font-semibold"
+                disabled={purchasing}
+                className="flex-1 py-3 rounded-xl border border-gray-200 text-gray-700 font-semibold disabled:opacity-60"
               >
                 Não agora
               </button>
               <button
                 onClick={() => confirmPurchased(true)}
-                className="flex-1 py-3 rounded-xl bg-green-600 text-white font-semibold hover:bg-green-700 transition-colors"
+                disabled={purchasing}
+                className="flex-1 py-3 rounded-xl bg-green-600 text-white font-semibold hover:bg-green-700 transition-colors disabled:opacity-60"
               >
                 {copy.confirm}
               </button>
