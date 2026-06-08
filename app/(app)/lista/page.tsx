@@ -297,7 +297,7 @@ export default function ListaPage() {
             </div>
 
             {checkedIds.size > 0 && (
-              <div className="fixed bottom-20 left-0 right-0 px-4">
+              <div className="fixed bottom-[calc(5rem+env(safe-area-inset-bottom))] left-0 right-0 px-4">
                 <div className="max-w-lg mx-auto">
                   <button
                     onClick={finishShopping}

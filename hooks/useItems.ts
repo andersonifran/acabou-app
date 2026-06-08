@@ -185,25 +185,32 @@ export function useItems() {
 
   const deleteItem = useCallback(
     async (itemId: string) => {
-      const { error } = await supabase.from("items").delete().eq("id", itemId);
-      if (error) throw error;
+      // Otimista: some da lista NA HORA. Captura o original p/ reverter em erro.
+      const original = useAppStore.getState().items.find((i) => i.id === itemId);
       removeItem(itemId);
+
+      const { error } = await supabase.from("items").delete().eq("id", itemId);
+      if (error) {
+        if (original) addItem(original); // reverte (re-insere) se o banco falhar
+        throw error;
+      }
     },
-    [supabase, removeItem]
+    [supabase, removeItem, addItem]
   );
 
   const updateQuantity = useCallback(
     async (itemId: string, quantity: string) => {
-      const item = useAppStore.getState().items.find((i) => i.id === itemId);
+      const { items: cur, userId } = useAppStore.getState();
+      const item = cur.find((i) => i.id === itemId);
       if (!item) return;
 
       const trimmed = quantity.trim();
       updateItem(itemId, { quantity_text: trimmed || undefined });
 
-      const { data: { user } } = await supabase.auth.getUser();
+      // Sem getUser(): usa o userId já cacheado no store (edição instantânea).
       const { error } = await supabase
         .from("items")
-        .update({ quantity_text: trimmed || null, updated_by: user?.id })
+        .update({ quantity_text: trimmed || null, updated_by: userId })
         .eq("id", itemId);
 
       if (error) {
@@ -220,13 +227,14 @@ export function useItems() {
       if (!trimmed) throw new Error("Nome inválido");
 
       // Captura o original ANTES da alteração otimista (pra reverter em erro).
-      const original = useAppStore.getState().items.find((i) => i.id === itemId);
+      const { items: cur, userId } = useAppStore.getState();
+      const original = cur.find((i) => i.id === itemId);
       updateItem(itemId, { name: trimmed });
 
-      const { data: { user } } = await supabase.auth.getUser();
+      // Sem getUser(): usa o userId já cacheado no store.
       const { error } = await supabase
         .from("items")
-        .update({ name: trimmed, updated_by: user?.id })
+        .update({ name: trimmed, updated_by: userId })
         .eq("id", itemId);
 
       if (error) {
@@ -243,7 +251,8 @@ export function useItems() {
       if (!trimmed) throw new Error("Nome inválido");
 
       // Captura o original ANTES da alteração otimista (pra reverter em erro).
-      const original = useAppStore.getState().items.find((i) => i.id === itemId);
+      const { items: cur, userId } = useAppStore.getState();
+      const original = cur.find((i) => i.id === itemId);
       if (!original) return;
 
       updateItem(itemId, {
@@ -252,14 +261,14 @@ export function useItems() {
         quantity_text: data.quantity_text?.trim() || undefined,
       });
 
-      const { data: { user } } = await supabase.auth.getUser();
+      // Sem getUser(): usa o userId já cacheado no store.
       const { error } = await supabase
         .from("items")
         .update({
           name: trimmed,
           note: data.note?.trim() || null,
           quantity_text: data.quantity_text?.trim() || null,
-          updated_by: user?.id,
+          updated_by: userId,
         })
         .eq("id", itemId);
 
