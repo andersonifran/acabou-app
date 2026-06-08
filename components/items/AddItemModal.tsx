@@ -16,20 +16,27 @@ function normalize(s: string): string {
     .trim();
 }
 
-// Pontua a relevância (0 = não casa). Começa-com > palavra-começa > contém.
-// Busca no nome + apelidos do item, tudo sem acento.
+// Pontua um texto contra a busca: exato(100) > começa-com(80) > palavra-começa(60) > contém(40).
+function scoreField(field: string, q: string): number {
+  const f = normalize(field);
+  if (f === q) return 100;
+  if (f.startsWith(q)) return 80;
+  if (f.split(/\s+/).some((w) => w.startsWith(q))) return 60;
+  if (f.includes(q)) return 40;
+  return 0;
+}
+
+// Relevância do item. REGRA: match no NOME sempre ganha de match só por APELIDO
+// (senão "cloro" mostrava "Água sanitária" — apelido — na frente de "Cloro para
+// piscina" — nome). Apelido ainda funciona, mas ranqueia abaixo de qualquer nome.
 function matchScore(name: string, extraAliases: string[] | undefined, query: string): number {
   const q = normalize(query);
   if (!q) return 1; // sem busca → tudo passa (neutro)
-  const fields = [name, ...(extraAliases ?? [])].map(normalize);
-  let score = 0;
-  for (const f of fields) {
-    if (f === q) score = Math.max(score, 100);
-    else if (f.startsWith(q)) score = Math.max(score, 80);
-    else if (f.split(/\s+/).some((w) => w.startsWith(q))) score = Math.max(score, 60);
-    else if (f.includes(q)) score = Math.max(score, 40);
-  }
-  return score;
+  const nameScore = scoreField(name, q);
+  if (nameScore > 0) return nameScore;
+  let aliasScore = 0;
+  for (const a of extraAliases ?? []) aliasScore = Math.max(aliasScore, scoreField(a, q));
+  return aliasScore > 0 ? Math.max(15, aliasScore - 25) : 0;
 }
 
 interface AddItemModalProps {
