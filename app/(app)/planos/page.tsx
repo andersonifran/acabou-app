@@ -105,6 +105,13 @@ function PlanosContent() {
   const [mpCheckout, setMpCheckout] = useState(false);
   const [cancelOpen, setCancelOpen] = useState(false);
   const [cancelling, setCancelling] = useState(false);
+  // Está rodando DENTRO do app da Play Store (TWA com Play Billing)?
+  // Se sim, NÃO mostramos nada do Mercado Pago (exigência do Google: app da Loja
+  // só pode usar/mostrar o pagamento do Google). Web/PWA continua com Mercado Pago.
+  const [isTwa, setIsTwa] = useState(false);
+  useEffect(() => {
+    isPlayBillingAvailable().then(setIsTwa).catch(() => setIsTwa(false));
+  }, []);
 
   // Assinatura recorrente paga e ativa (não trial) → pode cancelar
   const hasActiveSubscription = isPaid && !isTrialing && (rawPlan === "monthly" || rawPlan === "yearly");
@@ -442,7 +449,17 @@ function PlanosContent() {
                   Renova automaticamente em <strong>{formatDate(planExpiresAt)}</strong>. Pode cancelar quando quiser, sem multa.
                 </p>
                 <button
-                  onClick={() => setCancelOpen(true)}
+                  onClick={() => {
+                    if (isTwa) {
+                      // App da Play Store: o cancelamento é gerenciado pelo Google.
+                      window.open(
+                        "https://play.google.com/store/account/subscriptions?package=br.com.acabouapp.www.twa",
+                        "_blank"
+                      );
+                    } else {
+                      setCancelOpen(true);
+                    }
+                  }}
                   className="mt-3 text-sm font-medium text-gray-400 hover:text-red-600 transition-colors"
                 >
                   Cancelar assinatura
@@ -508,6 +525,15 @@ function PlanosContent() {
                 // Só trava como "Plano atual" se for plano pago ATIVO de verdade.
                 // Em teste grátis (monthly/trialing) o botão fica liberado p/ assinar.
                 const lockedAsCurrent = isCurrent && isActivePaidPlan && !showReactivate;
+                // O card "Grátis" só diz "Plano atual" quando o usuário REALMENTE
+                // está no grátis. Se ele é pagante/trial, vira só "Plano grátis"
+                // (não pode aparecer "Plano atual" em dois cards ao mesmo tempo).
+                const ctaText =
+                  plan.id === "free"
+                    ? currentPlan === "free" && !isTrialing
+                      ? "Plano atual"
+                      : "Plano grátis"
+                    : plan.cta;
                 return (
                   <button
                     onClick={() => handleSubscribe(plan)}
@@ -528,7 +554,7 @@ function PlanosContent() {
                         <Loader2 size={16} className="animate-spin" />
                         Aguarde...
                       </>
-                    ) : showReactivate ? "Reativar assinatura" : lockedAsCurrent ? "Plano atual" : plan.cta}
+                    ) : showReactivate ? "Reativar assinatura" : lockedAsCurrent ? "Plano atual" : ctaText}
                   </button>
                 );
               })()}
@@ -536,7 +562,9 @@ function PlanosContent() {
           </div>
         ))}
 
-        <PaymentTrust className="pt-2 pb-2" />
+        {/* Selo do Mercado Pago: SÓ na web/PWA. No app da Play Store é proibido
+            (Google exige pagamento exclusivo do Google). */}
+        {!isTwa && <PaymentTrust className="pt-2 pb-2" />}
 
         <p className="text-center text-xs text-gray-400 pb-4">
           Cancelamento a qualquer momento. Sem multa.
