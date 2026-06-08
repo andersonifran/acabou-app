@@ -26,30 +26,18 @@ export function ThemeApplier() {
   const pathname = usePathname();
 
   useEffect(() => {
-    const html = document.documentElement;
-    const isAppRoute = APP_ROUTES.some(
-      (r) => pathname === r || pathname.startsWith(r + "/")
-    );
-
-    function apply() {
-      try {
-        const stored = localStorage.getItem("acabou_theme");
-        const sysDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-        // 'dark'/'light' = escolha manual fixa; ausente = segue o sistema.
-        const useDark = stored === "dark" || (stored == null && sysDark);
-        if (isAppRoute && useDark) {
-          if (!html.classList.contains("dark")) html.classList.add("dark");
-        } else {
-          if (html.classList.contains("dark")) html.classList.remove("dark");
-        }
-      } catch { /* localStorage bloqueado */ }
-    }
-
-    apply();
-
-    const mql = window.matchMedia("(prefers-color-scheme: dark)");
-    mql.addEventListener("change", apply);
-    return () => mql.removeEventListener("change", apply);
+    try {
+      const html = document.documentElement;
+      const isAppRoute = APP_ROUTES.some(
+        (r) => pathname === r || pathname.startsWith(r + "/")
+      );
+      // Só dark se o usuário escolheu explicitamente (revertido o "seguir sistema").
+      if (isAppRoute && localStorage.getItem("acabou_theme") === "dark") {
+        if (!html.classList.contains("dark")) html.classList.add("dark");
+      } else {
+        if (html.classList.contains("dark")) html.classList.remove("dark");
+      }
+    } catch { /* localStorage bloqueado */ }
   }, [pathname]);
 
   return null;

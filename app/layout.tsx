@@ -62,12 +62,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   var path = window.location.pathname;
                   var appRoutes = ['/home','/despensa','/lista','/casa','/configuracoes','/planos','/feedback'];
                   var isAppRoute = appRoutes.some(function(r){ return path === r || path.indexOf(r + '/') === 0; });
-                  var stored = localStorage.getItem('acabou_theme');
-                  var sysDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-                  // Segue o tema do CELULAR por padrão; o botão do app (acabou_theme)
-                  // é override manual ('dark'/'light' fixam; ausente = segue o sistema).
-                  var useDark = stored === 'dark' || (stored == null && sysDark);
-                  if (isAppRoute && useDark) {
+                  // Só ativa dark se o usuário ESCOLHEU explicitamente (botão do app).
+                  // (O "seguir o sistema" foi revertido: o tema escuro precisa de
+                  // polimento antes de expor a todos — bug do banner ilegível.)
+                  if (isAppRoute && localStorage.getItem('acabou_theme') === 'dark') {
                     document.documentElement.classList.add('dark');
                   } else {
                     document.documentElement.classList.remove('dark');
