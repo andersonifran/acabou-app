@@ -87,7 +87,9 @@ export function SwipeNavigator({
 
       if (next !== idx) {
         hapticLight();
-        router.push(tabs[next]);
+        // replace (não push): trocar de aba NÃO empilha histórico — evita o
+        // acúmulo de entradas no Chrome que causava lentidão/travas com o tempo.
+        router.replace(tabs[next]);
       }
     }
 

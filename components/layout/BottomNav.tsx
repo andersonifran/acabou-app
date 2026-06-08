@@ -183,6 +183,7 @@ export function BottomNav() {
             <Link
               key={href}
               href={href}
+              replace
               onClick={() => { setAddItemModalOpen(false); if (!active) hapticLight(); }}
               className="flex-1 flex flex-col items-center justify-center py-2 gap-0.5 transition-colors active:scale-90"
             >
