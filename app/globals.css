@@ -103,6 +103,23 @@ input, select, textarea {
 .dark .text-red-700, .dark .text-red-600, .dark .text-red-500 { color: #f87171 !important; }
 .dark .text-violet-700 { color: #a78bfa !important; }
 .dark .text-teal-700 { color: #5eead4 !important; }
+/* Cores que faltavam no dark (premium/legível): azul, índigo, roxo, laranja, sky */
+.dark .text-blue-900, .dark .text-blue-800, .dark .text-blue-700,
+.dark .text-blue-600, .dark .text-blue-500 { color: #60a5fa !important; }
+.dark .text-indigo-700, .dark .text-indigo-600 { color: #818cf8 !important; }
+.dark .text-purple-800, .dark .text-purple-700, .dark .text-purple-600 { color: #c084fc !important; }
+.dark .text-orange-700, .dark .text-orange-600, .dark .text-orange-500 { color: #fb923c !important; }
+.dark .text-sky-700, .dark .text-sky-600 { color: #38bdf8 !important; }
+/* Fundos de ícone (círculos -100) — tint escuro em vez de claro */
+.dark .bg-blue-100 { background-color: rgba(59, 130, 246, 0.15) !important; }
+.dark .bg-purple-100 { background-color: rgba(168, 85, 247, 0.15) !important; }
+.dark .bg-orange-100 { background-color: rgba(249, 115, 22, 0.15) !important; }
+.dark .bg-sky-100 { background-color: rgba(14, 165, 233, 0.15) !important; }
+.dark .bg-red-100 { background-color: rgba(239, 68, 68, 0.15) !important; }
+.dark .bg-teal-100 { background-color: rgba(20, 184, 166, 0.15) !important; }
+.dark .bg-violet-100 { background-color: rgba(139, 92, 246, 0.15) !important; }
+/* Destaque de notificação NÃO-LIDA no dropdown (bg-green-50/50 não era coberto) */
+.dark .bg-green-50\/50 { background-color: rgba(22, 163, 74, 0.12) !important; }
 
 /* Borders — sutis */
 .dark .border-gray-50 { border-color: #1f2937 !important; }
