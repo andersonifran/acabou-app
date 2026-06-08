@@ -294,7 +294,7 @@ export default function CasaPage() {
         localStorage.setItem("acabou_selected_house", remaining[0].id);
       }
       setConfirmDeleteHouse(false);
-      router.push("/home");
+      router.replace("/home"); // local excluído: replace pra o "voltar" não retornar à casa deletada
     } catch (err) {
       console.error("Erro ao excluir casa:", err);
       alert("Erro ao excluir local. Tente novamente.");

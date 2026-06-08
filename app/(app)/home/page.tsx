@@ -173,7 +173,7 @@ export default function HomePage() {
   function openModal(status: string) {
     // "Comprei!" → vai direto para a lista de compras (para marcar itens como comprados)
     if (status === "tem") {
-      router.push("/lista");
+      router.replace("/lista"); // aba → replace (não empilha histórico)
       return;
     }
 
@@ -187,7 +187,7 @@ export default function HomePage() {
 
     // "Acabou!" e "Está acabando!" → navega para despensa filtrada pelo status
     // Assim o usuário vê os itens relevantes e pode gerenciá-los
-    router.push(`/despensa?filtro=${status}`);
+    router.replace(`/despensa?filtro=${status}`); // aba → replace (não empilha histórico)
   }
 
   function eventLabel(event: any): string {
@@ -474,7 +474,7 @@ export default function HomePage() {
 
             {/* Resumo */}
             <div className="grid grid-cols-2 gap-3">
-              <Link href="/lista" className="bg-white rounded-2xl border border-green-200 shadow-sm p-4 hover:shadow-md transition-all">
+              <Link href="/lista" replace className="bg-white rounded-2xl border border-green-200 shadow-sm p-4 hover:shadow-md transition-all">
                 <div className="flex items-center justify-between mb-1">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src="/acoes/contador-comprar.png" alt="" aria-hidden="true" draggable={false} className="w-8 h-8 object-contain select-none pointer-events-none" />
@@ -483,7 +483,7 @@ export default function HomePage() {
                 <p className="text-3xl font-black text-green-600">{shoppingCount}</p>
                 <p className="text-sm text-gray-500 font-medium">Para comprar</p>
               </Link>
-              <Link href="/despensa?filtro=acabando" className="bg-white rounded-2xl border border-amber-200 shadow-sm p-4 hover:shadow-md transition-all">
+              <Link href="/despensa?filtro=acabando" replace className="bg-white rounded-2xl border border-amber-200 shadow-sm p-4 hover:shadow-md transition-all">
                 <div className="flex items-center justify-between mb-1">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src="/acoes/contador-acabando.png" alt="" aria-hidden="true" draggable={false} className="w-8 h-8 object-contain select-none pointer-events-none" />
@@ -519,6 +519,7 @@ export default function HomePage() {
             {shoppingCount > 0 && (
               <Link
                 href="/lista"
+                replace
                 className="flex items-center justify-between bg-green-600 text-white rounded-2xl px-5 py-4 hover:bg-green-700 transition-colors"
               >
                 <div>
