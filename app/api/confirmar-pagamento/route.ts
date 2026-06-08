@@ -36,12 +36,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
     }
 
-    // 2. Casa do usuário
+    // 2. Casa do usuário (a casa que ele É DONO — a assinatura é por dono).
+    // limit(1).maybeSingle() em vez de single(): dono pode ter VÁRias casas, e
+    // single() quebraria (500). role=owner garante que é a casa dele, não uma
+    // casa em que ele é só convidado.
     const { data: membership } = await supabase
       .from("house_members")
       .select("house_id")
       .eq("user_id", user.id)
-      .single();
+      .eq("role", "owner")
+      .limit(1)
+      .maybeSingle();
 
     if (!membership) {
       return NextResponse.json({ error: "Casa não encontrada" }, { status: 404 });
