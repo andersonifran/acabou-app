@@ -1,5 +1,5 @@
 // Service Worker — Acabou? v3
-const CACHE = "acabou-v141";
+const CACHE = "acabou-v142";
 
 // ── Instalação ──
 self.addEventListener("install", (event) => {
@@ -29,6 +29,21 @@ self.addEventListener("fetch", (event) => {
   // Só GET da própria origem
   if (event.request.method !== "GET") return;
   if (url.origin !== self.location.origin) return;
+
+  // ── PEDIDOS RSC do Next (navegação LEVE entre abas / prefetch) ──────────────
+  // SEMPRE rede, NUNCA cache. O Next já faz cache-busting com ?_rsc=<hash>, mas
+  // esse hash NÃO depende do build. Se o SW (cache-first) servir um RSC cacheado
+  // de um BUILD ANTIGO, o cliente detecta build divergente e cai pra navegação
+  // DURA (recarrega o documento inteiro = a "tarja azul" + reload a cada aba).
+  // Não interceptar = o browser busca da rede normalmente = navegação leve, sem
+  // tarja. (Era a causa real da tarja azul/recarregar em toda troca de aba.)
+  if (
+    url.searchParams.has("_rsc") ||
+    event.request.headers.get("RSC") === "1" ||
+    event.request.headers.get("Next-Router-Prefetch") === "1"
+  ) {
+    return; // deixa passar direto pra rede (sem cache do SW)
+  }
 
   // NAVEGAÇÕES (HTML pages): network-first com fallback offline
   // Chrome EXIGE que navegações passem por respondWith para classificar como PWA válida
