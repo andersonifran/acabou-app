@@ -49,8 +49,10 @@ next-env.d.ts
 /public/Video*.mp4
 /public/video-source*.mp4
 
-# scripts utilitários locais (caminhos absolutos)
-/scripts/
+# scripts utilitários locais (caminhos absolutos) — exceto o guard de build,
+# que PRECISA ser versionado (roda no build da Vercel pra blindar o SW).
+/scripts/*
+!/scripts/check-sw-rsc.mjs
 
 # gerador de screenshots de marketing (arquivo local pesado, não deve ir pra produção)
 /public/marketing/
