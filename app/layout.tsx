@@ -62,14 +62,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   var path = window.location.pathname;
                   var appRoutes = ['/home','/despensa','/lista','/casa','/configuracoes','/planos','/feedback'];
                   var isAppRoute = appRoutes.some(function(r){ return path === r || path.indexOf(r + '/') === 0; });
-                  // Só ativa dark se o usuário ESCOLHEU explicitamente (botão do app).
-                  // (O "seguir o sistema" foi revertido: o tema escuro precisa de
-                  // polimento antes de expor a todos — bug do banner ilegível.)
-                  if (isAppRoute && localStorage.getItem('acabou_theme') === 'dark') {
-                    document.documentElement.classList.add('dark');
-                  } else {
-                    document.documentElement.classList.remove('dark');
-                  }
+                  var stored = localStorage.getItem('acabou_theme');
+                  var sysDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+                  // Segue o tema do CELULAR; o botão do app (acabou_theme) é override.
+                  var useDark = isAppRoute && (stored === 'dark' || (stored == null && sysDark));
+                  if (useDark) document.documentElement.classList.add('dark');
+                  else document.documentElement.classList.remove('dark');
+                  // Barra de status (topo) segue o tema do app (theme-color dinâmico).
+                  var m = document.querySelector('meta[name="theme-color"]');
+                  if (m) m.setAttribute('content', useDark ? '#0f172a' : '#FFFFFF');
                 } catch(e){}
               })();
             `,

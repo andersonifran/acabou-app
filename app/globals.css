@@ -158,10 +158,16 @@ input, select, textarea {
 .dark ::-webkit-scrollbar-track { background: #111827; }
 .dark ::-webkit-scrollbar-thumb { background: #374151; border-radius: 3px; }
 
-/* Gradients dark mode */
-.dark .from-gray-50 { --tw-gradient-from: #111827 !important; }
-.dark .from-green-50 { --tw-gradient-from: rgba(22, 163, 74, 0.1) !important; }
-.dark .to-emerald-50 { --tw-gradient-to: rgba(16, 185, 129, 0.1) !important; }
+/* Gradientes no DARK — banners pastel (from-*-50: amber, azul, vermelho, verde…)
+   NÃO eram cobertos → fundo claro + texto claro = ILEGÍVEL (bug do banner
+   "Tem item te esperando" e dos cards de ação). Como `.dark` só vale nas rotas do
+   app — e lá todo gradiente é um banner pastel claro — neutralizamos pra um fundo
+   escuro legível (igual aos cards). Ícones e textos coloridos seguem (o
+   `.dark .text-*` cuida deles). Regra única = cobre TODOS, sem esquecer cor. */
+.dark [class*="bg-gradient-to-"] {
+  background-image: none !important;
+  background-color: #1a1f2e !important;
+}
 
 /* Header verde principal — mantém cores da marca */
 .dark .bg-green-600 { background-color: #16a34a !important; }

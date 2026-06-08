@@ -26,18 +26,32 @@ export function ThemeApplier() {
   const pathname = usePathname();
 
   useEffect(() => {
-    try {
-      const html = document.documentElement;
-      const isAppRoute = APP_ROUTES.some(
-        (r) => pathname === r || pathname.startsWith(r + "/")
-      );
-      // Só dark se o usuário escolheu explicitamente (revertido o "seguir sistema").
-      if (isAppRoute && localStorage.getItem("acabou_theme") === "dark") {
-        if (!html.classList.contains("dark")) html.classList.add("dark");
-      } else {
-        if (html.classList.contains("dark")) html.classList.remove("dark");
-      }
-    } catch { /* localStorage bloqueado */ }
+    const html = document.documentElement;
+    const isAppRoute = APP_ROUTES.some(
+      (r) => pathname === r || pathname.startsWith(r + "/")
+    );
+
+    function apply() {
+      try {
+        const stored = localStorage.getItem("acabou_theme");
+        const sysDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        // Segue o celular; botão do app (acabou_theme) é override manual.
+        const useDark = isAppRoute && (stored === "dark" || (stored == null && sysDark));
+        if (useDark) {
+          if (!html.classList.contains("dark")) html.classList.add("dark");
+        } else {
+          if (html.classList.contains("dark")) html.classList.remove("dark");
+        }
+        // Barra de status (topo) segue o tema do app.
+        const m = document.querySelector('meta[name="theme-color"]');
+        if (m) m.setAttribute("content", useDark ? "#0f172a" : "#FFFFFF");
+      } catch { /* localStorage bloqueado */ }
+    }
+
+    apply();
+    const mql = window.matchMedia("(prefers-color-scheme: dark)");
+    mql.addEventListener("change", apply);
+    return () => mql.removeEventListener("change", apply);
   }, [pathname]);
 
   return null;
