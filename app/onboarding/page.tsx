@@ -225,6 +225,11 @@ function OnboardingContent() {
       trackCadastroCompleto();
 
       setHouseId(data.houseId);
+      // CORREÇÃO do bug "limitado a 10 itens no primeiro acesso": contas novas
+      // ganham trial de 14 dias (acesso ilimitado), mas esta tela mantinha
+      // userIsPaid=false → travava em 10 itens na seleção inicial. Agora usa o
+      // isPaid AUTORITATIVO do servidor (trial/pago → ilimitado; grátis → teto).
+      setUserIsPaid(data.isPaid === true);
       setPropertyType(setupPropertyType);
       setActiveCategory((ITEMS_BY_TYPE[setupPropertyType] ?? ITEMS_BY_TYPE.casa)[0].category);
       setNeedsSetup(false);

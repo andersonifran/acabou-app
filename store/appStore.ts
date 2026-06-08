@@ -25,6 +25,8 @@ function writeCache(state: AppState) {
     userId: state.userId,
     profileName: state.profileName,
     profileAvatar: state.profileAvatar,
+    profileEmail: state.profileEmail,
+    profilePhone: state.profilePhone,
     currentHouse: state.currentHouse,
     allHouses: state.allHouses,
     members: state.members,
@@ -61,6 +63,12 @@ interface AppState {
   profileName: string;
   profileAvatar: string;
   setProfile: (name: string, avatar: string) => void;
+
+  // Contato do perfil (email/telefone) — cacheado p/ Configurações abrir
+  // instantânea, sem "fade-in" do email. Limpo no reset() (logout) → sem vazar.
+  profileEmail: string;
+  profilePhone: string;
+  setProfileContact: (email: string, phone: string) => void;
 
   // Indica se os dados ja foram confirmados com o servidor nesta sessao
   // (usado para esconder banners de plano enquanto dados sao do cache stale)
@@ -135,6 +143,10 @@ export const useAppStore = create<AppState>((set, get) => {
     profileAvatar: cached.profileAvatar ?? "",
     setProfile: (name, avatar) => persistThenSet({ profileName: name, profileAvatar: avatar }),
 
+    profileEmail: cached.profileEmail ?? "",
+    profilePhone: cached.profilePhone ?? "",
+    setProfileContact: (email, phone) => persistThenSet({ profileEmail: email, profilePhone: phone }),
+
     // dataSyncComplete inicia false: enquanto nao confirmar com o servidor,
     // banners de plano ficam escondidos para evitar flash de info errada
     dataSyncComplete: false,
@@ -181,6 +193,8 @@ export const useAppStore = create<AppState>((set, get) => {
         userId: null,
         profileName: "",
         profileAvatar: "",
+        profileEmail: "",
+        profilePhone: "",
         currentHouse: null,
         allHouses: [],
         members: [],

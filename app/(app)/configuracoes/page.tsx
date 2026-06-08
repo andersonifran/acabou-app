@@ -23,7 +23,7 @@ import { ReminderTimePicker } from "@/components/shared/ReminderTimePicker";
 export default function ConfiguracoesPage() {
   const router = useRouter();
   const supabase = createClient();
-  const { currentHouse, items, categories, reset, updateItem, profileName: storeProfileName, profileAvatar: storeProfileAvatar, setProfile: setStoreProfile } = useAppStore();
+  const { currentHouse, items, categories, reset, updateItem, profileName: storeProfileName, profileAvatar: storeProfileAvatar, profileEmail: storeProfileEmail, profilePhone: storeProfilePhone, setProfile: setStoreProfile, setProfileContact: setStoreProfileContact } = useAppStore();
   const { isPaid, canAddItem, limits } = useSubscription();
   const { renameItem, deleteItem, createItem } = useItems();
   const { isOwner, isMember, canAccessPlans } = useRole();
@@ -45,7 +45,12 @@ export default function ConfiguracoesPage() {
         .select("*")
         .eq("user_id", user.id)
         .single();
-      if (data) setProfile(data as Profile);
+      if (data) {
+        setProfile(data as Profile);
+        // Cacheia email/telefone no store → próxima abertura mostra na hora,
+        // sem "fade-in". O reset() (logout) limpa, então não vaza entre contas.
+        setStoreProfileContact((data as any).email ?? "", (data as any).phone ?? "");
+      }
       setLoadingProfile(false);
     }
     loadProfile();
@@ -257,9 +262,9 @@ export default function ConfiguracoesPage() {
                 <h2 className="font-bold text-gray-900 text-lg mt-3">
                   {profile?.full_name ?? storeProfileName ?? "..."}
                 </h2>
-                <p className="text-sm text-gray-500 mt-0.5">{profile?.email ?? ""}</p>
-                {profile?.phone && (
-                  <p className="text-xs text-gray-400 mt-0.5">{profile.phone}</p>
+                <p className="text-sm text-gray-500 mt-0.5">{profile?.email ?? storeProfileEmail ?? ""}</p>
+                {(profile?.phone ?? storeProfilePhone) && (
+                  <p className="text-xs text-gray-400 mt-0.5">{profile?.phone ?? storeProfilePhone}</p>
                 )}
               </div>
             </div>

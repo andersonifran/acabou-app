@@ -152,7 +152,22 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    return NextResponse.json({ success: true, houseId: house.id });
+    // isPaid AUTORITATIVO (servidor): a casa nasceu com trial de 14 dias ou
+    // herdou plano pago/trial ativo? Em ambos os casos o usuário tem acesso
+    // ILIMITADO (sem teto de 10 itens) durante o onboarding. Conta que entrou
+    // como grátis (já usou trial / é convidado) → isPaid=false → teto free.
+    // Anti-burla: o gatilho de item no banco continua sendo a trava final.
+    const isPaid =
+      inheritedPlan.plan !== "free" &&
+      (inheritedPlan.plan_status === "active" || inheritedPlan.plan_status === "trialing");
+
+    return NextResponse.json({
+      success: true,
+      houseId: house.id,
+      isPaid,
+      plan: inheritedPlan.plan,
+      plan_status: inheritedPlan.plan_status,
+    });
   } catch (err: any) {
     console.error("[criar-casa]", err);
     return NextResponse.json(
