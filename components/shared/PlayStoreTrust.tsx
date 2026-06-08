@@ -16,16 +16,14 @@ export function PlayStoreTrust({ className = "" }: { className?: string }) {
         <span>🔒</span> Pagamento 100% seguro pelo
       </div>
       <div className="inline-flex items-center gap-2">
-        <span
-          aria-hidden
-          className="inline-block"
-          style={{
-            width: 0,
-            height: 0,
-            borderTop: "9px solid transparent",
-            borderBottom: "9px solid transparent",
-            borderLeft: "15px solid #1E9839",
-          }}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/google-play.png"
+          alt="Google Play"
+          width={26}
+          height={26}
+          draggable={false}
+          className="w-[26px] h-[26px] select-none"
         />
         <span className="text-lg font-bold text-gray-800">Google Play</span>
       </div>
