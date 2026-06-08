@@ -37,14 +37,27 @@ const ACTION_BUTTONS = [
   { label: "Comprei!", sublabel: "Já comprou o item", img: "/acoes/acao-comprei.png", bg: "bg-white border-green-300 shadow-sm", status: "tem" },
 ];
 
+// Cache EM MEMÓRIA (persiste entre remontagens na mesma sessão). Ao voltar pra
+// Home, mostra atividades/lembretes na hora (sem flash de "carregando") e
+// atualiza em background — toque instantâneo de app grande, sem spinner.
+let homeCacheHouseId: string | null = null;
+let homeCacheEvents: (ItemEvent & { profile?: any; item?: any })[] = [];
+let homeCacheReminders: { id: string; name: string }[] = [];
+
 export default function HomePage() {
   const router = useRouter();
   const supabase = createClient();
   const { items, currentHouse, allHouses, setCurrentHouse, setAllHouses, setMembers, setItems, setAddItemModalOpen, setInitialStatus, dataSyncComplete } = useAppStore();
 
   const [currentUserId, setCurrentUserId] = useState<string>("");
-  const [recentEvents, setRecentEvents] = useState<(ItemEvent & { profile?: any; item?: any })[]>([]);
-  const [reminders, setReminders] = useState<{ id: string; name: string }[]>([]);
+  // Inicia com o cache da MESMA casa → render instantâneo, sem flash de vazio.
+  const homeCacheHit = homeCacheHouseId === ((currentHouse as any)?.id ?? null);
+  const [recentEvents, setRecentEvents] = useState<(ItemEvent & { profile?: any; item?: any })[]>(
+    homeCacheHit ? homeCacheEvents : []
+  );
+  const [reminders, setReminders] = useState<{ id: string; name: string }[]>(
+    homeCacheHit ? homeCacheReminders : []
+  );
   const [showHousePicker, setShowHousePicker] = useState(false);
   const [switchingHouse, setSwitchingHouse] = useState(false);
   const [showPlanLimit, setShowPlanLimit] = useState(false);
@@ -104,7 +117,11 @@ export default function HomePage() {
       .eq("house_id", currentHouse!.id)
       .order("created_at", { ascending: false })
       .limit(8);
-    if (data) setRecentEvents(data as any);
+    if (data) {
+      setRecentEvents(data as any);
+      homeCacheEvents = data as any;
+      homeCacheHouseId = currentHouse!.id;
+    }
   }
 
   async function loadReminders() {
@@ -117,7 +134,11 @@ export default function HomePage() {
       .lte("next_reminder_at", now)
       .neq("status", "acabou")
       .neq("status", "comprar");
-    if (data) setReminders(data);
+    if (data) {
+      setReminders(data);
+      homeCacheReminders = data;
+      homeCacheHouseId = currentHouse!.id;
+    }
   }
 
   async function switchHouse(house: House) {
