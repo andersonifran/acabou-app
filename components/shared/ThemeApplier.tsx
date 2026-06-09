@@ -42,11 +42,9 @@ export function ThemeApplier() {
         } else {
           if (html.classList.contains("dark")) html.classList.remove("dark");
         }
-        // Barra de status (topo) segue o tema do app. Só altera quando MUDA de
-        // verdade (senão re-setava a cada troca de aba → piscava a tarja branca).
-        const m = document.querySelector('meta[name="theme-color"]');
-        const want = useDark ? "#0f172a" : "#FFFFFF";
-        if (m && m.getAttribute("content") !== want) m.setAttribute("content", want);
+        // NÃO mexer no theme-color aqui: re-setar a meta na navegação fazia a
+        // barra de status piscar branco ao trocar de aba. A barra escura no app
+        // da Loja vem da config NATIVA (themeColorDark no .aab), sem JS.
       } catch { /* localStorage bloqueado */ }
     }
 

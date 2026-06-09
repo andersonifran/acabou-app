@@ -515,7 +515,9 @@ export default function ConfiguracoesPage() {
                       onClick={() => saveReminderSettings(!reminderEnabled, reminderTime)}
                       disabled={savingReminder}
                       className={cn(
-                        "relative inline-flex h-6 w-11 items-center rounded-full transition-colors disabled:opacity-50",
+                        // sem disabled:opacity → o toggle NÃO pisca quando você
+                        // escolhe um horário (que dispara um save rápido).
+                        "relative inline-flex h-6 w-11 items-center rounded-full transition-colors",
                         reminderEnabled ? "bg-green-600" : "bg-gray-200"
                       )}
                     >

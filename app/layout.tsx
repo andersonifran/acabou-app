@@ -68,10 +68,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   var useDark = isAppRoute && (stored === 'dark' || (stored == null && sysDark));
                   if (useDark) document.documentElement.classList.add('dark');
                   else document.documentElement.classList.remove('dark');
-                  // Barra de status (topo) segue o tema do app — só altera quando muda.
-                  var m = document.querySelector('meta[name="theme-color"]');
-                  var want = useDark ? '#0f172a' : '#FFFFFF';
-                  if (m && m.getAttribute('content') !== want) m.setAttribute('content', want);
+                  // NÃO mexer no theme-color na navegação (piscava branco no topo).
                 } catch(e){}
               })();
             `,
