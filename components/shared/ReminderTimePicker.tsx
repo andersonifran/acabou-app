@@ -13,7 +13,7 @@ import { cn } from "@/lib/utils";
  */
 
 const PRESETS = [
-  { label: "Manhã", time: "08:00", emoji: "🌅" },
+  { label: "Manhã", time: "08:00", emoji: "🌄" },
   { label: "Meio-dia", time: "12:00", emoji: "☀️" },
   { label: "Tardinha", time: "18:00", emoji: "🌇" },
   { label: "Noite", time: "20:00", emoji: "🌙" },

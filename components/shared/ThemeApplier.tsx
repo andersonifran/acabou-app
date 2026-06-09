@@ -42,9 +42,11 @@ export function ThemeApplier() {
         } else {
           if (html.classList.contains("dark")) html.classList.remove("dark");
         }
-        // Barra de status (topo) segue o tema do app.
+        // Barra de status (topo) segue o tema do app. Só altera quando MUDA de
+        // verdade (senão re-setava a cada troca de aba → piscava a tarja branca).
         const m = document.querySelector('meta[name="theme-color"]');
-        if (m) m.setAttribute("content", useDark ? "#0f172a" : "#FFFFFF");
+        const want = useDark ? "#0f172a" : "#FFFFFF";
+        if (m && m.getAttribute("content") !== want) m.setAttribute("content", want);
       } catch { /* localStorage bloqueado */ }
     }
 
