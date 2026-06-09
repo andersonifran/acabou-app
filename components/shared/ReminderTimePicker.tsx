@@ -60,7 +60,7 @@ export function ReminderTimePicker({
               className={cn(
                 // "afundadinho" (scale-95) suave SÓ no botão tocado; sem opacity no
                 // disabled → os outros não piscam/balançam ao escolher um horário.
-                "flex items-center justify-center gap-1.5 rounded-xl border px-2 py-2.5 text-sm font-medium transition-all duration-100 active:scale-[0.94] disabled:cursor-not-allowed",
+                "flex items-center justify-center gap-1.5 rounded-xl border px-2 py-2.5 text-sm font-medium transition-all duration-150 ease-out active:scale-[0.93] disabled:cursor-not-allowed",
                 active
                   ? "border-green-600 bg-green-50 text-green-700"
                   : "border-gray-200 bg-white text-gray-600 hover:border-gray-300"

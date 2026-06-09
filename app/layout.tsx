@@ -34,10 +34,10 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
-  themeColor: "#FFFFFF",
-  // O app tem o PRÓPRIO modo escuro (classe .dark). Declarar color-scheme evita
-  // que o "Forçar Modo escuro p/ conteúdo web" (Chrome/Samsung) escureça o app
-  // à força — era isso que deixava o fundo (atrás das barras) preto.
+  // NÃO declarar themeColor aqui de propósito: o Next "restaurava" a meta
+  // theme-color pro valor estático a CADA navegação (piscava branco no topo ao
+  // trocar de aba). Agora a meta é criada e controlada 100% pelo nosso script
+  // (no <head>) + ThemeApplier → segue o tema (navy no escuro) SEM piscar.
   colorScheme: "light",
   // Quando o teclado do celular sobe, ele EMPURRA o conteúdo pra cima (em vez de
   // cobrir). Assim o campo digitado + as sugestões ficam SEMPRE visíveis acima do
@@ -68,11 +68,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   var useDark = isAppRoute && (stored === 'dark' || (stored == null && sysDark));
                   if (useDark) document.documentElement.classList.add('dark');
                   else document.documentElement.classList.remove('dark');
-                  // Barra de status segue o tema; só altera quando MUDA (não pisca
-                  // na troca de aba, pois o valor é o mesmo).
+                  // Barra de status: a meta é NOSSA (Next não declara mais). Cria
+                  // se não existir e segue o tema; só altera quando MUDA (não pisca
+                  // na troca de aba, pois o Next não a "restaura" mais).
                   var m = document.querySelector('meta[name="theme-color"]');
+                  if (!m) { m = document.createElement('meta'); m.setAttribute('name','theme-color'); document.head.appendChild(m); }
                   var want = useDark ? '#0f172a' : '#FFFFFF';
-                  if (m && m.getAttribute('content') !== want) m.setAttribute('content', want);
+                  if (m.getAttribute('content') !== want) m.setAttribute('content', want);
                 } catch(e){}
               })();
             `,

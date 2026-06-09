@@ -47,7 +47,7 @@ export function StatusButtons({ currentStatus, onChangeStatus, disabled }: Statu
           className={cn(
             // Feedback premium SÓ no botão tocado: "afundadinho" (scale-95) suave.
             // Sem opacity no disabled → os outros não dimam/piscam.
-            "px-3 py-1 rounded-full text-xs font-medium border transition-all duration-100 active:scale-90",
+            "px-3 py-1 rounded-full text-xs font-medium border transition-all duration-150 ease-out active:scale-[0.93]",
             currentStatus === status ? activeClass : inactiveClass,
             disabled && "cursor-not-allowed"
           )}
