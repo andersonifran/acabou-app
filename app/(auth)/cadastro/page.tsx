@@ -77,38 +77,21 @@ export default function CadastroPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
 
-    // Step 1 → validação e avanço
-    if (step === 1 && !hasInvite) {
-      if (password.length < 6) {
-        setError("A senha deve ter pelo menos 6 caracteres.");
-        return;
-      }
-      if (!isValidMobile(phone)) {
-        setError("Informe um celular/WhatsApp válido com DDD. Ex.: (11) 99999-9999");
-        return;
-      }
-      setError("");
-      setStep(2);
+    // Validações da conta (todos os fluxos). Cadastro agora é 1 ETAPA: o LOCAL é
+    // escolhido DEPOIS da confirmação, no onboarding (mesmo caminho do Google).
+    if (password.length < 6) {
+      setError("A senha deve ter pelo menos 6 caracteres.");
+      return;
+    }
+    if (!isValidMobile(phone)) {
+      setError("Informe um celular/WhatsApp válido com DDD. Ex.: (11) 99999-9999");
       return;
     }
 
-    // Se tem convite → criar conta + perfil (sem casa) e ir para /convite/TOKEN
-    // Se NÃO tem convite → criar conta + casa + perfil e ir para /onboarding
     setLoading(true);
     setError("");
 
     try {
-      // Valida senha e telefone no step 1 quando tem convite
-      if (hasInvite && password.length < 6) {
-        setError("A senha deve ter pelo menos 6 caracteres.");
-        setLoading(false);
-        return;
-      }
-      if (hasInvite && !isValidMobile(phone)) {
-        setError("Informe um celular/WhatsApp válido com DDD. Ex.: (11) 99999-9999");
-        setLoading(false);
-        return;
-      }
 
       // 1. Cria conta no Supabase Auth
       const { data: authData, error: authError } = await supabase.auth.signUp({
@@ -119,7 +102,7 @@ export default function CadastroPage() {
           // confirmação de email (no /onboarding), quando já existe sessão.
           data: hasInvite
             ? { full_name: fullName, phone: phone || null, pending_invite: conviteToken }
-            : { full_name: fullName, phone: phone || null, house_name: houseName, property_type: propertyType },
+            : { full_name: fullName, phone: phone || null },
           // O link de confirmação volta pro nosso callback (troca código por sessão).
           emailRedirectTo: `${window.location.origin}/api/auth/callback`,
         },
@@ -154,40 +137,23 @@ export default function CadastroPage() {
       if (!authData.user) throw new Error("Erro ao criar conta.");
       const userId = authData.user.id;
 
+      // Rastreia conversão de cadastro (Google Ads + Meta Pixel)
+      trackCadastroCompleto();
+
       if (hasInvite) {
-        // Usuário convidado: cria perfil + aceita convite server-side
+        // Convidado: cria perfil + aceita o convite no servidor → /home.
         const res = await fetch("/api/criar-perfil", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ userId, fullName, phone, conviteToken }),
         });
-
         if (!res.ok) {
           const data = await res.json();
           throw new Error(data.error ?? "Erro ao criar perfil.");
         }
-      } else {
-        // Usuário normal: cria casa + perfil
-        const res = await fetch("/api/criar-casa", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ userId, houseName, fullName, phone, propertyType }),
-        });
-
-        if (!res.ok) {
-          const data = await res.json();
-          throw new Error(data.error ?? "Erro ao criar casa.");
-        }
-      }
-
-      // Rastreia conversão de cadastro (Google Ads + Meta Pixel)
-      trackCadastroCompleto();
-
-      // Redireciona
-      if (conviteToken) {
-        // Convite já foi aceito server-side → vai direto para o app
         router.push("/home");
       } else {
+        // Sem convite → onboarding (escolhe o local + cria a casa lá, igual ao Google).
         router.push("/onboarding");
       }
       router.refresh();
@@ -334,13 +300,8 @@ export default function CadastroPage() {
         <div className="mb-5">
           <div className="flex gap-2">
             <div className="flex-1 h-1.5 rounded-full bg-green-600" />
-            {!hasInvite && (
-              <div className={`flex-1 h-1.5 rounded-full ${step === 2 ? "bg-green-600" : "bg-gray-200"}`} />
-            )}
           </div>
-          <p className="text-xs text-gray-400 mt-1.5">
-            {hasInvite ? "Cadastro rápido" : `Passo ${step} de ${totalSteps}`}
-          </p>
+          <p className="text-xs text-gray-400 mt-1.5">Cadastro rápido — leva 1 minuto</p>
         </div>
 
         <div className="w-full">
@@ -494,16 +455,14 @@ export default function CadastroPage() {
 
           <button
             type="submit"
-            disabled={loading || (step === 1
-              ? !fullName || !email || !password || !phone
-              : !houseName)}
+            disabled={loading || !fullName || !email || !password || !phone}
             className="w-full bg-green-600 text-white font-semibold py-4 rounded-xl hover:bg-green-700 transition-colors disabled:opacity-60 text-base mt-2"
           >
             {loading
-              ? (hasInvite ? "Criando conta..." : "Criando conta...")
-              : step === 1
-                ? (hasInvite ? "Criar conta e aceitar convite" : "Continuar")
-                : "Criar minha casa"}
+              ? "Criando conta..."
+              : hasInvite
+                ? "Criar conta e aceitar convite"
+                : "Criar conta grátis"}
           </button>
         </form>
 
