@@ -42,9 +42,13 @@ export function ThemeApplier() {
         } else {
           if (html.classList.contains("dark")) html.classList.remove("dark");
         }
-        // NÃO mexer no theme-color aqui: re-setar a meta na navegação fazia a
-        // barra de status piscar branco ao trocar de aba. A barra escura no app
-        // da Loja vem da config NATIVA (themeColorDark no .aab), sem JS.
+        // Barra de status (topo) segue o tema do app — navy no escuro, branco no
+        // claro. CHAVE p/ não piscar: só ALTERA a meta quando o valor MUDA de
+        // verdade. Na troca de aba (mesmo tema) o valor é igual → não toca → não
+        // pisca. Só muda em: trocar o tema OU sair pra landing.
+        const m = document.querySelector('meta[name="theme-color"]');
+        const want = useDark ? "#0f172a" : "#FFFFFF";
+        if (m && m.getAttribute("content") !== want) m.setAttribute("content", want);
       } catch { /* localStorage bloqueado */ }
     }
 
