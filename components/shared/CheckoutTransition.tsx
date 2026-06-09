@@ -52,8 +52,12 @@ export function CheckoutTransition({ planName, price }: { planName: string; pric
       {/* Badge Mercado Pago oficial + formas de pagamento */}
       <div className="w-full max-w-xs bg-gray-50 border border-gray-100 rounded-2xl px-4 py-3.5 mb-6">
         <p className="text-[11px] text-gray-400 mb-2">Pagamento processado por</p>
+        {/* Logo MP: colorida no claro; no escuro a tela vira escura (overrides .dark)
+            e a versão BRANCA aparece (a colorida sumia no fundo escuro). */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/mercadopago/mp-horizontal.png" alt="Mercado Pago" draggable={false} className="h-9 w-auto mx-auto mb-2.5 select-none" />
+        <img src="/mercadopago/mp-horizontal.png" alt="Mercado Pago" draggable={false} className="mp-logo-colored h-9 w-auto mx-auto mb-2.5 select-none" />
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/mercadopago/mp-horizontal-white.png" alt="Mercado Pago" draggable={false} className="mp-logo-white hidden h-9 w-auto mx-auto mb-2.5 select-none" />
         <div className="flex items-center justify-center gap-2 flex-wrap">
           {["💳 Cartão de crédito", "🔁 Renova automático"].map((m) => (
             <span key={m} className="text-[11px] font-semibold text-gray-600 bg-white border border-gray-200 rounded-lg px-2.5 py-1">

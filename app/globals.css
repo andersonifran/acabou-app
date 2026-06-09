@@ -522,3 +522,11 @@ input, select, textarea {
 .dark .hover\:bg-green-200:hover { background-color: rgba(34, 197, 94, 0.16) !important; }
 .dark .hover\:bg-amber-50:hover { background-color: rgba(245, 158, 11, 0.16) !important; }
 .dark .hover\:bg-blue-50:hover { background-color: rgba(59, 130, 246, 0.16) !important; }
+
+/* ── Logo do Mercado Pago: troca pra versão BRANCA no escuro ──
+   A tela-ponte de checkout (CheckoutTransition) e o selo PaymentTrust(light) na
+   /planos usam a logo COLORIDA, que some no fundo escuro. No escuro escondemos a
+   colorida e mostramos a branca (mp-horizontal-white). No claro (sem .dark) a
+   branca fica com `hidden` (Tailwind) e a colorida aparece → claro intacto. */
+.dark .mp-logo-colored { display: none !important; }
+.dark .mp-logo-white { display: block !important; }

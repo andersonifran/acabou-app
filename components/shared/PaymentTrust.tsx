@@ -27,13 +27,34 @@ export function PaymentTrust({
       >
         <span>🔒</span> Pagamento 100% seguro processado por
       </div>
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src={isDark ? "/mercadopago/mp-horizontal-white.png" : "/mercadopago/mp-horizontal.png"}
-        alt="Mercado Pago"
-        draggable={false}
-        className="h-11 md:h-12 w-auto select-none"
-      />
+      {isDark ? (
+        // variant "dark": fundo explicitamente escuro/colorido → sempre logo branca
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src="/mercadopago/mp-horizontal-white.png"
+          alt="Mercado Pago"
+          draggable={false}
+          className="h-11 md:h-12 w-auto select-none"
+        />
+      ) : (
+        // variant "light": SEGUE o tema do app — colorida no claro, branca no escuro
+        <>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/mercadopago/mp-horizontal.png"
+            alt="Mercado Pago"
+            draggable={false}
+            className="mp-logo-colored h-11 md:h-12 w-auto select-none"
+          />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/mercadopago/mp-horizontal-white.png"
+            alt="Mercado Pago"
+            draggable={false}
+            className="mp-logo-white hidden h-11 md:h-12 w-auto select-none"
+          />
+        </>
+      )}
       <div className="flex items-center justify-center gap-2 flex-wrap">
         {["💳 Cartão de crédito", "🔁 Renovação automática", "↩️ Cancele quando quiser"].map((m) => (
           <span
