@@ -42,20 +42,30 @@ export function ThemeApplier() {
         } else {
           if (html.classList.contains("dark")) html.classList.remove("dark");
         }
-        // Barra de status (topo) segue o tema do app — navy no escuro, branco no
-        // claro. CHAVE p/ não piscar: só ALTERA a meta quando o valor MUDA de
-        // verdade. Na troca de aba (mesmo tema) o valor é igual → não toca → não
-        // pisca. Só muda em: trocar o tema OU sair pra landing.
-        const m = document.querySelector('meta[name="theme-color"]');
+        // Barra de status: força a cor desejada (want) ESCREVENDO o mesmo content
+        // nos DOIS metas com media (em layout.tsx). Como ambos ficam com a mesma
+        // cor, qualquer que seja o tema do SISTEMA que o Chrome use pra escolher, a
+        // barra fica certa: navy no escuro do app; branco no claro/landing (mesmo
+        // sob sistema escuro). Apendar um meta SEM media depois NÃO venceria
+        // (first-match-wins). ANTI-FLASH: só altera quando o valor MUDA → na troca
+        // de aba (mesmo tema) não toca, não pisca.
         const want = useDark ? "#0f172a" : "#FFFFFF";
-        if (m && m.getAttribute("content") !== want) m.setAttribute("content", want);
+        document.querySelectorAll('meta[name="theme-color"]').forEach((m) => {
+          if (m.getAttribute("content") !== want) m.setAttribute("content", want);
+        });
       } catch { /* localStorage bloqueado */ }
     }
 
     apply();
     const mql = window.matchMedia("(prefers-color-scheme: dark)");
     mql.addEventListener("change", apply);
-    return () => mql.removeEventListener("change", apply);
+    // Toggle manual de tema dispara este evento → a barra de status atualiza NA
+    // HORA, sem esperar a próxima navegação.
+    window.addEventListener("acabou-theme", apply);
+    return () => {
+      mql.removeEventListener("change", apply);
+      window.removeEventListener("acabou-theme", apply);
+    };
   }, [pathname]);
 
   return null;

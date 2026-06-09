@@ -24,6 +24,9 @@ export function ThemeToggle({ className }: { className?: string }) {
       document.documentElement.classList.remove("dark");
       localStorage.setItem("acabou_theme", "light");
     }
+    // Avisa o ThemeApplier pra atualizar a barra de status NA HORA (o toggle manual
+    // tem que mandar na barra imediatamente, sem precisar navegar).
+    window.dispatchEvent(new Event("acabou-theme"));
   }
 
   if (!mounted) return null;

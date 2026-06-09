@@ -50,6 +50,21 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="pt-BR" className={geist.variable} suppressHydrationWarning>
       <head>
+        {/* Barra de status (PWA INSTALADO / standalone) — caminho NATIVO sem JS.
+            Estes DOIS metas com `media` deixam o Chrome (>=93, Android standalone)
+            resolver claro/escuro sozinho: navy no escuro do sistema, branco no
+            claro — SEM flash e SEM depender do timing do JS. Resolvem o bug do
+            topo branco no PWA instalado em modo escuro.
+            O JS (script inline + ThemeApplier) FORÇA a cor desejada ESCREVENDO o
+            mesmo `content` (want) nos DOIS metas — assim, qualquer que seja o tema
+            do sistema que o Chrome use pra escolher, a barra fica certa (navy no
+            escuro do app; branco no claro/landing, mesmo sob sistema escuro).
+            NÃO apendar um meta SEM media depois: NÃO venceria (first-match-wins, o
+            Chrome usa o PRIMEIRO meta cujo `media` casa). São JSX cru no <head> →
+            o Next NÃO os "restaura" por navegação (a tarja branca vinha do
+            `themeColor` no viewport, proibido pelo guard). */}
+        <meta name="theme-color" media="(prefers-color-scheme: light)" content="#FFFFFF" />
+        <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0f172a" />
         {/* Dark mode — aplica APENAS dentro das rotas do app (area logada).
             Landing, login, cadastro e termos sempre ficam no modo claro
             para garantir leitura e branding consistente.
@@ -68,13 +83,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   var useDark = isAppRoute && (stored === 'dark' || (stored == null && sysDark));
                   if (useDark) document.documentElement.classList.add('dark');
                   else document.documentElement.classList.remove('dark');
-                  // Barra de status: a meta é NOSSA (Next não declara mais). Cria
-                  // se não existir e segue o tema; só altera quando MUDA (não pisca
-                  // na troca de aba, pois o Next não a "restaura" mais).
-                  var m = document.querySelector('meta[name="theme-color"]');
-                  if (!m) { m = document.createElement('meta'); m.setAttribute('name','theme-color'); document.head.appendChild(m); }
+                  // Barra de status: FORÇA a cor desejada nos DOIS metas com media.
+                  // Ambos recebem o MESMO valor (want), então qualquer que seja o
+                  // tema do SISTEMA que o Chrome use pra escolher entre eles, a barra
+                  // fica certa: navy no escuro do app; branco no claro/landing (mesmo
+                  // sob sistema escuro). Apendar um meta SEM media depois NÃO venceria
+                  // (first-match-wins). ANTI-FLASH: só altera quando o valor MUDA.
                   var want = useDark ? '#0f172a' : '#FFFFFF';
-                  if (m.getAttribute('content') !== want) m.setAttribute('content', want);
+                  var tcs = document.querySelectorAll('meta[name="theme-color"]');
+                  for (var i=0;i<tcs.length;i++){ if (tcs[i].getAttribute('content') !== want) tcs[i].setAttribute('content', want); }
                 } catch(e){}
               })();
             `,
