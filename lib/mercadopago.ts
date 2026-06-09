@@ -1,3 +1,4 @@
+import "server-only"; // trava: nunca pode ir pro client (protege MERCADOPAGO_ACCESS_TOKEN)
 import MercadoPagoLib, { Preference, PreApproval } from "mercadopago";
 
 const client = new MercadoPagoLib({

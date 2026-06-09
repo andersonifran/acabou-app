@@ -1,3 +1,4 @@
+import "server-only"; // trava: nunca pode ir pro client (protege RESEND_API_KEY)
 import { Resend } from "resend";
 
 // =============================================

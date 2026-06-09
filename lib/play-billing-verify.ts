@@ -1,3 +1,5 @@
+import "server-only"; // trava: nunca pode ir pro client (protege GOOGLE_PLAY_SA_JSON)
+
 // =============================================================
 // GOOGLE PLAY BILLING — validação no SERVIDOR (anti-burla)
 // =============================================================

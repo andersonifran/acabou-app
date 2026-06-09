@@ -1,3 +1,4 @@
+import "server-only"; // trava: nunca pode ir pro client (protege VAPID_PRIVATE_KEY)
 import webpush from "web-push";
 
 // Configura VAPID keys

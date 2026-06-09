@@ -1,3 +1,4 @@
+import "server-only"; // trava: se algum dia for importado no client, o build QUEBRA (não vaza service_role)
 import { createServerClient } from "@supabase/ssr";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
