@@ -479,7 +479,7 @@ function PlanosContent() {
             )}
           >
             {plan.badge && (
-              <div className="bg-green-600 text-white text-center py-1.5 text-xs font-bold tracking-wide uppercase flex items-center justify-center gap-1">
+              <div className="planos-launch-badge bg-green-600 text-white text-center py-1.5 text-xs font-bold tracking-wide uppercase flex items-center justify-center gap-1">
                 <Star size={12} />
                 {plan.badge}
               </div>
@@ -547,7 +547,7 @@ function PlanosContent() {
                         ? "bg-green-600 text-white hover:bg-green-700 disabled:opacity-70"
                         : plan.ctaDisabled || lockedAsCurrent
                         ? "bg-gray-100 text-gray-400 cursor-default"
-                        : "bg-gray-900 text-white hover:bg-gray-800 disabled:opacity-70"
+                        : "planos-cta-secondary bg-gray-900 text-white hover:bg-gray-800 disabled:opacity-70"
                     )}
                   >
                     {loadingPlan === plan.id ? (

@@ -432,3 +432,93 @@ input, select, textarea {
 .brand-grad {
   background: radial-gradient(120% 170% at 50% 50%, #2ead46 0%, #16a34a 50%, #15803d 100%);
 }
+
+/* ═══════════════════════════════════════════════════════
+   DARK SYSTEM v2 — consolidação da auditoria (premium AA)
+   Superfícies: base #0f172a · card #1a1f2e · sunken #111827
+   · raised(pílula) #232a3b · elevated(botão) #1e2536→#243044
+   Apenas .dark + !important. NÃO altera o claro. Estes blocos
+   SOBREPÕEM (cascade) regras anteriores onde os valores foram
+   intencionalmente elevados pela auditoria — não duplicam.
+   ═══════════════════════════════════════════════════════ */
+
+/* ── SUPERFÍCIES translúcidas branco → elevada escura ──
+   PRINTS #3/#4 (pílulas "Plano Família inclui") e #5 (badge cadeado).
+   `.dark .bg-white` só casa a classe exata — bg-white/XX ficava clara. */
+.dark .bg-white\/60,
+.dark .bg-white\/70,
+.dark .bg-white\/80,
+.dark .bg-white\/90 { background-color: #232a3b !important; }
+/* Badge sobre o verde do WhatsApp (lista) — mantém branco translúcido legível */
+.dark .bg-white\/25 { background-color: rgba(255, 255, 255, 0.18) !important; }
+
+/* ── PERIGO — ink claro legível (corrige "vermelho sobre vermelho") ──
+   PRINTS #1/#2/#7. text-red-800/900 não tinham override → caíam no
+   #991b1b do Tailwind sobre tint vermelho = ilegível. Sobe p/ #fca5a5.
+   Mantém #f87171 só p/ ícones/links de baixa ênfase (red-500/400). */
+.dark .text-red-900,
+.dark .text-red-800,
+.dark .text-red-700,
+.dark .text-red-600 { color: #fca5a5 !important; }
+.dark .text-red-500,
+.dark .text-red-400 { color: #f87171 !important; }
+
+/* Banners de perigo — fundo mais sólido + bordas visíveis (PRINT #1/#2/#7) */
+.dark .bg-red-50 { background-color: rgba(239, 68, 68, 0.14) !important; }
+.dark .bg-red-100 { background-color: rgba(239, 68, 68, 0.20) !important; }
+.dark .border-red-100 { border-color: rgba(248, 113, 113, 0.35) !important; }
+.dark .border-red-200 { border-color: rgba(248, 113, 113, 0.45) !important; }
+.dark .hover\:bg-red-50:hover { background-color: rgba(239, 68, 68, 0.18) !important; }
+.dark .hover\:bg-red-100:hover { background-color: rgba(239, 68, 68, 0.24) !important; }
+
+/* ── AVISO — âmbar mais claro p/ texto xs + bordas (PRINT #2b/#9) ── */
+.dark .text-amber-800,
+.dark .text-amber-700,
+.dark .text-amber-600 { color: #fcd34d !important; }
+.dark .border-amber-100 { border-color: rgba(245, 158, 11, 0.30) !important; }
+.dark .border-amber-200 { border-color: rgba(245, 158, 11, 0.40) !important; }
+
+/* ── INFO/SUCESSO — bordas que faltavam (PRINT #9, wrapper pílulas, ativo) ── */
+.dark .border-blue-100 { border-color: rgba(96, 165, 250, 0.30) !important; }
+.dark .border-blue-200 { border-color: rgba(96, 165, 250, 0.40) !important; }
+.dark .border-purple-100 { border-color: rgba(192, 132, 252, 0.30) !important; }
+.dark .border-purple-200 { border-color: rgba(192, 132, 252, 0.40) !important; }
+.dark .border-green-100 { border-color: rgba(34, 197, 94, 0.25) !important; }
+.dark .border-green-600 { border-color: #22c55e !important; }
+
+/* ── TEXTO secundário xs — ganho seguro de contraste (PRINT #9) ── */
+.dark .text-gray-500 { color: #8595ad !important; }
+
+/* Hover de gradiente recupera feedback (gradiente já vira #1a1f2e) */
+.dark [class*="bg-gradient-to-"][class*="hover\:from-"]:hover { background-color: #232a3b !important; }
+
+/* ── PRINT #6 — CTA secundário "Assinar R$/mês": anel verde + fundo elevado.
+   Hierarquia ABAIXO do CTA verde PREENCHIDO (Anual). Marker class adicionada
+   cirurgicamente no ramo else do cn() em planos/page.tsx. Só .dark; claro intacto. */
+.dark .planos-cta-secondary {
+  background-color: #1e2536 !important;
+  color: #e2e8f0 !important;
+  border: 1.5px solid #22c55e !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4) !important;
+}
+.dark .planos-cta-secondary:hover { background-color: #243044 !important; }
+
+/* ── Contraste AA — ajustes pós-verificação (pares < 4.5:1 que faltavam) ── */
+/* text-gray-400 era #64748b (3.45:1) — sobe p/ #94a3b8 (~6:1): "recursos não
+   incluídos", rodapé, link "Cancelar assinatura". Mantém-se mais claro que o
+   text-gray-500 (#8595ad), preservando a hierarquia. */
+.dark .text-gray-400 { color: #94a3b8 !important; }
+/* Placeholder dos inputs era #64748b (3.08:1) — sobe p/ #94a3b8 (~5.7:1). */
+.dark input::placeholder,
+.dark textarea::placeholder { color: #94a3b8 !important; }
+/* Badge "PREÇO DE LANÇAMENTO" (branco em verde, texto 12px = exige 4.5:1):
+   verde mais escuro SÓ no badge → branco = 5.0:1 (AA). NÃO afeta o CTA verde
+   preenchido (texto maior, passa em 3:1) nem o modo claro. */
+.dark .planos-launch-badge { background-color: #15803d !important; }
+
+/* ── Sem flash pastel claro no hover/active (estado base já estava certo) ── */
+.dark .hover\:bg-green-50:hover,
+.dark .hover\:bg-green-100:hover,
+.dark .hover\:bg-green-200:hover { background-color: rgba(34, 197, 94, 0.16) !important; }
+.dark .hover\:bg-amber-50:hover { background-color: rgba(245, 158, 11, 0.16) !important; }
+.dark .hover\:bg-blue-50:hover { background-color: rgba(59, 130, 246, 0.16) !important; }
