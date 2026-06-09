@@ -6,6 +6,7 @@ import { Item, ItemStatus, Category, STATUS_LABELS, SHOPPING_LIST_STATUSES } fro
 import { cn } from "@/lib/utils";
 import { SUGGESTED_ITEMS } from "@/lib/item-catalog";
 import { recordItemUse, getLearnedItems, type LearnedItem } from "@/lib/learned-items";
+import { hapticSuccess } from "@/lib/haptics";
 
 // Tira acento + maiúscula → "Açúcar" e "acucar" viram a mesma coisa.
 function normalize(s: string): string {
@@ -216,6 +217,7 @@ export function AddItemModal({
       // Aprende: registra o uso (alimenta sugestões entre casas + ranking).
       const catName = categories.find((c) => c.id === newCategoryId)?.name ?? "";
       recordItemUse(newName.trim(), catName);
+      hapticSuccess(); // tec de recompensa ao salvar item (sensação premium)
       onClose();
     } catch (err: any) {
       // Sem isto, um erro de rede/limite deixava o modal travado e mudo.
