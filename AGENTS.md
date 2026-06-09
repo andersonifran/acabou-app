@@ -54,3 +54,19 @@ tema → não toca → não pisca). O toggle dispara `window.dispatchEvent(new
 Event("acabou-theme"))` pra a barra atualizar NA HORA.
 - Guard de build: `scripts/check-theme-flash.mjs` (roda no `npm run build`/Vercel)
   bloqueia o deploy se `themeColor` voltar pro viewport. NÃO remova o guard.
+
+# ℹ️ LIMITE CONHECIDO — tarja branca na SPLASH da PWA instalada (NÃO é bug, NÃO perseguir)
+
+Ao ABRIR a PWA instalada (Android, display standalone), aparece ~200ms de barra de
+status na **cor PADRÃO DO SISTEMA** (branca no claro / escura no escuro) ANTES do
+Chrome aplicar o `theme_color` verde. É **ARQUITETURAL**: o Android 12+ desenha a
+Window de splash do SISTEMA antes do Chrome entrar, e a PWA pura NÃO tem acesso a
+esse tema. Só a casca nativa (TWA/.aab da Play) controla o frame 0 — por isso o app
+da Play abre verde de ponta a ponta e a PWA não. Confirmado por pesquisa (Chromium
+40759522, bubblewrap #488, web.dev ~200ms). 
+- `manifest.json` `theme_color`/`background_color` = `#1E9839` (verde) é o TETO do
+  controlável pela web — **MANTER** (não voltar pra branco).
+- NÃO migrar pra `display:"fullscreen"` (esconde relógio/bateria pra sempre).
+- NÃO mexer nos metas theme-color/viewport pra tentar "consertar" a splash —
+  quebraria a barra INTERNA (que já está certa) e os guards. Verde perfeito na
+  abertura = só via TWA (que já existe).
