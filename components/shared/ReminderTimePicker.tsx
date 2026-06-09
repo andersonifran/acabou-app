@@ -58,7 +58,9 @@ export function ReminderTimePicker({
                 onChange(p.time);
               }}
               className={cn(
-                "flex items-center justify-center gap-1.5 rounded-xl border px-2 py-2.5 text-sm font-medium transition-colors disabled:opacity-50",
+                // active:scale só no botão tocado; sem opacity no disabled → os
+                // outros botões não piscam/balançam quando você escolhe um horário.
+                "flex items-center justify-center gap-1.5 rounded-xl border px-2 py-2.5 text-sm font-medium transition-colors active:scale-[0.97] disabled:cursor-not-allowed",
                 active
                   ? "border-green-600 bg-green-50 text-green-700"
                   : "border-gray-200 bg-white text-gray-600 hover:border-gray-300"
@@ -78,7 +80,7 @@ export function ReminderTimePicker({
         disabled={disabled}
         onClick={() => setCustom(true)}
         className={cn(
-          "w-full rounded-xl border px-3 py-2 text-sm font-medium transition-colors disabled:opacity-50",
+          "w-full rounded-xl border px-3 py-2 text-sm font-medium transition-colors active:scale-[0.98] disabled:cursor-not-allowed",
           custom
             ? "border-green-600 bg-green-50 text-green-700"
             : "border-gray-200 bg-white text-gray-600 hover:border-gray-300"

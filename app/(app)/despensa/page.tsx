@@ -183,7 +183,7 @@ function DespensaContent() {
               key={value}
               onClick={() => setFilter(value)}
               className={cn(
-                "py-2 rounded-xl text-xs font-semibold border transition-all text-center",
+                "py-2 rounded-xl text-xs font-semibold border transition-colors active:scale-[0.97] text-center",
                 filter === value
                   ? "bg-green-600 text-white border-green-600"
                   : "bg-white text-gray-600 border-gray-200 hover:border-green-300"

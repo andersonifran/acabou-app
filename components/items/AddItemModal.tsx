@@ -402,7 +402,7 @@ export function AddItemModal({
                     key={s}
                     onClick={() => setNewStatus(s)}
                     className={cn(
-                      "py-2.5 rounded-xl text-sm font-medium border transition-all",
+                      "py-2.5 rounded-xl text-sm font-medium border transition-colors active:scale-[0.97]",
                       newStatus === s
                         ? "bg-green-600 text-white border-green-600"
                         : "bg-gray-50 text-gray-700 border-gray-200 hover:border-green-300"

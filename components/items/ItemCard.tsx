@@ -125,12 +125,9 @@ export const ItemCard = memo(function ItemCard({
 
   return (
     <>
-      <div
-        className={cn(
-          "bg-white rounded-xl border border-gray-100 shadow-sm transition-all",
-          loading && "opacity-70"
-        )}
-      >
+      {/* Card NUNCA pisca/dimma no toque: a atualização é otimista (instantânea),
+          então não há "loading" visual no card inteiro — só o botão tocado responde. */}
+      <div className="bg-white rounded-xl border border-gray-100 shadow-sm">
         <div className="p-4">
           <div className="flex items-start justify-between gap-2 mb-3">
             <div className="flex-1 min-w-0">
