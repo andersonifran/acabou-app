@@ -165,6 +165,34 @@ export async function GET(request: NextRequest) {
     });
   }
 
+  // ── CHECK: quantos usuários NÃO confirmaram o email ──
+  // Segurança ANTES de ligar "Confirm email": se algum atual não estiver
+  // confirmado, ligar o trancaria. (Quando estava OFF, o Supabase auto-confirma,
+  // então o esperado é ZERO não-confirmados.)
+  if (acao === "check_confirmados") {
+    const users: any[] = [];
+    for (let page = 1; page <= 50; page++) {
+      const { data, error } = await admin.auth.admin.listUsers({ page, perPage: 200 });
+      if (error || !data) break;
+      const batch = data.users ?? [];
+      users.push(...batch);
+      if (batch.length < 200) break;
+    }
+    const naoConf = users.filter((u) => !u.email_confirmed_at && !u.confirmed_at);
+    return NextResponse.json({
+      ok: true,
+      acao: "check_confirmados",
+      total: users.length,
+      confirmados: users.length - naoConf.length,
+      nao_confirmados: naoConf.length,
+      exemplos_nao_confirmados: naoConf.slice(0, 20).map((u) => u.email || u.id),
+      message:
+        naoConf.length === 0
+          ? "✅ TODOS confirmados — pode ligar o Confirm email sem trancar ninguém."
+          : `⚠️ ${naoConf.length} conta(s) NÃO confirmada(s) — marcar como confirmadas ANTES de ligar.`,
+    });
+  }
+
   // ── AUDITORIA (relatório) ──
   // Vazamentos = plano != free, JÁ vencido, mas status não está "inactive"
   // (deveriam estar congelados). O esperado é ZERO.
@@ -242,6 +270,7 @@ export async function GET(request: NextRequest) {
       estender_trials_14: "?acao=estender14",
       congelar_vencidos_agora: "?acao=congelar_vencidos",
       backfill_trial_grants: "?acao=backfill_trial_grants",
+      check_confirmados: "?acao=check_confirmados",
     },
   });
 }

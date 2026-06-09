@@ -32,7 +32,13 @@ export default function LoginPage() {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
     if (error) {
-      setError("E-mail ou senha incorretos. Tente novamente.");
+      // Com "Confirm email" ON, quem ainda não confirmou cai aqui com erro próprio.
+      const msg = (error.message || "").toLowerCase();
+      if (msg.includes("not confirmed") || msg.includes("not_confirmed")) {
+        setError("Seu e-mail ainda não foi confirmado. Abra o link que enviamos pra você (confira o spam/lixo eletrônico) e tente entrar de novo.");
+      } else {
+        setError("E-mail ou senha incorretos. Tente novamente.");
+      }
       setLoading(false);
       return;
     }

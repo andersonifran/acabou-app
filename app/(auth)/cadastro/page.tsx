@@ -51,6 +51,8 @@ export default function CadastroPage() {
   const [loading, setLoading] = useState(false);
   const [loadingGoogle, setLoadingGoogle] = useState(false);
   const [error, setError] = useState("");
+  const [confirmSentTo, setConfirmSentTo] = useState<string | null>(null);
+  const [resending, setResending] = useState(false);
 
   // Step 1: conta
   const [fullName, setFullName] = useState("");
@@ -113,7 +115,13 @@ export default function CadastroPage() {
         email,
         password,
         options: {
-          data: { full_name: fullName },
+          // Guarda os dados no user_metadata pra criar a casa/trial DEPOIS da
+          // confirmação de email (no /onboarding), quando já existe sessão.
+          data: hasInvite
+            ? { full_name: fullName, phone: phone || null, pending_invite: conviteToken }
+            : { full_name: fullName, phone: phone || null, house_name: houseName, property_type: propertyType },
+          // O link de confirmação volta pro nosso callback (troca código por sessão).
+          emailRedirectTo: `${window.location.origin}/api/auth/callback`,
         },
       });
 
@@ -126,6 +134,22 @@ export default function CadastroPage() {
       // para a casa recém-criada não se misturar com dados antigos (casa-fantasma).
       useAppStore.getState().reset();
       try { localStorage.removeItem("acabou_selected_house"); } catch {}
+
+      // CONFIRMAÇÃO DE EMAIL: com "Confirm email" ON no Supabase, o signUp NÃO
+      // retorna sessão. Sem sessão não dá pra criar casa/perfil (são server-side
+      // por sessão) → mostramos a tela "confirme seu email". A criação acontece
+      // após a confirmação: no /onboarding (lê o user_metadata) ou no callback
+      // (convite via cookie). Com a confirmação OFF, há sessão → segue o fluxo
+      // atual abaixo, INTACTO (zero mudança).
+      if (!authData.session) {
+        if (conviteToken) {
+          document.cookie = `acabou_pending_invite=${conviteToken}; path=/; max-age=86400; SameSite=Lax`;
+        }
+        trackCadastroCompleto();
+        setConfirmSentTo(email);
+        setLoading(false);
+        return;
+      }
 
       if (hasInvite) {
         // Usuário convidado: cria perfil + aceita convite server-side
@@ -202,6 +226,52 @@ export default function CadastroPage() {
       setError("Erro ao entrar com Google. Tente novamente.");
       setLoadingGoogle(false);
     }
+  }
+
+  // Tela "Confirme seu e-mail" — aparece quando o Supabase exige confirmação
+  // (Confirm email ON). A conta foi criada; falta o usuário clicar no link.
+  if (confirmSentTo) {
+    return (
+      <div className="min-h-screen relative flex flex-col items-center justify-center px-4 py-8 brand-grad">
+        <div className="w-full max-w-md bg-white rounded-3xl shadow-2xl p-7 relative z-10 text-center">
+          <Mascote mood="acenando" size={96} className="mx-auto mb-1" />
+          <h1 className="text-xl font-black text-gray-900 mt-2">Confirme seu e-mail 📬</h1>
+          <p className="text-gray-600 text-sm mt-2">
+            Enviamos um link de confirmação para<br />
+            <strong className="text-gray-900 break-all">{confirmSentTo}</strong>
+          </p>
+          <p className="text-gray-500 text-sm mt-2">
+            Clique no link pra ativar sua conta e começar os <strong>14 dias grátis</strong>.
+          </p>
+          <div className="bg-green-50 rounded-xl p-3 mt-4 text-left">
+            <p className="text-sm text-green-800">
+              💡 Não chegou? Olhe o <strong>spam</strong>/lixo eletrônico — pode levar 1-2 minutos.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={async () => {
+              setResending(true);
+              try {
+                await supabase.auth.resend({
+                  type: "signup",
+                  email: confirmSentTo,
+                  options: { emailRedirectTo: `${window.location.origin}/api/auth/callback` },
+                });
+              } catch {}
+              setResending(false);
+            }}
+            disabled={resending}
+            className="w-full mt-4 border-2 border-gray-200 hover:border-gray-300 text-gray-700 font-semibold py-3 rounded-xl transition-colors disabled:opacity-60"
+          >
+            {resending ? "Reenviando..." : "Reenviar e-mail"}
+          </button>
+          <Link href="/login" className="block mt-3 text-green-600 font-semibold text-sm hover:underline">
+            Já confirmei → Entrar
+          </Link>
+        </div>
+      </div>
+    );
   }
 
   return (

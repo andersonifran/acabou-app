@@ -144,8 +144,12 @@ function OnboardingContent() {
             .maybeSingle();
           if (paidHouse) setUserIsPaid(true);
         } else {
-          // Verifica se há convite pendente no localStorage (Google OAuth perde query params)
-          const pendingInvite = localStorage.getItem("acabou_pending_invite");
+          // Convite pendente: localStorage (Google perde query params) OU
+          // user_metadata (cadastro email/senha guarda lá antes de confirmar).
+          const pendingInvite =
+            localStorage.getItem("acabou_pending_invite") ||
+            (user.user_metadata?.pending_invite as string | undefined) ||
+            null;
           if (pendingInvite) {
             try {
               const res = await fetch("/api/criar-perfil", {
@@ -154,7 +158,7 @@ function OnboardingContent() {
                 body: JSON.stringify({
                   userId: user.id,
                   fullName: user.user_metadata?.full_name ?? user.user_metadata?.name ?? "",
-                  phone: null,
+                  phone: user.user_metadata?.phone ?? null,
                   conviteToken: pendingInvite,
                 }),
               });
@@ -175,8 +179,44 @@ function OnboardingContent() {
             }
           }
 
-          // Usuário não tem casa (veio pelo Google OAuth)
-          setNeedsSetup(true);
+          // CADASTRO EMAIL/SENHA pós-confirmação: os dados da casa vêm do
+          // user_metadata (guardados no cadastro). Cria a casa/trial AGORA (já com
+          // sessão, pós-confirmação) e segue pros itens — sem re-perguntar.
+          // O Google NÃO tem esses metadados → cai no form de setup abaixo.
+          const metaHouseName = user.user_metadata?.house_name as string | undefined;
+          if (metaHouseName && metaHouseName.trim()) {
+            const metaType = (user.user_metadata?.property_type as string | undefined) || "casa";
+            try {
+              const res = await fetch("/api/criar-casa", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  userId: user.id,
+                  houseName: metaHouseName.trim(),
+                  fullName: user.user_metadata?.full_name ?? "",
+                  phone: user.user_metadata?.phone ?? null,
+                  propertyType: metaType,
+                }),
+              });
+              if (res.ok) {
+                const data = await res.json();
+                trackCadastroCompleto();
+                setHouseId(data.houseId);
+                setUserIsPaid(data.isPaid === true);
+                setPropertyType(metaType);
+                setActiveCategory((ITEMS_BY_TYPE[metaType] ?? ITEMS_BY_TYPE.casa)[0].category);
+                setNeedsSetup(false);
+              } else {
+                setNeedsSetup(true);
+              }
+            } catch (err) {
+              console.error("[Onboarding] Erro ao criar casa do metadata:", err);
+              setNeedsSetup(true);
+            }
+          } else {
+            // Sem casa nem metadados (Google OAuth) → form de setup
+            setNeedsSetup(true);
+          }
         }
       }
 
