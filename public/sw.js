@@ -1,5 +1,5 @@
 // Service Worker — Acabou? v3
-const CACHE = "acabou-v143";
+const CACHE = "acabou-v144";
 
 // ── Instalação ──
 self.addEventListener("install", (event) => {
@@ -44,6 +44,26 @@ self.addEventListener("fetch", (event) => {
     event.request.headers.get("Next-Router-Prefetch") === "1"
   ) {
     return; // deixa passar direto pra rede (sem cache do SW)
+  }
+
+  // ── manifest.json: NETWORK-FIRST ──────────────────────────────────────────
+  // A cor da SPLASH da PWA instalada vem do `theme_color` do manifest. Se o SW
+  // servir um manifest CACHEADO (cache-first), mudanças de cor NÃO chegam (a
+  // tarja branca na abertura "não saía" mesmo após deploy). Network-first → o
+  // Chrome sempre pega o manifest novo; cai pro cache só offline.
+  if (url.pathname === "/manifest.json") {
+    event.respondWith(
+      fetch(event.request)
+        .then(function(response) {
+          if (response.ok) {
+            var clone = response.clone();
+            caches.open(CACHE).then(function(cache) { cache.put(event.request, clone); });
+          }
+          return response;
+        })
+        .catch(function() { return caches.match(event.request); })
+    );
+    return;
   }
 
   // NAVEGAÇÕES (HTML pages): network-first com fallback offline
