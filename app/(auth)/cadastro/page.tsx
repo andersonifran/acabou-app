@@ -126,21 +126,20 @@ export default function CadastroPage() {
       });
 
       if (authError) throw authError;
-      if (!authData.user) throw new Error("Erro ao criar conta.");
-
-      const userId = authData.user.id;
 
       // Conta NOVA neste navegador → zera qualquer cache de conta anterior,
       // para a casa recém-criada não se misturar com dados antigos (casa-fantasma).
       useAppStore.getState().reset();
       try { localStorage.removeItem("acabou_selected_house"); } catch {}
 
-      // CONFIRMAÇÃO DE EMAIL: com "Confirm email" ON no Supabase, o signUp NÃO
-      // retorna sessão. Sem sessão não dá pra criar casa/perfil (são server-side
-      // por sessão) → mostramos a tela "confirme seu email". A criação acontece
-      // após a confirmação: no /onboarding (lê o user_metadata) ou no callback
-      // (convite via cookie). Com a confirmação OFF, há sessão → segue o fluxo
-      // atual abaixo, INTACTO (zero mudança).
+      // CONFIRMAÇÃO DE EMAIL — TEM QUE VIR ANTES de exigir authData.user.
+      // Com "Confirm email" ON, o signUp NÃO retorna sessão E PODE NÃO retornar o
+      // objeto `user` (o cliente recebe só a confirmação pendente). Se a checagem
+      // `!authData.user` rodasse antes, daria "Erro ao criar conta" mesmo com tudo
+      // certo (conta criada + e-mail enviado). Então: sem sessão = precisa
+      // confirmar → mostramos "confirme seu e-mail"; a casa/trial é criada DEPOIS
+      // da confirmação (no /onboarding, que lê o user_metadata; convite via cookie
+      // no callback). Com a confirmação OFF há sessão → segue o fluxo atual abaixo.
       if (!authData.session) {
         if (conviteToken) {
           document.cookie = `acabou_pending_invite=${conviteToken}; path=/; max-age=86400; SameSite=Lax`;
@@ -150,6 +149,10 @@ export default function CadastroPage() {
         setLoading(false);
         return;
       }
+
+      // Daqui pra baixo HÁ SESSÃO (confirmação OFF) → o user está presente.
+      if (!authData.user) throw new Error("Erro ao criar conta.");
+      const userId = authData.user.id;
 
       if (hasInvite) {
         // Usuário convidado: cria perfil + aceita convite server-side
