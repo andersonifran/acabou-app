@@ -53,6 +53,7 @@ next-env.d.ts
 # que PRECISA ser versionado (roda no build da Vercel pra blindar o SW).
 /scripts/*
 !/scripts/check-sw-rsc.mjs
+!/scripts/check-theme-flash.mjs
 
 # gerador de screenshots de marketing (arquivo local pesado, não deve ir pra produção)
 /public/marketing/

@@ -21,3 +21,14 @@ de aba**. Já aconteceu e custou caro (commit 39923c0).
   pra que o SW novo limpe o cache antigo dos usuários no `activate`.
 - Templates do Next (`template.tsx`) remontam a página a cada navegação → NÃO usar
   em rotas de aba (causa "recarregar toda vez", inclusive ao clicar na aba atual).
+
+# ⚠️ REGRA CRÍTICA — não declarar `themeColor` no viewport (tarja branca no topo)
+
+O `export const viewport` em `app/layout.tsx` **NÃO pode declarar `themeColor`**. O
+Next "restaura" a meta theme-color pro valor estático a CADA navegação e o
+ThemeApplier re-coloca o navy logo depois → a **"tarja branca" pisca no topo ao
+trocar de aba** (custou caro, commit 63e622c). A barra de status é controlada 100%
+pelo **script inline no `<head>`** (cria/atualiza a meta) + **ThemeApplier** (segue o
+tema, navy no escuro), e só altera quando o valor MUDA (não pisca na navegação).
+- Guard de build: `scripts/check-theme-flash.mjs` (roda no `npm run build`/Vercel)
+  bloqueia o deploy se `themeColor` voltar pro viewport. NÃO remova o guard.
