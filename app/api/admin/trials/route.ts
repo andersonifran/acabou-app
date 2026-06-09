@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { sendAdminLeakAlert } from "@/lib/emails";
+import { emailTrialHash } from "@/lib/trial-email";
 
 // =============================================================
 // Ferramenta de ADMIN (só Anderson) — auditoria + correção de trials.
@@ -131,6 +132,39 @@ export async function GET(request: NextRequest) {
     });
   }
 
+  // ── BACKFILL: marca os usuários ATUAIS como "já usaram trial" (por email) ──
+  // Rode UMA vez após a migration 2026-06-09_trial_grants. Sem isso, um usuário
+  // EXISTENTE poderia farmar trial excluindo + recriando com o mesmo email.
+  // Idempotente (upsert ignora duplicados); pode rodar de novo sem problema.
+  if (acao === "backfill_trial_grants") {
+    const { data: profs } = await admin
+      .from("profiles")
+      .select("email")
+      .not("email", "is", null);
+    const hashes = new Set<string>();
+    for (const p of profs ?? []) {
+      const em = ((p as any).email || "").trim();
+      if (em) hashes.add(emailTrialHash(em));
+    }
+    const rows = [...hashes].map((email_hash) => ({ email_hash }));
+    let gravados = 0;
+    for (let i = 0; i < rows.length; i += 500) {
+      const batch = rows.slice(i, i + 500);
+      const { error } = await admin
+        .from("trial_grants")
+        .upsert(batch, { onConflict: "email_hash", ignoreDuplicates: true });
+      if (!error) gravados += batch.length;
+    }
+    return NextResponse.json({
+      ok: true,
+      acao: "backfill_trial_grants",
+      perfis_com_email: (profs ?? []).length,
+      emails_unicos_marcados: hashes.size,
+      gravados,
+      message: `Backfill: ${hashes.size} email(s) marcados como já-usaram-trial (não ganham 14 dias ao excluir+recriar).`,
+    });
+  }
+
   // ── AUDITORIA (relatório) ──
   // Vazamentos = plano != free, JÁ vencido, mas status não está "inactive"
   // (deveriam estar congelados). O esperado é ZERO.
@@ -207,6 +241,7 @@ export async function GET(request: NextRequest) {
     acoes: {
       estender_trials_14: "?acao=estender14",
       congelar_vencidos_agora: "?acao=congelar_vencidos",
+      backfill_trial_grants: "?acao=backfill_trial_grants",
     },
   });
 }

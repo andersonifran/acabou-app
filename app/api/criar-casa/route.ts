@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient, getAuthUser } from "@/lib/supabase/server";
 import { sendWelcomeEmail } from "@/lib/emails";
+import { emailTrialHash } from "@/lib/trial-email";
 
 export async function POST(request: NextRequest) {
   try {
@@ -65,6 +66,21 @@ export async function POST(request: NextRequest) {
       .maybeSingle();
     if (!profErr && profileRow) trialUsed = !!(profileRow as any).trial_used;
 
+    // Marcador DURÁVEL por EMAIL — sobrevive à EXCLUSÃO da conta + recriar com o
+    // MESMO email (Google OU normal). O trial_used acima é por user_id e some
+    // quando a conta é apagada; este aqui é o hash do email numa tabela que o
+    // excluir-conta NÃO apaga (trial_grants). Se o hash já existe → já usou o trial.
+    const emailHash = userEmail ? emailTrialHash(userEmail) : null;
+    let emailTrialUsed = false;
+    if (emailHash) {
+      const { data: grant } = await supabase
+        .from("trial_grants")
+        .select("email_hash")
+        .eq("email_hash", emailHash)
+        .maybeSingle();
+      emailTrialUsed = !!grant;
+    }
+
     // Verifica se o dono tem alguma casa com plano pago → herda o plano
     const { data: paidHouse } = await supabase
       .from("houses")
@@ -98,6 +114,7 @@ export async function POST(request: NextRequest) {
       // nunca foi membro/convidado de nenhuma casa.
       const isBrandNew =
         !trialUsed &&
+        !emailTrialUsed &&
         (ownedCount === 0 || ownedCount === null) &&
         (memberCount === 0 || memberCount === null);
 
@@ -113,6 +130,17 @@ export async function POST(request: NextRequest) {
         // isso dá pra farmar trial apagando e recriando. Falha silenciosa se a
         // coluna ainda não existir (será ativada quando a migration rodar).
         await supabase.from("profiles").update({ trial_used: true } as any).eq("user_id", userId);
+        // Marcador DURÁVEL por email (sobrevive à exclusão da conta): grava o hash
+        // em trial_grants. Bloqueia farm de trial via excluir + recriar com o
+        // mesmo email. Falha silenciosa se a tabela ainda não existir (migration).
+        if (emailHash) {
+          const { error: grantErr } = await supabase
+            .from("trial_grants")
+            .upsert({ email_hash: emailHash }, { onConflict: "email_hash" });
+          // Caminho anti-farm CRÍTICO: se a gravação falhar, registra (não bloqueia
+          // o cadastro). Com a tabela criada + service_role não deve falhar.
+          if (grantErr) console.error("[criar-casa] falha ao gravar trial_grants:", grantErr.message);
+        }
       } else {
         // Já usou trial / já foi membro/convidado / já teve casa → grátis
         inheritedPlan = { plan: "free", plan_status: "active" };
