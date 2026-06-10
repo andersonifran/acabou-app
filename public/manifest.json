@@ -3,7 +3,7 @@
   "name": "Acabou?",
   "short_name": "Acabou?",
   "description": "Nunca mais esqueça nada no mercado! Toda a família marca o que acabou em 1 toque e a lista de compras se monta sozinha. Fácil como um WhatsApp.",
-  "start_url": "/",
+  "start_url": "/home",
   "scope": "/",
   "display": "standalone",
   "prefer_related_applications": false,
