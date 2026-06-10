@@ -2,25 +2,28 @@ import { ImageResponse } from "next/og";
 import { readFileSync } from "fs";
 import { join } from "path";
 
-// Imagem de preview (Open Graph) — aparece quando o link é compartilhado no
-// WhatsApp / Facebook / Instagram. Gerada no build (1200x630), seguindo o MESMO
-// estilo do banner premium da Play Store: logo oficial + "Acabou?" + tagline +
-// pílula + Sacolino, no verde da marca (#1E9839).
+// Imagem de preview (Open Graph) — aparece ao compartilhar o link no WhatsApp /
+// Facebook / Instagram. Gerada no build (1200x630), no MESMO padrão do banner da
+// Play Store: logo oficial + "Acabou?" em Poppins ExtraBold + frase + pílula CTA
+// + Sacolino, no verde da marca (#1E9839).
 export const runtime = "nodejs";
-export const alt = "Acabou? — Sua casa sempre sabe o que precisa comprar";
+export const alt = "Acabou? — Nunca mais falta nada em casa";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
+function file(relPath: string): Buffer {
+  return readFileSync(join(process.cwd(), relPath));
+}
 function dataUri(relPath: string): string {
-  const buf = readFileSync(join(process.cwd(), relPath));
-  return `data:image/png;base64,${buf.toString("base64")}`;
+  return `data:image/png;base64,${file(relPath).toString("base64")}`;
 }
 
 export default async function OpengraphImage() {
-  // Logo OFICIAL (cópia versionada de marketing/Logos/Logo.png, que é gitignorada
-  // → daria ENOENT na Vercel). Mesma logo do banner da Play Store = padrão único.
+  // Logo OFICIAL versionada (marketing/Logos é gitignorada → daria ENOENT).
   const logo = dataUri("public/logo-oficial.png");
-  const mascote = dataUri("public/mascote/sacolino-acenando.png");
+  const mascote = dataUri("public/mascote/sacolino-feliz.png");
+  const poppinsExtra = file("public/fonts/Poppins-ExtraBold.ttf");
+  const poppinsBold = file("public/fonts/Poppins-Bold.ttf");
 
   return new ImageResponse(
     (
@@ -31,15 +34,15 @@ export default async function OpengraphImage() {
           height: "100%",
           display: "flex",
           background: "#1E9839",
-          padding: "60px 70px",
-          fontFamily: "sans-serif",
+          padding: "60px 68px",
+          fontFamily: "Poppins",
           overflow: "hidden",
         }}
       >
         {/* Bloco de texto (à esquerda) */}
-        <div style={{ display: "flex", flexDirection: "column", maxWidth: 690, zIndex: 2 }}>
+        <div style={{ display: "flex", flexDirection: "column", maxWidth: 660, zIndex: 2 }}>
           {/* Brandrow: logo oficial + "Acabou?" */}
-          <div style={{ display: "flex", alignItems: "center", gap: 24 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 22 }}>
             <img
               src={logo}
               width={104}
@@ -47,50 +50,57 @@ export default async function OpengraphImage() {
               style={{ borderRadius: 24, border: "3px solid rgba(255,255,255,0.55)" }}
               alt=""
             />
-            <div style={{ fontSize: 94, fontWeight: 800, color: "#ffffff", letterSpacing: "-2px" }}>
+            <div style={{ fontSize: 112, fontWeight: 800, color: "#ffffff", letterSpacing: "-3px" }}>
               Acabou?
             </div>
           </div>
 
           <div
             style={{
-              fontSize: 42,
-              color: "#eafff1",
-              fontWeight: 700,
+              fontSize: 54,
+              fontWeight: 800,
+              color: "#ffffff",
               marginTop: 26,
-              lineHeight: 1.2,
+              lineHeight: 1.08,
+              maxWidth: 540,
             }}
           >
-            Sua casa sempre sabe o que precisa comprar.
+            Nunca mais falta nada em casa
           </div>
 
-          <div style={{ display: "flex", marginTop: 32 }}>
+          <div style={{ display: "flex", marginTop: 34 }}>
             <div
               style={{
                 background: "rgba(255,255,255,0.16)",
-                border: "2px solid rgba(255,255,255,0.45)",
+                border: "2px solid rgba(255,255,255,0.5)",
                 color: "#ffffff",
                 fontWeight: 700,
-                fontSize: 27,
-                padding: "11px 28px",
+                fontSize: 31,
+                padding: "13px 34px",
                 borderRadius: 999,
               }}
             >
-              acabouapp.com.br
+              14 dias grátis · sem cartão
             </div>
           </div>
         </div>
 
-        {/* Sacolino (à direita, encostado embaixo — igual o banner) */}
+        {/* Sacolino (joinha) à direita, encostado embaixo — igual o banner */}
         <img
           src={mascote}
-          width={460}
-          height={460}
-          style={{ position: "absolute", right: 20, bottom: 0 }}
+          width={500}
+          height={500}
+          style={{ position: "absolute", right: 16, bottom: -6 }}
           alt=""
         />
       </div>
     ),
-    { ...size }
+    {
+      ...size,
+      fonts: [
+        { name: "Poppins", data: poppinsBold, weight: 700, style: "normal" },
+        { name: "Poppins", data: poppinsExtra, weight: 800, style: "normal" },
+      ],
+    }
   );
 }
