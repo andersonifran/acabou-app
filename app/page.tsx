@@ -20,10 +20,23 @@ function BrandName({ className = "" }: { className?: string }) {
   return <span className={`font-black text-gray-900 ${className}`}>Acabou?</span>;
 }
 
-// Canônica explícita da landing → resolve o aviso "Cópia sem página canônica" do
-// Search Console (diz ao Google que https://www.acabouapp.com.br/ é a versão oficial).
+// Metadata da landing: canônica (resolve "Cópia sem canônica" do Search Console)
+// + og:url explícito (zera o aviso "og:url ausente" do depurador do Facebook). A
+// og:image continua vindo do arquivo app/opengraph-image.tsx (convenção do Next).
 export const metadata = {
   alternates: { canonical: "/" },
+  openGraph: {
+    title: "Acabou?",
+    description: "Sua casa sempre sabe o que precisa comprar.",
+    type: "website",
+    locale: "pt_BR",
+    url: "/",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Acabou?",
+    description: "Sua casa sempre sabe o que precisa comprar.",
+  },
 };
 
 export default function LandingPage() {
