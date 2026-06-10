@@ -305,7 +305,11 @@ function OnboardingContent() {
     if (willBeFirst && !optInAsked && push.state === "prompt") {
       setOptInAsked(true);
       // pequeno atraso pra o "check" do item aparecer antes do convite subir.
-      setTimeout(() => setShowOptIn(true), 350);
+      setTimeout(() => {
+        setShowOptIn(true);
+        // marca o cooldown compartilhado → a home não repete o convite logo após.
+        try { localStorage.setItem("acabou_optin_last", String(Date.now())); } catch {}
+      }, 350);
     }
   }
 

@@ -89,8 +89,27 @@ export default function HomePage() {
   const [showOptIn, setShowOptIn] = useState(false);
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const ativar = new URLSearchParams(window.location.search).get("ativar");
-    if (ativar === "notificacoes" && push.state === "prompt") setShowOptIn(true);
+    // Só pra quem AINDA não decidiu a permissão (não incomoda quem ativou nem
+    // quem bloqueou — esse último vê instrução de religar nas Configurações).
+    if (push.state !== "prompt") return;
+    // Veio do e-mail de reconquista → abre na hora.
+    if (new URLSearchParams(window.location.search).get("ativar") === "notificacoes") {
+      setShowOptIn(true);
+      return;
+    }
+    // FORÇA GENTIL: usuário EXISTENTE sem push vê o convite premium ao abrir a
+    // home — no máximo 1x a cada 5 dias (cooldown compartilhado com o onboarding,
+    // pra não duplicar). É o que traz os 88% que nunca ativaram.
+    try {
+      const last = Number(localStorage.getItem("acabou_optin_last") || 0);
+      if (Date.now() - last >= 5 * 24 * 60 * 60 * 1000) {
+        const t = setTimeout(() => {
+          setShowOptIn(true);
+          localStorage.setItem("acabou_optin_last", String(Date.now()));
+        }, 900);
+        return () => clearTimeout(t);
+      }
+    } catch {}
   }, [push.state]);
 
   const shoppingItems = items.filter((i) => SHOPPING_LIST_STATUSES.includes(i.status as any));
