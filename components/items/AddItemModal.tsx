@@ -84,6 +84,17 @@ export function AddItemModal({
   // teclado do celular), pra não ficar coberto/confuso. Ajuste escopado (sem
   // mexer no viewport global, que é arriscado pros usuários ativos).
   const customFieldRef = useRef<HTMLDivElement>(null);
+  // Ref do campo "Nome do item" — mesmo ajuste de teclado.
+  const nameFieldRef = useRef<HTMLDivElement>(null);
+  // Guarda a ÚLTIMA versão de onClose SEM desestabilizar o efeito de histórico.
+  // (onClose vem inline do layout = nova referência a cada render; adicionar item
+  // re-renderiza o layout. Se o efeito dependesse de onClose, ele re-disparava
+  // history.back()/pushState em loop → histórico embaralhava → TRAVA: voltar/X não
+  // fechava. Agora o efeito roda só on open/close; aqui só atualizamos a ref.)
+  const onCloseRef = useRef(onClose);
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
   // Item existente sendo editado (null = criando item novo)
   const [editingItem, setEditingItem] = useState<Item | null>(null);
   // Mostra o autocomplete embaixo do campo "Nome do item" (só enquanto digita).
@@ -114,7 +125,7 @@ export function AddItemModal({
   // Empurra um estado no histórico ao abrir; o back dispara popstate → fecha.
   useEffect(() => {
     if (!isOpen) return;
-    const onPopState = () => onClose();
+    const onPopState = () => onCloseRef.current();
     window.history.pushState({ acabouModal: "addItem" }, "");
     window.addEventListener("popstate", onPopState);
     return () => {
@@ -124,7 +135,7 @@ export function AddItemModal({
         window.history.back();
       }
     };
-  }, [isOpen, onClose]);
+  }, [isOpen]);
 
   // Busca inteligente: sem acento + ranking (começa-com aparece primeiro).
   const filteredExisting = existingItems
@@ -195,9 +206,12 @@ export function AddItemModal({
 
   // Sugestões enquanto digita o NOME (só quando criando item novo). Auto-completa
   // o nome + já escolhe a categoria certa ao tocar.
+  // NÃO filtra o match exato: se o usuário digitou "café" inteiro, "Café" TEM que
+  // aparecer no topo pra ele tocar (e travar a categoria certa). Antes o filtro
+  // escondia o item certo e sobravam os parecidos (Filtro de café, Mexedor…).
   const nameSuggestions =
     showNameSug && newName.trim() && !editingItem
-      ? rankPool(newName).filter((s) => normalize(s.name) !== normalize(newName)).slice(0, 5)
+      ? rankPool(newName).slice(0, 8)
       : [];
 
   function pickNameSuggestion(s: { name: string; category: string }) {
@@ -247,11 +261,11 @@ export function AddItemModal({
       .sort((a, b) => b.score - a.score || a.c.label.localeCompare(b.c.label, "pt-BR"))
       .map((x) => x.c);
   }
+  // Idem: sem filtro de match exato — "Depósito de bebidas" inteiro tem que
+  // aparecer pra tocar. Catálogo completo cobre os casos comuns; resto fica livre.
   const customSuggestions =
     isOutros && showCustomSug && newCustomCategory.trim()
-      ? rankCustomCats(newCustomCategory)
-          .filter((c) => normalize(c.label) !== normalize(newCustomCategory))
-          .slice(0, 6)
+      ? rankCustomCats(newCustomCategory).slice(0, 8)
       : [];
   function pickCustomSuggestion(label: string) {
     setNewCustomCategory(label);
@@ -421,7 +435,7 @@ export function AddItemModal({
         ) : (
           /* Formulário de criação */
           <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
-            <div className="relative">
+            <div className="relative" ref={nameFieldRef}>
               <label className="block text-sm font-medium text-gray-700 mb-1.5">
                 Nome do item *
               </label>
@@ -429,7 +443,13 @@ export function AddItemModal({
                 type="text"
                 value={newName}
                 onChange={(e) => { setNewName(e.target.value); setShowNameSug(true); }}
-                onFocus={() => setShowNameSug(true)}
+                onFocus={() => {
+                  setShowNameSug(true);
+                  setTimeout(
+                    () => nameFieldRef.current?.scrollIntoView({ block: "center", behavior: "smooth" }),
+                    300
+                  );
+                }}
                 placeholder="Ex: Café, Detergente..."
                 autoComplete="off"
                 className="w-full px-4 py-3 bg-gray-50 rounded-xl border border-gray-200 focus:outline-none focus:border-green-400 text-gray-900"
