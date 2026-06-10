@@ -31,6 +31,12 @@ export const metadata: Metadata = {
     type: "website",
     locale: "pt_BR",
   },
+  // Card grande no Twitter/X (usa a mesma imagem do Open Graph como fallback).
+  twitter: {
+    card: "summary_large_image",
+    title: "Acabou?",
+    description: "Sua casa sempre sabe o que precisa comprar.",
+  },
 };
 
 export const viewport: Viewport = {
