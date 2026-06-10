@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo, Suspense } from "react";
+import { useState, useEffect, useMemo, useCallback, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { useAppStore } from "@/store/appStore";
 import { useItems } from "@/hooks/useItems";
@@ -17,12 +17,14 @@ import Link from "next/link";
 
 type FilterStatus = "todos" | ItemStatus;
 
+// A DESPENSA mostra só o que VOCÊ TEM em casa: "Tem" e "Acabando" (ainda tem um
+// pouco). "Acabou" e "Comprar" saem da despensa e moram só na Lista de Compras.
+const DESPENSA_STATUSES: ItemStatus[] = ["tem", "acabando"];
+
 const filterOptions: { value: FilterStatus; label: string }[] = [
   { value: "todos", label: "Todos" },
   { value: "tem", label: "Tem" },
   { value: "acabando", label: "Acabando" },
-  { value: "acabou", label: "Acabou" },
-  { value: "comprar", label: "Comprar" },
 ];
 
 export default function DespensaPage() {
@@ -39,13 +41,32 @@ function DespensaContent() {
   const { items, itemsByCategory, changeStatus, deleteItem, renameItem, editItem } = useItems();
   const { canAddItem, isPaid, itemCount, itemsRemaining, limits } = useSubscription();
   const { canManageItems, canEditCategories } = useRole();
-  const initialFilter = (searchParams.get("filtro") as FilterStatus) || "todos";
+  // Valida o ?filtro= JÁ no estado inicial — se vier um status que não existe na
+  // despensa (ex.: ?filtro=acabou), cai pra "todos" em vez de tela vazia.
+  const rawFilter = searchParams.get("filtro") as FilterStatus;
+  const initialFilter: FilterStatus = filterOptions.some((f) => f.value === rawFilter)
+    ? rawFilter
+    : "todos";
   const [filter, setFilter] = useState<FilterStatus>(initialFilter);
   const [search, setSearch] = useState("");
   const [editingCat, setEditingCat] = useState<string | null>(null);
   const [editingCatName, setEditingCatName] = useState("");
   const [savingCat, setSavingCat] = useState(false);
   const { categories, setCategories } = useAppStore();
+  const setToast = useAppStore((s) => s.setToast);
+
+  // Ao marcar "Acabou"/"Comprar" na Despensa, o item SAI dela (vai pra Lista).
+  // Avisa pra onde foi, pra não parecer que "sumiu". Estável (useCallback) pra
+  // não quebrar o memo do ItemCard em lista grande.
+  const handleDespensaStatus = useCallback(
+    async (itemId: string, newStatus: ItemStatus) => {
+      const ok = await changeStatus(itemId, newStatus);
+      if (ok && (newStatus === "acabou" || newStatus === "comprar")) {
+        setToast("Foi pra Lista de Compras 🛒");
+      }
+    },
+    [changeStatus, setToast]
+  );
 
   // Renomear CATEGORIA está desativado (mexia na categoria global de todos).
   // Renomear ITENS continua normal. Reativar quando houver categoria por casa.
@@ -76,12 +97,14 @@ function DespensaContent() {
     }
   }
 
-  // Sincroniza filtro quando URL muda (ex: vindo da Home)
+  // Sincroniza filtro quando URL muda (ex: vindo da Home). Sem param → preserva
+  // o filtro atual (não reseta). Param inválido (ex.: link velho ?filtro=acabou)
+  // → cai em "todos" em vez de deixar um filtro fantasma fora de sincronia.
   useEffect(() => {
-    const urlFilter = searchParams.get("filtro") as FilterStatus;
-    if (urlFilter && filterOptions.some(f => f.value === urlFilter)) {
-      setFilter(urlFilter);
-    }
+    const urlFilter = searchParams.get("filtro");
+    if (!urlFilter) return;
+    const valid = filterOptions.some((f) => f.value === urlFilter);
+    setFilter(valid ? (urlFilter as FilterStatus) : "todos");
   }, [searchParams]);
   const [showPlanLimit, setShowPlanLimit] = useState(false);
 
@@ -89,6 +112,8 @@ function DespensaContent() {
   const filtered = useMemo(
     () =>
       items.filter((item) => {
+        // Só Tem + Acabando entram na Despensa (Acabou/Comprar vão pra Lista).
+        if (!DESPENSA_STATUSES.includes(item.status)) return false;
         const matchStatus = filter === "todos" || item.status === filter;
         const matchSearch = !search || item.name.toLowerCase().includes(search.toLowerCase());
         return matchStatus && matchSearch;
@@ -107,6 +132,13 @@ function DespensaContent() {
     [filtered]
   );
 
+  // Contagem da DESPENSA (só Tem + Acabando), independente da busca/filtro — pro
+  // header bater com o que está visível (Acabou/Comprar saíram pra Lista).
+  const despensaCount = useMemo(
+    () => items.filter((i) => DESPENSA_STATUSES.includes(i.status)).length,
+    [items]
+  );
+
   function openAdd() {
     if (!canAddItem) {
       setShowPlanLimit(true);
@@ -123,7 +155,7 @@ function DespensaContent() {
       <Header
         icon={<Package size={20} />}
         title="Despensa"
-        subtitle={isPaid ? `${items.length} itens` : `${itemCount}/${limits.max_items} itens`}
+        subtitle={isPaid ? `${despensaCount} itens` : `${itemCount}/${limits.max_items} itens`}
         right={
           canManageItems ? (
             <button
@@ -296,7 +328,7 @@ function DespensaContent() {
                   <ItemCard
                     key={item.id}
                     item={item}
-                    onStatusChange={changeStatus}
+                    onStatusChange={handleDespensaStatus}
                     onEdit={canManageItems ? renameItem : undefined}
                     onEditFull={canManageItems ? editItem : undefined}
                     onDelete={canManageItems ? deleteItem : undefined}

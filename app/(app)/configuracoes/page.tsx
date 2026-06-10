@@ -23,7 +23,7 @@ import { ReminderTimePicker } from "@/components/shared/ReminderTimePicker";
 export default function ConfiguracoesPage() {
   const router = useRouter();
   const supabase = createClient();
-  const { currentHouse, items, categories, reset, updateItem, profileName: storeProfileName, profileAvatar: storeProfileAvatar, profileEmail: storeProfileEmail, profilePhone: storeProfilePhone, setProfile: setStoreProfile, setProfileContact: setStoreProfileContact } = useAppStore();
+  const { currentHouse, items, categories, reset, updateItem, setToast, profileName: storeProfileName, profileAvatar: storeProfileAvatar, profileEmail: storeProfileEmail, profilePhone: storeProfilePhone, setProfile: setStoreProfile, setProfileContact: setStoreProfileContact } = useAppStore();
   const { isPaid, canAddItem, limits } = useSubscription();
   const { renameItem, deleteItem, createItem } = useItems();
   const { isOwner, isMember, canAccessPlans } = useRole();
@@ -38,20 +38,31 @@ export default function ConfiguracoesPage() {
 
   useEffect(() => {
     async function loadProfile() {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-      const { data } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("user_id", user.id)
-        .single();
-      if (data) {
-        setProfile(data as Profile);
-        // Cacheia email/telefone no store → próxima abertura mostra na hora,
-        // sem "fade-in". O reset() (logout) limpa, então não vaza entre contas.
-        setStoreProfileContact((data as any).email ?? "", (data as any).phone ?? "");
+      // try/catch silencioso: rede ruim ("Failed to fetch") no getUser/select
+      // NÃO pode virar unhandled rejection. Se falhar, a tela usa o que já está
+      // cacheado no store (nome/email/telefone) e segue sem travar.
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          setLoadingProfile(false);
+          return;
+        }
+        const { data } = await supabase
+          .from("profiles")
+          .select("*")
+          .eq("user_id", user.id)
+          .single();
+        if (data) {
+          setProfile(data as Profile);
+          // Cacheia email/telefone no store → próxima abertura mostra na hora,
+          // sem "fade-in". O reset() (logout) limpa, então não vaza entre contas.
+          setStoreProfileContact((data as any).email ?? "", (data as any).phone ?? "");
+        }
+      } catch (e) {
+        console.warn("[loadProfile] falhou (ignorado, usa cache):", e);
+      } finally {
+        setLoadingProfile(false);
       }
-      setLoadingProfile(false);
     }
     loadProfile();
   }, []);
@@ -73,38 +84,80 @@ export default function ConfiguracoesPage() {
   async function loadHistory() {
     if (historyLoaded || !currentHouse) return;
     setLoadingHistory(true);
-    const { data } = await supabase
-      .from("item_events")
-      .select("*, profile:profiles(full_name), item:items(name)")
-      .eq("house_id", currentHouse.id)
-      .order("created_at", { ascending: false })
-      .limit(50);
-    if (data) setHistory(data as any);
-    setHistoryLoaded(true);
-    setLoadingHistory(false);
+    // try/catch/finally: rede ruim ("Failed to fetch") NÃO pode deixar o spinner
+    // travado pra sempre nem virar unhandled rejection. finally sempre desliga.
+    try {
+      const { data } = await supabase
+        .from("item_events")
+        .select("*, profile:profiles(full_name), item:items(name)")
+        .eq("house_id", currentHouse.id)
+        .order("created_at", { ascending: false })
+        .limit(50);
+      if (data) setHistory(data as any);
+      setHistoryLoaded(true);
+    } catch (e) {
+      setToast("Não consegui carregar o histórico. Tente de novo. 📶");
+      console.warn("[loadHistory] falhou:", e);
+    } finally {
+      setLoadingHistory(false);
+    }
   }
 
   async function toggleRecurring(itemId: string, enabled: boolean, recurrenceType?: RecurrenceType) {
+    // Captura o original ANTES (pra reverter em erro de rede).
+    const before = useAppStore.getState().items.find((i) => i.id === itemId);
+
     const updates: any = { is_recurring: enabled };
     if (enabled && recurrenceType) {
       updates.recurrence_type = recurrenceType;
       updates.next_reminder_at = getNextReminderDate(recurrenceType).toISOString();
     }
 
-    await supabase.from("items").update(updates).eq("id", itemId);
+    // Otimista: o switch responde NA HORA (feedback premium).
     updateItem(itemId, updates);
+
+    // Captura TUDO (rede "Failed to fetch" + erro do banco) — antes estourava
+    // como unhandled rejection. Em erro: reverte o switch e avisa o usuário.
+    try {
+      const { error } = await supabase.from("items").update(updates).eq("id", itemId);
+      if (error) throw error;
+    } catch (e) {
+      if (before) {
+        updateItem(itemId, {
+          is_recurring: before.is_recurring,
+          recurrence_type: before.recurrence_type,
+          next_reminder_at: before.next_reminder_at,
+        });
+      }
+      setToast("Sem conexão — não consegui salvar. Tente de novo. 📶");
+      console.warn("[toggleRecurring] falhou:", e);
+    }
   }
 
   async function saveReminderSettings(enabled: boolean, time: string) {
     if (!currentHouse) return;
+    // Guarda o estado anterior (pra reverter se a rede cair).
+    const prevEnabled = reminderEnabled;
+    const prevTime = reminderTime;
     setSavingReminder(true);
     setReminderEnabled(enabled);
     setReminderTime(time);
-    await supabase
-      .from("houses")
-      .update({ reminder_enabled: enabled, reminder_time: time })
-      .eq("id", currentHouse.id);
-    setSavingReminder(false);
+    // Captura TUDO (rede "Failed to fetch" + erro do banco) — antes estourava
+    // como unhandled rejection. Em erro: reverte o switch/horário e avisa.
+    try {
+      const { error } = await supabase
+        .from("houses")
+        .update({ reminder_enabled: enabled, reminder_time: time })
+        .eq("id", currentHouse.id);
+      if (error) throw error;
+    } catch (e) {
+      setReminderEnabled(prevEnabled);
+      setReminderTime(prevTime);
+      setToast("Sem conexão — não consegui salvar. Tente de novo. 📶");
+      console.warn("[saveReminderSettings] falhou:", e);
+    } finally {
+      setSavingReminder(false);
+    }
   }
 
   // Lembretes: funções de edição

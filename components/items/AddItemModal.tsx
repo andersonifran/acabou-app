@@ -53,7 +53,7 @@ interface AddItemModalProps {
     note?: string;
     quantity_text?: string;
   }) => Promise<unknown>;
-  onUpdateStatus: (itemId: string, status: ItemStatus) => Promise<void>;
+  onUpdateStatus: (itemId: string, status: ItemStatus) => Promise<boolean | void>;
   onUpdateItem?: (itemId: string, data: { name: string; note?: string; quantity_text?: string }) => Promise<void>;
 }
 

@@ -252,8 +252,16 @@ export default function HomePage() {
       return;
     }
 
-    // "Acabou!" e "Está acabando!" → navega para despensa filtrada pelo status
-    // Assim o usuário vê os itens relevantes e pode gerenciá-los
+    // "Acabou!" → abre o modal de adicionar/buscar item já com status "acabou"
+    // (igual "Quero comprar!"). O item entra direto na Lista de Compras — assim o
+    // usuário REGISTRA o que acabou, em vez de cair numa lista possivelmente vazia.
+    if (status === "acabou") {
+      setInitialStatus(status);
+      setAddItemModalOpen(true);
+      return;
+    }
+
+    // "Está acabando!" / "Comprei!" (tem) → despensa filtrada (esses status ficam lá).
     router.replace(`/despensa?filtro=${status}`); // aba → replace (não empilha histórico)
   }
 

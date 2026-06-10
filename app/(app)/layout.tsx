@@ -10,6 +10,7 @@ import { AddItemModal } from "@/components/items/AddItemModal";
 import { PlanLimitModal } from "@/components/shared/PlanLimitModal";
 import { PWAInstallBanner } from "@/components/shared/PWAInstallBanner";
 import { PushPermissionBanner } from "@/components/shared/PushPermissionBanner";
+import { GlobalToast } from "@/components/shared/GlobalToast";
 // import { TesterBanner } from "@/components/shared/TesterBanner"; // DESATIVADO 06/06/2026 (ver nota no render)
 import { useItems } from "@/hooks/useItems";
 import { useSubscription } from "@/hooks/useSubscription";
@@ -341,6 +342,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
       <BottomNav />
       <PWAInstallBanner />
+      <GlobalToast />
 
       <AddItemModal
         isOpen={isAddItemModalOpen}

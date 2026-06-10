@@ -9,7 +9,7 @@ import { createClient } from "@/lib/supabase/client";
 import { Header } from "@/components/layout/Header";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { PlanLimitModal } from "@/components/shared/PlanLimitModal";
-import { Item } from "@/types";
+import { Item, SHOPPING_LIST_STATUSES } from "@/types";
 import { buildShoppingListText, buildWhatsAppShareUrl } from "@/lib/utils";
 import { CheckSquare, Square, ClipboardList } from "lucide-react";
 import { WhatsAppIcon } from "@/components/shared/WhatsAppIcon";
@@ -36,6 +36,7 @@ export default function ListaPage() {
   const { shoppingListItems, changeStatus, markPurchased, items } = useItems();
   const supabase = createClient();
   const { setItems } = useAppStore();
+  const setToast = useAppStore((s) => s.setToast);
   const [checkedIds, setCheckedIds] = useState<Set<string>>(new Set());
   const [finishing, setFinishing] = useState(false);
   const [done, setDone] = useState(false);
@@ -85,7 +86,12 @@ export default function ListaPage() {
     setPurchasing(true);
     try {
       if (putAsHas) {
-        await markPurchased(showPurchasedModal);
+        const ok = await markPurchased(showPurchasedModal);
+        if (!ok) {
+          // Rede falhou — markPurchased já reverteu e avisou. Fecha sem comemorar.
+          setShowPurchasedModal(null);
+          return;
+        }
       }
       setShowPurchasedModal(null);
       if (putAsHas && wasLast) {
@@ -105,63 +111,80 @@ export default function ListaPage() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user || !currentHouse) return;
 
-      // Marcar todos os itens checados como "tem"
-      const promises = Array.from(checkedIds).map((id) =>
-        supabase
-          .from("items")
-          .update({ status: "tem", updated_by: user.id, last_purchased_at: new Date().toISOString() })
-          .eq("id", id)
+      const ids = Array.from(checkedIds);
+      const nowISO = new Date().toISOString();
+
+      // 1) CRÍTICO: marca os itens como "tem" no banco. Se a REDE cair aqui, o
+      //    Promise.all rejeita → cai no catch (avisa, não estoura como antes).
+      await Promise.all(
+        ids.map((id) =>
+          supabase
+            .from("items")
+            .update({ status: "tem", updated_by: user.id, last_purchased_at: nowISO })
+            .eq("id", id)
+        )
       );
-      await Promise.all(promises);
 
-      // Registrar sessão de compra
-      await supabase.from("shopping_sessions").insert({
-        house_id: currentHouse.id,
-        user_id: user.id,
-        status: "finished",
-        items_count: checkedIds.size,
-        finished_at: new Date().toISOString(),
-      });
-
-      // Registrar eventos
-      for (const id of checkedIds) {
-        const item = shoppingListItems.find((i) => i.id === id);
-        if (item) {
-          await supabase.from("item_events").insert({
-            house_id: currentHouse.id,
-            item_id: id,
-            user_id: user.id,
-            event_type: "purchased",
-            old_status: item.status,
-            new_status: "tem",
-            source: "app",
-          });
-        }
-      }
-
-      // Atualiza items no store sem recarregar a página
+      // 2) UI: atualiza o store (o passo crítico passou).
       const updatedItems = items.map((item) =>
         checkedIds.has(item.id)
-          ? { ...item, status: "tem" as const, last_purchased_at: new Date().toISOString() }
+          ? { ...item, status: "tem" as const, last_purchased_at: nowISO }
           : item
       );
       setItems(updatedItems);
 
+      // 3) SECUNDÁRIOS (sessão de compra + eventos) — NÃO-críticos: try/catch
+      //    silencioso pra uma falha de rede aqui NÃO reverter a compra nem estourar.
+      try {
+        await supabase.from("shopping_sessions").insert({
+          house_id: currentHouse.id,
+          user_id: user.id,
+          status: "finished",
+          items_count: ids.length,
+          finished_at: nowISO,
+        });
+        for (const id of ids) {
+          const item = shoppingListItems.find((i) => i.id === id);
+          if (item) {
+            await supabase.from("item_events").insert({
+              house_id: currentHouse.id,
+              item_id: id,
+              user_id: user.id,
+              event_type: "purchased",
+              old_status: item.status,
+              new_status: "tem",
+              source: "app",
+            });
+          }
+        }
+      } catch (e) {
+        console.warn("[finishShopping] secundário falhou (ignorado):", e);
+      }
+
       // Só comemora com confete se a lista ZEROU (tudo comprado).
       // Compra parcial = toast sutil, sem festa (ainda há itens pendentes).
-      const boughtCount = checkedIds.size;
-      const willBeEmpty = boughtCount >= shoppingListItems.length;
+      // Conta o que SOBRA a partir do estado JÁ atualizado (updatedItems), não do
+      // closure antigo (shoppingListItems) — à prova de corrida quando outro
+      // membro mexe na lista ao mesmo tempo.
+      const boughtCount = ids.length;
+      const remaining = updatedItems.filter((i) =>
+        SHOPPING_LIST_STATUSES.includes(i.status as any)
+      ).length;
+      const willBeEmpty = remaining === 0;
       setCheckedIds(new Set());
       hapticSuccess();
 
       if (willBeEmpty) {
         setDone(true);
       } else {
-        const remaining = shoppingListItems.length - boughtCount;
         setPartialMsg(
           `✓ ${boughtCount} ${boughtCount === 1 ? "item comprado" : "itens comprados"} · faltam ${remaining} na lista`
         );
       }
+    } catch (e) {
+      // Rede caiu no passo crítico → avisa e mantém os itens na lista (sem estourar).
+      setToast("Sem conexão — não consegui finalizar. Tente de novo. 📶");
+      console.warn("[finishShopping] falhou:", e);
     } finally {
       setFinishing(false);
     }

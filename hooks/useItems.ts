@@ -39,10 +39,11 @@ export function useItems() {
   // preservada porque capturamos o ORIGINAL ANTES de alterar.
 
   const changeStatus = useCallback(
-    async (itemId: string, newStatus: ItemStatus) => {
-      const { items: cur, currentHouse, userId } = useAppStore.getState();
+    async (itemId: string, newStatus: ItemStatus): Promise<boolean> => {
+      const { items: cur, currentHouse, userId, setToast } = useAppStore.getState();
       const item = cur.find((i) => i.id === itemId);
-      if (!item) return;
+      if (!item) return false;
+      if (item.status === newStatus) return true; // nada a fazer
 
       // Feedback imediato (otimista) — usa userId já cacheado, sem getUser().
       updateItem(itemId, { status: newStatus });
@@ -59,62 +60,80 @@ export function useItems() {
         ).toISOString();
       }
 
-      const { error } = await supabase
-        .from("items")
-        .update(updatePayload)
-        .eq("id", itemId);
-
-      if (error) {
-        // Reverte para o status original (capturado antes).
-        updateItem(itemId, { status: item.status });
-        throw error;
+      // Salva no banco. Captura TUDO — inclusive a FALHA DE REDE ("Failed to
+      // fetch"), que antes estourava como unhandled rejection (Sentry). Em
+      // qualquer erro: reverte o otimista, avisa o usuário e NÃO re-lança.
+      try {
+        const { error } = await supabase
+          .from("items")
+          .update(updatePayload)
+          .eq("id", itemId);
+        if (error) throw error;
+      } catch (e) {
+        updateItem(itemId, { status: item.status }); // reverte
+        setToast("Sem conexão — não consegui salvar. Tente de novo. 📶");
+        console.warn("[changeStatus] falhou:", e);
+        return false;
       }
 
       if (updatePayload.next_reminder_at) {
         updateItem(itemId, { next_reminder_at: updatePayload.next_reminder_at as string });
       }
 
-      // Registra evento (a notificação ao dono é disparada pelo webhook do banco).
+      // Evento (NÃO-crítico: a notificação vai pelo webhook do banco). try/catch
+      // silencioso pra uma falha de rede aqui NÃO virar erro nem reverter o status.
       if (userId && currentHouse) {
-        await supabase.from("item_events").insert({
-          house_id: currentHouse.id,
-          item_id: itemId,
-          user_id: userId,
-          event_type: "status_changed",
-          old_status: item.status,
-          new_status: newStatus,
-          source: "app",
-        });
+        try {
+          await supabase.from("item_events").insert({
+            house_id: currentHouse.id,
+            item_id: itemId,
+            user_id: userId,
+            event_type: "status_changed",
+            old_status: item.status,
+            new_status: newStatus,
+            source: "app",
+          });
+        } catch (e) {
+          console.warn("[item_events] falhou (ignorado):", e);
+        }
       }
+
+      return true;
     },
     [supabase, updateItem]
   );
 
   const markPurchased = useCallback(
-    async (itemId: string) => {
+    async (itemId: string): Promise<boolean> => {
       // Captura o status ANTES de mudar (pro evento "purchased").
       const before = useAppStore.getState().items.find((i) => i.id === itemId);
-      await changeStatus(itemId, "tem");
+      const ok = await changeStatus(itemId, "tem"); // volta pra Despensa
+      if (!ok) return false; // rede falhou → não tenta os secundários
 
       const { currentHouse, userId } = useAppStore.getState();
-      if (!before || !currentHouse) return;
+      if (!before || !currentHouse) return true;
 
+      // Secundários (evento + data da compra) — não-críticos: try/catch silencioso.
       if (userId) {
-        await supabase.from("item_events").insert({
-          house_id: currentHouse.id,
-          item_id: itemId,
-          user_id: userId,
-          event_type: "purchased",
-          old_status: before.status,
-          new_status: "tem",
-          source: "app",
-        });
-
-        await supabase
-          .from("items")
-          .update({ last_purchased_at: new Date().toISOString() })
-          .eq("id", itemId);
+        try {
+          await supabase.from("item_events").insert({
+            house_id: currentHouse.id,
+            item_id: itemId,
+            user_id: userId,
+            event_type: "purchased",
+            old_status: before.status,
+            new_status: "tem",
+            source: "app",
+          });
+          await supabase
+            .from("items")
+            .update({ last_purchased_at: new Date().toISOString() })
+            .eq("id", itemId);
+        } catch (e) {
+          console.warn("[markPurchased] secundário falhou (ignorado):", e);
+        }
       }
+      return true;
     },
     [supabase, changeStatus]
   );
@@ -169,14 +188,19 @@ export function useItems() {
 
       addItem(item as Item);
 
-      await supabase.from("item_events").insert({
-        house_id: currentHouse.id,
-        item_id: item.id,
-        user_id: userId,
-        event_type: "created",
-        new_status: data.status,
-        source: "app",
-      });
+      // Evento (não-crítico) — try/catch silencioso pra rede ruim não estourar.
+      try {
+        await supabase.from("item_events").insert({
+          house_id: currentHouse.id,
+          item_id: item.id,
+          user_id: userId,
+          event_type: "created",
+          new_status: data.status,
+          source: "app",
+        });
+      } catch (e) {
+        console.warn("[createItem] item_events falhou (ignorado):", e);
+      }
 
       return item as Item;
     },
@@ -186,13 +210,19 @@ export function useItems() {
   const deleteItem = useCallback(
     async (itemId: string) => {
       // Otimista: some da lista NA HORA. Captura o original p/ reverter em erro.
+      const { setToast } = useAppStore.getState();
       const original = useAppStore.getState().items.find((i) => i.id === itemId);
       removeItem(itemId);
 
-      const { error } = await supabase.from("items").delete().eq("id", itemId);
-      if (error) {
-        if (original) addItem(original); // reverte (re-insere) se o banco falhar
-        throw error;
+      // Captura TUDO (rede "Failed to fetch" + erro do banco). Sem isto, a
+      // rejeição de rede virava unhandled rejection no caminho da despensa.
+      try {
+        const { error } = await supabase.from("items").delete().eq("id", itemId);
+        if (error) throw error;
+      } catch (e) {
+        if (original) addItem(original); // reverte (re-insere) — o item volta
+        setToast("Sem conexão — não consegui excluir. Tente de novo. 📶");
+        console.warn("[deleteItem] falhou:", e);
       }
     },
     [supabase, removeItem, addItem]
@@ -200,22 +230,25 @@ export function useItems() {
 
   const updateQuantity = useCallback(
     async (itemId: string, quantity: string) => {
-      const { items: cur, userId } = useAppStore.getState();
+      const { items: cur, userId, setToast } = useAppStore.getState();
       const item = cur.find((i) => i.id === itemId);
       if (!item) return;
 
       const trimmed = quantity.trim();
       updateItem(itemId, { quantity_text: trimmed || undefined });
 
-      // Sem getUser(): usa o userId já cacheado no store (edição instantânea).
-      const { error } = await supabase
-        .from("items")
-        .update({ quantity_text: trimmed || null, updated_by: userId })
-        .eq("id", itemId);
-
-      if (error) {
+      // Captura TUDO (rede "Failed to fetch" + erro do banco) — antes a rejeição
+      // de rede virava unhandled rejection. Em erro: reverte, avisa e NÃO re-lança.
+      try {
+        const { error } = await supabase
+          .from("items")
+          .update({ quantity_text: trimmed || null, updated_by: userId })
+          .eq("id", itemId);
+        if (error) throw error;
+      } catch (e) {
         updateItem(itemId, { quantity_text: item.quantity_text });
-        throw error;
+        setToast("Sem conexão — não consegui salvar. Tente de novo. 📶");
+        console.warn("[updateQuantity] falhou:", e);
       }
     },
     [supabase, updateItem]
@@ -227,19 +260,22 @@ export function useItems() {
       if (!trimmed) throw new Error("Nome inválido");
 
       // Captura o original ANTES da alteração otimista (pra reverter em erro).
-      const { items: cur, userId } = useAppStore.getState();
+      const { items: cur, userId, setToast } = useAppStore.getState();
       const original = cur.find((i) => i.id === itemId);
       updateItem(itemId, { name: trimmed });
 
-      // Sem getUser(): usa o userId já cacheado no store.
-      const { error } = await supabase
-        .from("items")
-        .update({ name: trimmed, updated_by: userId })
-        .eq("id", itemId);
-
-      if (error) {
+      // Captura TUDO (rede "Failed to fetch" + erro do banco) — antes a rejeição
+      // de rede virava unhandled rejection. Em erro: reverte, avisa e NÃO re-lança.
+      try {
+        const { error } = await supabase
+          .from("items")
+          .update({ name: trimmed, updated_by: userId })
+          .eq("id", itemId);
+        if (error) throw error;
+      } catch (e) {
         if (original) updateItem(itemId, { name: original.name });
-        throw error;
+        setToast("Sem conexão — não consegui salvar. Tente de novo. 📶");
+        console.warn("[renameItem] falhou:", e);
       }
     },
     [supabase, updateItem]
@@ -251,7 +287,7 @@ export function useItems() {
       if (!trimmed) throw new Error("Nome inválido");
 
       // Captura o original ANTES da alteração otimista (pra reverter em erro).
-      const { items: cur, userId } = useAppStore.getState();
+      const { items: cur, userId, setToast } = useAppStore.getState();
       const original = cur.find((i) => i.id === itemId);
       if (!original) return;
 
@@ -261,24 +297,27 @@ export function useItems() {
         quantity_text: data.quantity_text?.trim() || undefined,
       });
 
-      // Sem getUser(): usa o userId já cacheado no store.
-      const { error } = await supabase
-        .from("items")
-        .update({
-          name: trimmed,
-          note: data.note?.trim() || null,
-          quantity_text: data.quantity_text?.trim() || null,
-          updated_by: userId,
-        })
-        .eq("id", itemId);
-
-      if (error) {
+      // Captura TUDO (rede "Failed to fetch" + erro do banco) — antes a rejeição
+      // de rede virava unhandled rejection. Em erro: reverte, avisa e NÃO re-lança.
+      try {
+        const { error } = await supabase
+          .from("items")
+          .update({
+            name: trimmed,
+            note: data.note?.trim() || null,
+            quantity_text: data.quantity_text?.trim() || null,
+            updated_by: userId,
+          })
+          .eq("id", itemId);
+        if (error) throw error;
+      } catch (e) {
         updateItem(itemId, {
           name: original.name,
           note: original.note,
           quantity_text: original.quantity_text,
         });
-        throw error;
+        setToast("Sem conexão — não consegui salvar. Tente de novo. 📶");
+        console.warn("[editItem] falhou:", e);
       }
     },
     [supabase, updateItem]

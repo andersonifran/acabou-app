@@ -104,6 +104,10 @@ interface AppState {
   initialStatus: string | null;
   setInitialStatus: (status: string | null) => void;
 
+  // Toast global (ex.: "sem conexão") — some sozinho
+  toast: string | null;
+  setToast: (msg: string | null) => void;
+
   // Reset
   reset: () => void;
 }
@@ -188,6 +192,9 @@ export const useAppStore = create<AppState>((set, get) => {
     initialStatus: null,
     setInitialStatus: (status) => set({ initialStatus: status }),
 
+    toast: null,
+    setToast: (msg) => set({ toast: msg }),
+
     reset: () => {
       set({
         userId: null,
@@ -203,6 +210,7 @@ export const useAppStore = create<AppState>((set, get) => {
         isAddItemModalOpen: false,
         initialStatus: null,
         dataSyncComplete: false,
+        toast: null, // não vaza toast entre contas no mesmo aparelho (app de família)
       });
       if (typeof window !== "undefined") {
         try { localStorage.removeItem(CACHE_KEY); } catch {}
