@@ -336,7 +336,66 @@ export async function sendPlanExpiringEmail(
 }
 
 // =============================================
-// 4. ALERTA DE VAZAMENTO (interno — só admin)
+// 4. RECONQUISTA DE NOTIFICAÇÕES (push desligado)
+// =============================================
+// Pra quem NUNCA ativou (ou bloqueou no sistema, único caso que a web não cura
+// sozinha). Convida de volta pra ligar as notificações — o CTA abre o app já
+// com o convite (?ativar=notificacoes). Enviado UMA vez por usuário (controle
+// via profiles.push_reengage_at) pela ferramenta admin. Sem spam.
+export async function sendPushReengageEmail(email: string, name: string) {
+  if (!process.env.RESEND_API_KEY) return;
+
+  const firstName = name.split(" ")[0] || "Oi";
+  const resend = getResend();
+
+  await resend.emails.send({
+    from: FROM,
+    to: email,
+    replyTo: REPLY_TO,
+    subject: `${firstName}, ligue as notificações e não esqueça mais nada 🔔`,
+    html: emailLayout(`
+      ${greenHeader("Posso te avisar na hora certa? 🔔", "É só ligar as notificações — leva 1 toque", MASCOTE.acenando)}
+      <div style="padding: 40px 32px; border: 1px solid #e5e7eb; border-top: none;">
+        <h2 style="margin: 0 0 16px; font-size: 22px; color: #111827;">
+          Oi, ${firstName}! 👋
+        </h2>
+        <p style="margin: 0 0 20px; font-size: 15px; color: #4b5563; line-height: 1.7;">
+          Notei que suas notificações estão <strong>desligadas</strong> — e assim
+          você acaba perdendo os melhores avisos do Acabou?. Com elas ligadas, eu
+          cuido disso pra você:
+        </p>
+
+        <div style="background: #f0fdf4; border-radius: 12px; padding: 24px; margin: 0 0 24px;">
+          <p style="margin: 0 0 12px; font-size: 14px; color: #111827; line-height: 1.6;">🛒 &nbsp;<strong>Na hora certa</strong> de ir às compras</p>
+          <p style="margin: 0 0 12px; font-size: 14px; color: #111827; line-height: 1.6;">📦 &nbsp;Quando algo estiver <strong>acabando</strong></p>
+          <p style="margin: 0; font-size: 14px; color: #111827; line-height: 1.6;">👨‍👩‍👧 &nbsp;Quando alguém da família <strong>atualizar a lista</strong></p>
+        </div>
+
+        <p style="margin: 0 0 8px; font-size: 15px; color: #4b5563; line-height: 1.7;">
+          É rapidinho — toque no botão e confirme em "Permitir":
+        </p>
+
+        <div style="text-align: center; margin: 24px 0 8px;">
+          <a href="${APP_URL}/home?ativar=notificacoes" style="display: inline-block; background: #16a34a; color: white; text-decoration: none; font-weight: 700; font-size: 16px; padding: 14px 40px; border-radius: 12px;">🔔 Ativar minhas notificações</a>
+        </div>
+
+        <p style="margin: 16px 0 24px; font-size: 12px; color: #9ca3af; text-align: center; line-height: 1.6;">
+          Você controla tudo — pode desativar quando quiser. Não vamos mandar este lembrete de novo.
+        </p>
+
+        <p style="margin: 0; font-size: 14px; color: #111827;">
+          Conto com você! 💚<br>
+          <strong>Sacolino & Equipe Acabou?</strong> 🛒
+        </p>
+      </div>
+    `),
+  });
+
+  console.log(`[Email] ✅ Reconquista de notificações enviada para ${email}`);
+}
+
+// =============================================
+// 5. ALERTA DE VAZAMENTO (interno — só admin)
 // =============================================
 // Disparado pela faxina diária (check-subscriptions) SE — depois de congelar
 // tudo — ainda sobrar alguma casa com plano pago/trial vencido e não-inativa

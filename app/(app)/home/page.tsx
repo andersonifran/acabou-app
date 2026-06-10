@@ -15,6 +15,8 @@ import { CasaEmDiaBadge } from "@/components/shared/CasaEmDiaBadge";
 import { LocationIcon } from "@/components/shared/LocationIcon";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useRole } from "@/hooks/useRole";
+import { usePushNotifications } from "@/hooks/usePushNotifications";
+import { NotificationOptInModal } from "@/components/shared/NotificationOptInModal";
 import { cn } from "@/lib/utils";
 
 const SELECTED_HOUSE_KEY = "acabou_selected_house";
@@ -79,6 +81,17 @@ export default function HomePage() {
     }
   }
   const { canManageItems, isOwner: isRoleOwner, loaded: roleLoaded } = useRole();
+
+  // Deep-link do e-mail de reconquista (/home?ativar=notificacoes) → abre o
+  // convite premium de notificações. Lê via window.location (sem useSearchParams,
+  // que exigiria Suspense). Só mostra se a permissão ainda não foi decidida.
+  const push = usePushNotifications();
+  const [showOptIn, setShowOptIn] = useState(false);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const ativar = new URLSearchParams(window.location.search).get("ativar");
+    if (ativar === "notificacoes" && push.state === "prompt") setShowOptIn(true);
+  }, [push.state]);
 
   const shoppingItems = items.filter((i) => SHOPPING_LIST_STATUSES.includes(i.status as any));
   const shoppingCount = shoppingItems.length;
@@ -229,6 +242,8 @@ export default function HomePage() {
 
   return (
     <div>
+      <NotificationOptInModal open={showOptIn} onClose={() => setShowOptIn(false)} />
+
       {/* Header com ícone do imóvel + seletor de casas */}
       <header className="sticky top-0 z-40 bg-white border-b border-gray-100 px-4 py-3">
         <div className="max-w-lg mx-auto flex items-center justify-between gap-3">

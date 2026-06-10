@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
-import { sendAdminLeakAlert } from "@/lib/emails";
+import { sendAdminLeakAlert, sendPushReengageEmail } from "@/lib/emails";
 import { emailTrialHash } from "@/lib/trial-email";
 import { sendPushNotification } from "@/lib/push";
 
@@ -385,6 +385,94 @@ export async function GET(request: NextRequest) {
     });
   }
 
+  // ── RECONQUISTA por e-mail: "ligue as notificações" (push desligado) ──
+  // Alvo: tem e-mail + SEM push + ativo nos últimos N dias + nunca recebeu este
+  // e-mail (push_reengage_at null). dry (padrão) = só conta/preview; send=1 =
+  // envia de verdade (em lotes pra não estourar timeout/rate). Idempotente:
+  // marca push_reengage_at após enviar → nunca manda 2x.
+  if (acao === "reengage_push") {
+    const dias = Math.max(1, parseInt(request.nextUrl.searchParams.get("dias") || "45", 10));
+    const lote = Math.max(1, Math.min(60, parseInt(request.nextUrl.searchParams.get("lote") || "30", 10)));
+    const enviar = request.nextUrl.searchParams.get("send") === "1";
+    const ativoDesde = new Date(Date.now() - dias * 24 * 60 * 60 * 1000).getTime();
+
+    // Perfis (paginado).
+    const profs: { user_id: string; email: string | null; full_name: string | null; last_active_at: string | null; push_reengage_at: string | null }[] = [];
+    for (let i = 0; i < 50; i++) {
+      const { data, error } = await admin
+        .from("profiles")
+        .select("user_id, email, full_name, last_active_at, push_reengage_at")
+        .range(i * 1000, i * 1000 + 999);
+      if (error || !data || data.length === 0) break;
+      profs.push(...(data as any));
+      if (data.length < 1000) break;
+    }
+
+    // Quem TEM push (paginado) → excluir.
+    const comPush = new Set<string>();
+    for (let i = 0; i < 50; i++) {
+      const { data, error } = await admin
+        .from("push_subscriptions")
+        .select("user_id")
+        .range(i * 1000, i * 1000 + 999);
+      if (error || !data || data.length === 0) break;
+      for (const s of data as any) comPush.add(s.user_id);
+      if (data.length < 1000) break;
+    }
+
+    const elegiveis = profs.filter((p) => {
+      if (!p.email) return false;
+      if (comPush.has(p.user_id)) return false;          // já tem notificação
+      if (p.push_reengage_at) return false;              // já recebeu este e-mail
+      if (!p.last_active_at) return false;               // nunca usou → pula
+      return new Date(p.last_active_at).getTime() >= ativoDesde; // ativo recente
+    });
+
+    if (!enviar) {
+      return NextResponse.json({
+        ok: true,
+        acao: "reengage_push",
+        modo: "dry_run",
+        criterio: `sem push + ativo nos últimos ${dias} dias + nunca recebeu`,
+        elegiveis: elegiveis.length,
+        exemplos: elegiveis.slice(0, 15).map((p) => p.email),
+        como_enviar: `Adicione &send=1 pra enviar (lotes de ${lote}). Ex.: ?acao=reengage_push&send=1`,
+      });
+    }
+
+    // ENVIO (lote) — sequencial pra respeitar rate-limit do Resend.
+    const alvo = elegiveis.slice(0, lote);
+    let enviados = 0;
+    const falhas: string[] = [];
+    for (const p of alvo) {
+      try {
+        await sendPushReengageEmail(p.email as string, p.full_name || "");
+        await admin
+          .from("profiles")
+          .update({ push_reengage_at: nowISO })
+          .eq("user_id", p.user_id);
+        enviados++;
+      } catch (e: any) {
+        falhas.push(`${p.email}: ${e?.message || "erro"}`);
+      }
+    }
+
+    return NextResponse.json({
+      ok: true,
+      acao: "reengage_push",
+      modo: "envio",
+      elegiveis_total: elegiveis.length,
+      enviados,
+      falhas: falhas.length,
+      falhas_detalhe: falhas.slice(0, 10),
+      restantes: elegiveis.length - enviados,
+      message:
+        elegiveis.length - enviados > 0
+          ? `Enviados ${enviados}. Ainda faltam ${elegiveis.length - enviados} — rode de novo pra mandar o próximo lote.`
+          : `Enviados ${enviados}. Todos os elegíveis foram contatados. ✅`,
+    });
+  }
+
   // ── AUDITORIA (relatório) ──
   // Vazamentos = plano != free, JÁ vencido, mas status não está "inactive"
   // (deveriam estar congelados). O esperado é ZERO.
@@ -465,6 +553,7 @@ export async function GET(request: NextRequest) {
       check_confirmados: "?acao=check_confirmados",
       check_push: "?acao=check_push",
       push_debug: "?acao=push_debug&email=...&send=1",
+      reengage_push: "?acao=reengage_push (dry) | &send=1 pra enviar",
     },
   });
 }
