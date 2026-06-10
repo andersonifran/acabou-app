@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { sendAdminLeakAlert } from "@/lib/emails";
 import { emailTrialHash } from "@/lib/trial-email";
+import { sendPushNotification } from "@/lib/push";
 
 // =============================================================
 // Ferramenta de ADMIN (só Anderson) — auditoria + correção de trials.
@@ -291,6 +292,99 @@ export async function GET(request: NextRequest) {
     });
   }
 
+  // ── DEBUG de push de UM usuário (por email) — diagnóstico de aparelho ──
+  // Lista as inscrições do usuário, opcionalmente ENVIA um teste em cada uma e
+  // mostra o status real (entregue à FCM / morta / falhou). Também confirma na
+  // prática se a tabela aceita type='nudge'. Uso: ?acao=push_debug&email=...&send=1
+  if (acao === "push_debug") {
+    const email = request.nextUrl.searchParams.get("email")?.trim().toLowerCase();
+    if (!email) {
+      return NextResponse.json({ ok: false, error: "Passe ?email=<email do usuário>." }, { status: 400 });
+    }
+    const { data: prof } = await admin
+      .from("profiles")
+      .select("user_id, full_name, email")
+      .ilike("email", email)
+      .maybeSingle();
+    if (!prof) {
+      return NextResponse.json({ ok: false, error: `Nenhum perfil com email ${email}.` }, { status: 404 });
+    }
+    const uid = (prof as any).user_id as string;
+
+    const { data: subs } = await admin
+      .from("push_subscriptions")
+      .select("id, endpoint, p256dh, auth, created_at")
+      .eq("user_id", uid)
+      .order("created_at", { ascending: false });
+
+    const wantSend = request.nextUrl.searchParams.get("send") === "1";
+    const detalhe = [];
+    for (const s of (subs ?? []) as any[]) {
+      let host = "";
+      try { host = new URL(s.endpoint).host; } catch {}
+      let envio: string | null = null;
+      if (wantSend) {
+        const r = await sendPushNotification(
+          { endpoint: s.endpoint, p256dh: s.p256dh, auth: s.auth },
+          {
+            title: "Teste do Sacolino 🔧",
+            body: "Diagnóstico de notificação — se chegou, tá tudo certo! 💚",
+            icon: "/mascote/sacolino-acenando.png",
+            url: "/home",
+            tag: "diag-push",
+          }
+        );
+        envio = r.success ? "entregue_a_fcm(201)" : r.expired ? "morta(410/404)" : "falhou";
+      }
+      detalhe.push({
+        host,
+        endpoint_fim: String(s.endpoint).slice(-14),
+        created_at: s.created_at,
+        envio,
+      });
+    }
+
+    // Confirma na prática se a tabela aceita type='nudge' (insere + apaga).
+    let nudge_type_aceito: boolean | null = null;
+    let nudge_type_erro: string | null = null;
+    const { data: anyHouse } = await admin
+      .from("house_members")
+      .select("house_id")
+      .eq("user_id", uid)
+      .limit(1)
+      .maybeSingle();
+    if ((anyHouse as any)?.house_id) {
+      const { data: ins, error: nErr } = await admin
+        .from("notifications")
+        .insert({ user_id: uid, house_id: (anyHouse as any).house_id, type: "nudge", title: "__diag__", body: "__diag__" })
+        .select("id")
+        .maybeSingle();
+      if (nErr) {
+        nudge_type_aceito = false;
+        nudge_type_erro = nErr.message;
+      } else {
+        nudge_type_aceito = true;
+        if ((ins as any)?.id) await admin.from("notifications").delete().eq("id", (ins as any).id);
+      }
+    }
+
+    return NextResponse.json({
+      ok: true,
+      acao: "push_debug",
+      usuario: { email: (prof as any).email, nome: (prof as any).full_name, user_id: uid },
+      inscricoes: (subs ?? []).length,
+      detalhe,
+      nudge_type_aceito,
+      nudge_type_erro,
+      dica:
+        (subs ?? []).length === 0
+          ? "Sem inscrição salva → o aparelho não está inscrito no servidor (reative no app)."
+          : wantSend
+          ? "Se 'entregue_a_fcm(201)' e mesmo assim não aparece no aparelho → é permissão/canal do Android (reabrir permissão de notificação do app). 'morta' → inscrição obsoleta."
+          : "Adicione &send=1 pra enviar um teste em cada inscrição e ver o status real.",
+    });
+  }
+
   // ── AUDITORIA (relatório) ──
   // Vazamentos = plano != free, JÁ vencido, mas status não está "inactive"
   // (deveriam estar congelados). O esperado é ZERO.
@@ -370,6 +464,7 @@ export async function GET(request: NextRequest) {
       backfill_trial_grants: "?acao=backfill_trial_grants",
       check_confirmados: "?acao=check_confirmados",
       check_push: "?acao=check_push",
+      push_debug: "?acao=push_debug&email=...&send=1",
     },
   });
 }

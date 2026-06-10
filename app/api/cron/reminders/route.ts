@@ -346,7 +346,9 @@ export async function GET(request: NextRequest) {
 
           // Grava ANTES de enviar (dedup entre execuções + histórico in-app).
           // SEMPRE type "nudge" → o dedup acima cobre os dois formatos. Se a
-          // gravação falhar, NÃO envia (evita duplicar na próxima execução).
+          // gravação falhar (ex.: constraint), NÃO bloqueia a ENTREGA — o push é
+          // o que importa; só loga. (A dedup via DB fica degradada até o registro
+          // voltar a gravar — risco baixo: a janela das 18h roda 1x/dia.)
           const { error: insErr } = await admin.from("notifications").insert({
             user_id: uid,
             house_id: primary.houseId,
@@ -355,10 +357,7 @@ export async function GET(request: NextRequest) {
             body,
             ...(itemsCount != null ? { data: { items_count: itemsCount } } : {}),
           });
-          if (insErr) {
-            console.error("[Cron] Falha ao gravar nudge:", uid, insErr.message);
-            continue;
-          }
+          if (insErr) console.error("[Cron] Falha ao gravar nudge (segue enviando):", uid, insErr.message);
           nudgedToday.add(uid);
           await sendPushToUser(admin, uid, {
             title,
