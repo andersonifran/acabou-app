@@ -15,9 +15,11 @@ export const metadata: Metadata = {
     "Marque o que acabou em segundos, compartilhe com sua família e vá ao mercado com a lista certa.",
   manifest: "/manifest.json",
   icons: {
-    // Kit oficial de favicon (gerado da logo oficial). O .ico multi-tamanho fica
-    // em app/favicon.ico (servido pelo Next em /favicon.ico).
+    // Favicon da ABA: versão LEGÍVEL (traço grosso, vetorial) — navegador moderno
+    // usa o SVG (nítido em qualquer tamanho). PNG/.ico = fallback p/ navegador antigo.
+    // (apple-touch e ícones do PWA seguem a logo OFICIAL completa — ver abaixo.)
     icon: [
+      { url: "/favicon.svg", type: "image/svg+xml" },
       { url: "/favicon-32x32.png", type: "image/png", sizes: "32x32" },
       { url: "/favicon-16x16.png", type: "image/png", sizes: "16x16" },
       { url: "/web-app-manifest-192x192.png", type: "image/png", sizes: "192x192" },
