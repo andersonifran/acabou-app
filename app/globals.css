@@ -263,6 +263,40 @@ input, select, textarea {
   .pulse-glow { animation: none; }
 }
 
+/* Sino do convite de notificação — balança como quem toca/chama atenção */
+@keyframes bell-ring {
+  0%, 55%, 100% { transform: rotate(0deg); }
+  5%, 15%, 25% { transform: rotate(13deg); }
+  10%, 20%, 30% { transform: rotate(-13deg); }
+  35% { transform: rotate(7deg); }
+  42% { transform: rotate(-7deg); }
+  48% { transform: rotate(0deg); }
+}
+.animate-bell-ring {
+  animation: bell-ring 2.6s ease-in-out infinite;
+  transform-origin: 50% 12%;
+}
+/* Halo que pulsa atrás do sino */
+@keyframes halo-pulse {
+  0%, 100% { transform: scale(1); opacity: 0.55; }
+  50% { transform: scale(1.35); opacity: 0; }
+}
+.animate-halo {
+  animation: halo-pulse 2.4s ease-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-bell-ring, .animate-halo { animation: none; }
+}
+
+/* Convite de notificação — fade do fundo + pop do card */
+@keyframes optinFadeIn { from { opacity: 0; } to { opacity: 1; } }
+.animate-optin-fade { animation: optinFadeIn 0.2s ease-out; }
+@keyframes optinPop {
+  0% { opacity: 0; transform: translateY(14px) scale(0.96); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+.animate-optin-pop { animation: optinPop 0.36s cubic-bezier(0.18, 0.89, 0.32, 1.28); }
+
 /* ═══ APP — TRANSIÇÃO DE PÁGINA ═══ */
 /* Slide-up suave (telas que não são abas). SEM fade de opacity — a página
    entra OPACA, cobrindo a anterior (evita a sensação de "2 páginas juntas"

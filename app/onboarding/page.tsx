@@ -9,6 +9,8 @@ import { PLAN_LIMITS } from "@/types";
 import { trackCadastroCompleto } from "@/lib/analytics";
 import { Mascote } from "@/components/shared/Mascote";
 import { LocationIcon } from "@/components/shared/LocationIcon";
+import { NotificationOptInModal } from "@/components/shared/NotificationOptInModal";
+import { usePushNotifications } from "@/hooks/usePushNotifications";
 
 // Itens por tipo de imóvel
 const ITEMS_BY_TYPE: Record<string, { category: string; items: string[] }[]> = {
@@ -102,6 +104,13 @@ function OnboardingContent() {
   const [pageReady, setPageReady] = useState(false);
   const [userIsPaid, setUserIsPaid] = useState(false);
   const maxItems = userIsPaid ? Infinity : PLAN_LIMITS.free.max_items;
+
+  // Convite de notificação (pré-prompt) no momento de ALTA INTENÇÃO: logo após o
+  // 1º item marcado. Só aparece se a permissão ainda não foi decidida (state
+  // "prompt") — não incomoda quem já ativou nem quem já bloqueou.
+  const push = usePushNotifications();
+  const [showOptIn, setShowOptIn] = useState(false);
+  const [optInAsked, setOptInAsked] = useState(false);
 
   useEffect(() => {
     async function init() {
@@ -281,6 +290,8 @@ function OnboardingContent() {
   }
 
   function toggleItem(name: string) {
+    // 1º item marcado → convite de notificação (momento de alta intenção).
+    const willBeFirst = selected.size === 0 && !selected.has(name);
     setSelected((prev) => {
       const next = new Set(prev);
       if (next.has(name)) {
@@ -291,6 +302,11 @@ function OnboardingContent() {
       }
       return next;
     });
+    if (willBeFirst && !optInAsked && push.state === "prompt") {
+      setOptInAsked(true);
+      // pequeno atraso pra o "check" do item aparecer antes do convite subir.
+      setTimeout(() => setShowOptIn(true), 350);
+    }
   }
 
   function toggleAll(items: string[]) {
@@ -494,6 +510,8 @@ function OnboardingContent() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
+      <NotificationOptInModal open={showOptIn} onClose={() => setShowOptIn(false)} />
+
       {/* Header fixo */}
       <div className="sticky top-0 bg-white z-10 border-b border-gray-100 shadow-sm">
         <div className="px-4 pt-5 pb-3 max-w-lg mx-auto">

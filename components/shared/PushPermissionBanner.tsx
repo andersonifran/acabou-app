@@ -38,9 +38,9 @@ export function PushPermissionBanner() {
         <Bell size={20} className="text-green-600" />
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-semibold text-gray-900">Ative as notificações</p>
+        <p className="text-sm font-semibold text-gray-900">Não perca nada importante 🔔</p>
         <p className="text-xs text-gray-600 mt-0.5">
-          Saiba na hora quando alguém marcar um item como acabou
+          Te avisamos na hora de comprar e quando algo estiver acabando.
         </p>
         <div className="flex gap-2 mt-2.5">
           <button
