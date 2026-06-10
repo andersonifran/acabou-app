@@ -20,6 +20,12 @@ function BrandName({ className = "" }: { className?: string }) {
   return <span className={`font-black text-gray-900 ${className}`}>Acabou?</span>;
 }
 
+// Canônica explícita da landing → resolve o aviso "Cópia sem página canônica" do
+// Search Console (diz ao Google que https://www.acabouapp.com.br/ é a versão oficial).
+export const metadata = {
+  alternates: { canonical: "/" },
+};
+
 export default function LandingPage() {
   return (
     <div className="min-h-screen bg-white">

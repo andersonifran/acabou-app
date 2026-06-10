@@ -7,6 +7,9 @@ import { Analytics } from "@vercel/analytics/next";
 const geist = Geist({ subsets: ["latin"], variable: "--font-geist-sans" });
 
 export const metadata: Metadata = {
+  // Base canônica: faz o Next resolver URLs (canonical/OG) para o domínio www+https.
+  // Ajuda o Google a consolidar duplicatas (www vs não-www, http vs https).
+  metadataBase: new URL("https://www.acabouapp.com.br"),
   title: "Acabou? — Sua casa sempre sabe o que precisa comprar",
   description:
     "Marque o que acabou em segundos, compartilhe com sua família e vá ao mercado com a lista certa.",
