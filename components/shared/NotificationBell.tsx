@@ -14,6 +14,7 @@ interface Notification {
   body: string;
   read: boolean;
   created_at: string;
+  data?: { items_count?: number } | null;
 }
 
 export function NotificationBell() {
@@ -32,7 +33,7 @@ export function NotificationBell() {
 
     const { data } = await supabase
       .from("notifications")
-      .select("id, type, title, body, read, created_at")
+      .select("id, type, title, body, read, created_at, data")
       .eq("user_id", userId)
       .order("created_at", { ascending: false })
       .limit(30);
@@ -83,8 +84,10 @@ export function NotificationBell() {
     setUnreadCount(0);
   }
 
-  function typeIcon(type: string) {
-    switch (type) {
+  function typeIcon(n: Notification) {
+    // Nudge sobre itens pendentes (carrega items_count) → carrinho, igual lembrete.
+    if (n.type === "nudge" && n.data?.items_count) return "🛒";
+    switch (n.type) {
       case "item_change": return "📦";
       case "reminder": return "🛒";
       case "invite": return "👋";
@@ -149,7 +152,7 @@ export function NotificationBell() {
                       !notif.read && "bg-green-50/50"
                     )}
                   >
-                    <span className="text-lg shrink-0 mt-0.5">{typeIcon(notif.type)}</span>
+                    <span className="text-lg shrink-0 mt-0.5">{typeIcon(notif)}</span>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-gray-900">{notif.title}</p>
                       <p className="text-xs text-gray-500 mt-0.5">{notif.body}</p>

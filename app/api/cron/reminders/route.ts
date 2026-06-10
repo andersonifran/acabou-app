@@ -10,12 +10,20 @@ import { sendPushToUser } from "@/lib/push";
  *   itens pendentes. Frase ROTACIONA (não repete dia a dia).
  *
  * PARTE 2 (GRÁTIS) — Nudge diário de re-engajamento (estilo Duolingo), 1x/dia
- *   na janela das 18h, pra quem tem push e NÃO recebeu outra notificação hoje:
- *     • TEM itens pendentes  → lembrete "tem N pra comprar" (pra quem não marcou
- *       horário — assim ninguém esquece os itens da lista).
- *     • SEM itens            → nudge de despensa (confere o que tá acabando).
+ *   na janela das 18h, pra TODO usuário com push (ativo nos últimos 30d). É o
+ *   nosso DIFERENCIAL → SEMPRE vai, mesmo pra quem já tem lembrete agendado ou
+ *   recebeu evento de item hoje. Conteúdo escolhido sem redundância:
+ *     • tem lembrete agendado → nudge AMIGÁVEL de despensa (já é avisado dos
+ *       itens no horário dele).
+ *     • sem lembrete agendado E tem itens → "tem N pra comprar" (não esquece a
+ *       lista).
+ *     • sem itens → nudge de despensa (confere o que tá acabando).
  *
- * Regra de ouro: no máximo 1 notificação/dia por usuário (sem colisão).
+ * Regra: o lembrete agendado e o nudge são INDEPENDENTES (cada um só evita
+ * repetir a si mesmo no dia). Logo um usuário pode receber 2 notificações
+ * intencionais/dia (o lembrete que ELE marcou + nosso nudge) — de propósito,
+ * pois ele pode perder/esquecer a que marcou. item_change (tempo real) não
+ * bloqueia nenhum dos dois.
  *
  * Variedade premium: a frase é escolhida por (dia-do-ano + offset do usuário) →
  * muda TODO dia (nunca repete a de ontem) e é diferente entre usuários. Cada
@@ -45,27 +53,30 @@ const PENDING_PHRASES: {
   { title: "Bora resolver as compras? 🛍️", body: (n, p, c) => `Tem ${n} ${p} esperando na lista da "${c}".`, pose: POSE.buscando },
   { title: "Sua lista já tá pronta 📝", body: (n, p, c) => `Tem ${n} ${p} pra pegar no mercado da "${c}".`, pose: POSE.placa },
   { title: "Vai ao mercado hoje? 🛒", body: (n, p, c) => `Não esqueça: ${n} ${p} na lista da "${c}".`, pose: POSE.buscando },
-  { title: "Tem coisa faltando em casa 👀", body: (n, p, c) => `Você marcou ${n} ${p} pra comprar na "${c}".`, pose: POSE.alerta },
+  { title: "Tem item esperando na lista 👀", body: (n, p, c) => `Você marcou ${n} ${p} pra comprar na "${c}".`, pose: POSE.alerta },
   { title: "Psiu, lembra das compras? 🙋", body: (n, p, c) => `Tem ${n} ${p} te esperando na lista da "${c}".`, pose: POSE.acenando },
   { title: "Antes que esqueça… 📌", body: (n, p, c) => `Você tem ${n} ${p} pra comprar na "${c}".`, pose: POSE.placa },
-  { title: "Lista cheia, despensa vazia? 🛒", body: (n, p, c) => `Tem ${n} ${p} aguardando compra na "${c}".`, pose: POSE.buscando },
+  { title: "Sua lista tá te chamando 🛒", body: (n, p, c) => `Tem ${n} ${p} aguardando compra na "${c}".`, pose: POSE.buscando },
 ];
 
-// NUDGE DE DESPENSA — re-engajamento pra quem NÃO tem itens pendentes.
+// NUDGE DE ENGAJAMENTO — re-engajamento pra quem NÃO tem itens pendentes.
+// Copy NEUTRO de propósito: serve pra QUALQUER local (Casa/Apê/Empresa/Praia…) e
+// pra quem tem vários locais — sem citar "casa"/"família"/"despensa", que soariam
+// errado pra quem escolheu "Empresa". O local só é citado no aviso de itens.
 const NUDGE_PHRASES: { title: string; body: string; pose: string }[] = [
-  { title: "Dá uma olhada na despensa hoje 👀", body: "Marque o que tá acabando pra não faltar nada.", pose: POSE.buscando },
-  { title: "Tá faltando algo em casa? 🏠", body: "Deixa marcado pra não esquecer no mercado.", pose: POSE.buscando },
-  { title: "Bora manter a casa abastecida? 🛒", body: "Confere a despensa em 10 segundos.", pose: POSE.placa },
+  { title: "Dá uma olhada no que tá acabando 👀", body: "Marque os itens no fim pra não faltar nada.", pose: POSE.buscando },
+  { title: "Tá faltando alguma coisa? 🛒", body: "Deixa marcado pra não esquecer no mercado.", pose: POSE.buscando },
+  { title: "Bora manter tudo abastecido? 🛒", body: "Confere seu estoque em 10 segundos.", pose: POSE.placa },
   { title: "Café, arroz, sabão... 🤔", body: "Se tá no fim, deixa anotado no Acabou?", pose: POSE.buscando },
   { title: "Antes de ir ao mercado 📝", body: "Marque o que falta — a lista se monta sozinha.", pose: POSE.placa },
-  { title: "10 segundos agora 🙈", body: "Evite o 'ah, esqueci!' na hora das compras.", pose: POSE.acenando },
-  { title: "Sua família conta com você 💚", body: "Marque o que tá faltando em casa.", pose: POSE.feliz },
-  { title: "Despensa em dia = vida tranquila 😌", body: "Dá uma conferida rapidinho?", pose: POSE.feliz },
-  { title: "O que será que tá acabando aí? 👀", body: "Confere rapidinho na despensa.", pose: POSE.buscando },
-  { title: "Nada pior que ver que faltou 😅", body: "Olha a despensa antes de sair de casa!", pose: POSE.alerta },
+  { title: "10 segundinhos agora 🙈", body: "Evite o 'ah, esqueci!' na hora das compras.", pose: POSE.acenando },
+  { title: "Conta com a gente pra não esquecer 💚", body: "Marque o que estiver faltando.", pose: POSE.feliz },
+  { title: "Estoque em dia = vida tranquila 😌", body: "Dá uma conferida rapidinho?", pose: POSE.feliz },
+  { title: "O que será que tá acabando? 👀", body: "Confere rapidinho sua lista.", pose: POSE.buscando },
+  { title: "Nada pior que ver que faltou 😅", body: "Confere antes de sair pro mercado!", pose: POSE.alerta },
 ];
 const NUDGE_FRIDAY = { title: "Fim de semana chegando! 🛒", body: "Vê o que falta antes das compras.", pose: POSE.comemorando };
-const NUDGE_SUNDAY = { title: "Bora começar a semana abastecido? 🗓️", body: "Confere a despensa e monte a lista.", pose: POSE.feliz };
+const NUDGE_SUNDAY = { title: "Bora começar a semana abastecido? 🗓️", body: "Confere o estoque e monte a lista.", pose: POSE.feliz };
 
 // Escolhe um item do array de forma estável pelo "seed" (dia + usuário).
 function pick<T>(arr: T[], seed: number): T {
@@ -107,8 +118,12 @@ export async function GET(request: NextRequest) {
   );
   const dayKey = `${brasilNow.getUTCFullYear()}-${String(brasilNow.getUTCMonth() + 1).padStart(2, "0")}-${String(brasilNow.getUTCDate()).padStart(2, "0")}`;
 
-  // Dedup global: no máximo 1 notificação/dia por usuário.
-  const notifiedToday = new Set<string>();
+  // Dedup POR TIPO (independentes): o lembrete agendado e o nudge diário podem
+  // coexistir no mesmo dia (o usuário pode perder/esquecer o que marcou, então o
+  // nudge amigável — nosso diferencial — SEMPRE vai). Cada um só evita repetir a
+  // SI MESMO no dia. Eventos em tempo real (item_change) NÃO bloqueiam nenhum.
+  const remindedToday = new Set<string>(); // já recebeu o lembrete agendado hoje
+  const nudgedToday = new Set<string>();   // já recebeu o nudge diário hoje
 
   let remindersSent = 0;
   let nudgesSent = 0;
@@ -132,16 +147,18 @@ export async function GET(request: NextRequest) {
       const reminderMinutes = rh * 60 + rm;
       if (reminderMinutes < slotStart || reminderMinutes >= slotStart + 15) continue;
 
-      // Já recebeu QUALQUER notificação hoje? (regra de ouro: máx 1/dia por usuário)
-      if (notifiedToday.has(house.owner_id)) continue;
+      // Já recebeu O LEMBRETE AGENDADO hoje? (evita lembrete duplo p/ quem tem
+      // várias casas — mas NÃO bloqueia o nudge nem é bloqueado por item_change.)
+      if (remindedToday.has(house.owner_id)) continue;
       const { data: existing } = await admin
         .from("notifications")
         .select("id")
         .eq("user_id", house.owner_id)
+        .eq("type", "reminder")
         .gte("created_at", todayStartISO)
         .limit(1);
       if (existing && existing.length > 0) {
-        notifiedToday.add(house.owner_id);
+        remindedToday.add(house.owner_id);
         continue;
       }
 
@@ -167,7 +184,7 @@ export async function GET(request: NextRequest) {
         body,
         data: { items_count: count },
       });
-      notifiedToday.add(house.owner_id);
+      remindedToday.add(house.owner_id);
       await sendPushToUser(admin, house.owner_id, {
         title: ph.title,
         body,
@@ -187,81 +204,136 @@ export async function GET(request: NextRequest) {
   const isNudgeWindow = brasilHour === 18 && brasilMinute < 15;
   if (isNudgeWindow) {
     try {
-      const { data: subs } = await admin.from("push_subscriptions").select("user_id");
-      const pushUserIds = [...new Set((subs ?? []).map((s: { user_id: string }) => s.user_id))];
-
-      // Casa primária de cada dono (id + nome) → registrar o nudge + saber se tem
-      // itens pendentes. Mantém a 1ª casa (a maioria tem só uma).
-      const { data: nudgeHouses } = await admin
-        .from("houses")
-        .select("id, owner_id, name")
-        .in("owner_id", pushUserIds.length > 0 ? pushUserIds : ["__none__"])
-        .order("id", { ascending: true }); // determinístico: mesma casa primária todo dia
-      const ownerPrimary = new Map<string, { houseId: string; name: string }>();
-      for (const h of (nudgeHouses ?? []) as { id: string; owner_id: string; name: string }[]) {
-        if (!ownerPrimary.has(h.owner_id)) ownerPrimary.set(h.owner_id, { houseId: h.id, name: h.name });
+      // Push subscriptions — PAGINADO. O PostgREST corta em 1000 linhas; sem
+      // paginar, acima de 1000 dispositivos os usuários PARAM de receber o nudge
+      // EM SILÊNCIO (é por dispositivo → dedup por user_id). Crítico p/ escalar.
+      const subUserSet = new Set<string>();
+      for (let i = 0; i < 500; i++) {
+        const { data, error } = await admin
+          .from("push_subscriptions")
+          .select("user_id")
+          .range(i * 1000, i * 1000 + 999);
+        if (error || !data || data.length === 0) break;
+        for (const s of data as { user_id: string }[]) subUserSet.add(s.user_id);
+        if (data.length < 1000) break;
+        // Teto de 500k linhas (500 páginas). Se um dia bater aqui, é hora de
+        // migrar pra processamento em lotes/fila (não dá pra carregar tudo numa
+        // execução). Loga em vez de cortar em silêncio.
+        if (i === 499) console.warn("[Cron] push_subscriptions atingiu o teto de paginação (500k) — aumentar/migrar pra lotes.");
       }
-
-      // Quantos itens pendentes por casa primária (1 query só) → pra decidir, por
-      // usuário, entre "lembrete de compras" e "nudge de despensa".
-      const primaryHouseIds = [...ownerPrimary.values()].map((v) => v.houseId);
-      const pendingByHouse = new Map<string, number>();
-      if (primaryHouseIds.length > 0) {
-        const { data: pendingItems } = await admin
-          .from("items")
-          .select("house_id")
-          .in("house_id", primaryHouseIds)
-          .in("status", ["acabou", "acabando", "comprar"]);
-        for (const it of (pendingItems ?? []) as { house_id: string }[]) {
-          pendingByHouse.set(it.house_id, (pendingByHouse.get(it.house_id) ?? 0) + 1);
-        }
-      }
+      const pushUserIds = [...subUserSet];
 
       if (pushUserIds.length > 0) {
-        const { data: profs } = await admin
-          .from("profiles")
-          .select("user_id, last_active_at")
-          .in("user_id", pushUserIds);
+        const CHUNK = 300; // limita o tamanho de cada .in() (URL/performance)
 
-        // Quem já recebeu QUALQUER notificação hoje → não recebe nudge.
-        const { data: notifsToday } = await admin
-          .from("notifications")
-          .select("user_id")
-          .gte("created_at", todayStartISO)
-          .in("user_id", pushUserIds);
-        for (const n of notifsToday ?? []) notifiedToday.add((n as { user_id: string }).user_id);
+        // Local PRIMÁRIO de cada usuário — vindo de house_members, então cobre
+        // DONO **e** CONVIDADO (antes só donos tinham primário → convidados
+        // ficavam sem registro e podiam levar nudge duplicado). Determinístico:
+        // o local de MENOR id vira o primário. Guardamos se o usuário é o DONO
+        // (só o dono recebe a Parte 1).
+        const userPrimary = new Map<
+          string,
+          { houseId: string; name: string; reminderEnabled: boolean; isOwner: boolean }
+        >();
+        for (let i = 0; i < pushUserIds.length; i += CHUNK) {
+          const chunk = pushUserIds.slice(i, i + CHUNK);
+          const { data: mems } = await admin
+            .from("house_members")
+            .select("user_id, house:houses(id, name, reminder_enabled, owner_id)")
+            .eq("status", "active")
+            .in("user_id", chunk);
+          for (const m of (mems ?? []) as any[]) {
+            const h = Array.isArray(m.house) ? m.house[0] : m.house;
+            if (!h?.id) continue;
+            const cur = userPrimary.get(m.user_id);
+            if (!cur || String(h.id) < String(cur.houseId)) {
+              userPrimary.set(m.user_id, {
+                houseId: h.id,
+                name: h.name,
+                reminderEnabled: !!h.reminder_enabled,
+                isOwner: h.owner_id === m.user_id,
+              });
+            }
+          }
+        }
+
+        // Itens pendentes por local primário (chunked) → decide o conteúdo.
+        const primaryHouseIds = [...new Set([...userPrimary.values()].map((v) => v.houseId))];
+        const pendingByHouse = new Map<string, number>();
+        for (let i = 0; i < primaryHouseIds.length; i += CHUNK) {
+          const chunk = primaryHouseIds.slice(i, i + CHUNK);
+          const { data: pendingItems } = await admin
+            .from("items")
+            .select("house_id")
+            .in("house_id", chunk)
+            .in("status", ["acabou", "acabando", "comprar"]);
+          for (const it of (pendingItems ?? []) as { house_id: string }[]) {
+            pendingByHouse.set(it.house_id, (pendingByHouse.get(it.house_id) ?? 0) + 1);
+          }
+        }
+
+        // Última atividade (chunked).
+        const lastActive = new Map<string, string | null>();
+        for (let i = 0; i < pushUserIds.length; i += CHUNK) {
+          const chunk = pushUserIds.slice(i, i + CHUNK);
+          const { data: profs } = await admin
+            .from("profiles")
+            .select("user_id, last_active_at")
+            .in("user_id", chunk);
+          for (const p of (profs ?? []) as { user_id: string; last_active_at: string | null }[]) {
+            lastActive.set(p.user_id, p.last_active_at);
+          }
+        }
+
+        // Quem JÁ recebeu O NUDGE hoje (idempotência se o cron repetir na janela).
+        // NÃO bloqueamos por lembrete agendado nem por item_change — o nudge
+        // amigável é o diferencial e SEMPRE vai. Chunked.
+        for (let i = 0; i < pushUserIds.length; i += CHUNK) {
+          const chunk = pushUserIds.slice(i, i + CHUNK);
+          const { data: nudgesToday } = await admin
+            .from("notifications")
+            .select("user_id")
+            .eq("type", "nudge")
+            .gte("created_at", todayStartISO)
+            .in("user_id", chunk);
+          for (const n of nudgesToday ?? []) nudgedToday.add((n as { user_id: string }).user_id);
+        }
 
         const MAX_INACTIVE = 30 * 24 * 60 * 60 * 1000;
 
-        for (const prof of profs ?? []) {
-          const uid = (prof as { user_id: string }).user_id;
-          const la = (prof as { last_active_at: string | null }).last_active_at;
+        for (const uid of pushUserIds) {
+          if (nudgedToday.has(uid)) continue;          // não repete o nudge no dia
 
-          if (notifiedToday.has(uid)) continue;        // regra de ouro: máx 1/dia
-          // MODELO DUOLINGO: manda o lembrete diário pra TODOS com push, MESMO
-          // quem abriu o app hoje (mantém engajado). Só pula quem sumiu há +30d.
+          const primary = userPrimary.get(uid);
+          if (!primary) continue;                      // sem local nenhum → nada a nudar
+
+          // MODELO DUOLINGO: nudge pra TODOS com push, mesmo quem abriu hoje.
+          // Só pula quem sumiu há +30d.
+          const la = lastActive.get(uid) ?? null;
           if (la && now - new Date(la).getTime() > MAX_INACTIVE) continue;
 
-          const primary = ownerPrimary.get(uid);
-          const pendingCount = primary ? (pendingByHouse.get(primary.houseId) ?? 0) : 0;
+          const pendingCount = pendingByHouse.get(primary.houseId) ?? 0;
+          // "Coberto" pelo lembrete agendado SÓ se for o DONO (membro não recebe
+          // a Parte 1) E o lembrete estiver ligado → aí manda o nudge amigável.
+          const coveredByReminder = primary.isOwner && primary.reminderEnabled;
 
           let title: string;
           let body: string;
           let icon: string;
           let url: string;
-          let type: string;
+          let itemsCount: number | null = null;
 
-          if (pendingCount > 0 && primary) {
-            // TEM itens pendentes → lembra das compras (rotaciona + pose).
+          if (pendingCount > 0 && !coveredByReminder) {
+            // Tem itens e NÃO é avisado pela Parte 1 → lembra das compras.
             const plural = pendingCount === 1 ? "item" : "itens";
             const ph = pick(PENDING_PHRASES, dayOfYear + userOffset(uid));
             title = ph.title;
             body = ph.body(pendingCount, plural, primary.name);
             icon = ph.pose;
             url = "/lista";
-            type = "reminder";
+            itemsCount = pendingCount;
           } else {
-            // SEM itens → nudge de despensa (sexta/domingo têm variações).
+            // Nudge de engajamento (sexta/domingo têm variações).
             const ph =
               dayOfWeek === 5 ? NUDGE_FRIDAY
               : dayOfWeek === 0 ? NUDGE_SUNDAY
@@ -270,21 +342,24 @@ export async function GET(request: NextRequest) {
             body = ph.body;
             icon = ph.pose;
             url = "/despensa";
-            type = "nudge";
           }
 
           // Grava ANTES de enviar (dedup entre execuções + histórico in-app).
-          if (primary) {
-            await admin.from("notifications").insert({
-              user_id: uid,
-              house_id: primary.houseId,
-              type,
-              title,
-              body,
-              ...(pendingCount > 0 ? { data: { items_count: pendingCount } } : {}),
-            });
+          // SEMPRE type "nudge" → o dedup acima cobre os dois formatos. Se a
+          // gravação falhar, NÃO envia (evita duplicar na próxima execução).
+          const { error: insErr } = await admin.from("notifications").insert({
+            user_id: uid,
+            house_id: primary.houseId,
+            type: "nudge",
+            title,
+            body,
+            ...(itemsCount != null ? { data: { items_count: itemsCount } } : {}),
+          });
+          if (insErr) {
+            console.error("[Cron] Falha ao gravar nudge:", uid, insErr.message);
+            continue;
           }
-          notifiedToday.add(uid);
+          nudgedToday.add(uid);
           await sendPushToUser(admin, uid, {
             title,
             body,

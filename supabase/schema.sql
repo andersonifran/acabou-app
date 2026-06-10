@@ -55,7 +55,7 @@ CREATE TABLE IF NOT EXISTS house_members (
   house_id UUID REFERENCES houses(id) ON DELETE CASCADE NOT NULL,
   user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
   role TEXT DEFAULT 'member' CHECK (role IN ('owner', 'admin', 'member')) NOT NULL,
-  status TEXT DEFAULT 'active' CHECK (status IN ('active', 'invited', 'removed')) NOT NULL,
+  status TEXT DEFAULT 'active' CHECK (status IN ('active', 'invited', 'removed', 'frozen')) NOT NULL, -- 'frozen' add. na migration 2026-06-03_member_frozen_status
   invited_by UUID REFERENCES auth.users(id),
   display_name TEXT,
   member_type TEXT DEFAULT 'familiar',

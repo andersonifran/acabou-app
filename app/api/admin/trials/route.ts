@@ -193,6 +193,104 @@ export async function GET(request: NextRequest) {
     });
   }
 
+  // ── DIAGNÓSTICO: cobertura das notificações push (quem RECEBE o nudge) ──
+  // Mede o alcance REAL do nudge diário: quantos têm push ativo, quantos estão
+  // ativos (last_active_at), quantos seriam alcançados hoje, e quantos nudges
+  // realmente saíram nas últimas 24/48h. Ajuda a achar quem NÃO recebe e por quê.
+  if (acao === "check_push") {
+    const DAY = 24 * 60 * 60 * 1000;
+    const nowMs = Date.now();
+    const d30 = new Date(nowMs - 30 * DAY).toISOString();
+    const d7 = new Date(nowMs - 7 * DAY).toISOString();
+    const h24 = new Date(nowMs - DAY).toISOString();
+    const h48 = new Date(nowMs - 2 * DAY).toISOString();
+
+    // Perfis (id + última atividade). Paginado p/ aguentar a base crescer.
+    const profs: { user_id: string; last_active_at: string | null }[] = [];
+    for (let i = 0; i < 50; i++) {
+      const { data, error } = await admin
+        .from("profiles")
+        .select("user_id, last_active_at")
+        .range(i * 1000, i * 1000 + 999);
+      if (error || !data || data.length === 0) break;
+      profs.push(...(data as any));
+      if (data.length < 1000) break;
+    }
+
+    // Quem tem ao menos uma subscription de push.
+    const subUserIds = new Set<string>();
+    let totalSubs = 0;
+    for (let i = 0; i < 50; i++) {
+      const { data, error } = await admin
+        .from("push_subscriptions")
+        .select("user_id")
+        .range(i * 1000, i * 1000 + 999);
+      if (error || !data || data.length === 0) break;
+      for (const s of data as any) subUserIds.add(s.user_id);
+      totalSubs += data.length;
+      if (data.length < 1000) break;
+    }
+
+    const isActive = (la: string | null, sinceISO: string) =>
+      !!la && new Date(la).getTime() >= new Date(sinceISO).getTime();
+
+    const comPush = profs.filter((p) => subUserIds.has(p.user_id));
+    const semPush = profs.filter((p) => !subUserIds.has(p.user_id));
+    const alcancaveis = comPush.filter((p) => isActive(p.last_active_at, d30)); // recebem o nudge
+    const pushInativos = comPush.filter((p) => !isActive(p.last_active_at, d30)); // pulados (+30d)
+
+    // Nudges realmente enviados (registro = enviado): últimas 24h e 24–48h.
+    const { data: nud24 } = await admin
+      .from("notifications")
+      .select("user_id")
+      .eq("type", "nudge")
+      .gte("created_at", h24);
+    const { data: nud48 } = await admin
+      .from("notifications")
+      .select("user_id")
+      .eq("type", "nudge")
+      .gte("created_at", h48)
+      .lt("created_at", h24);
+    const recebeuOntem = new Set((nud24 ?? []).map((n: any) => n.user_id));
+    const recebeuAnteontem = new Set((nud48 ?? []).map((n: any) => n.user_id));
+
+    // Quem DEVERIA receber mas NÃO recebeu nas últimas 24h (investigar).
+    const alcancaveisSemNudge = alcancaveis.filter((p) => !recebeuOntem.has(p.user_id));
+
+    const pct = (n: number, d: number) => (d > 0 ? Math.round((n / d) * 100) : 0);
+
+    return NextResponse.json({
+      ok: true,
+      acao: "check_push",
+      gerado_em: nowISO,
+      base: {
+        total_contas: profs.length,
+        com_push_ativo: comPush.length,
+        sem_push: semPush.length,
+        cobertura_push_pct: pct(comPush.length, profs.length),
+        total_subscriptions: totalSubs,
+      },
+      atividade: {
+        ativos_7d: profs.filter((p) => isActive(p.last_active_at, d7)).length,
+        ativos_30d: profs.filter((p) => isActive(p.last_active_at, d30)).length,
+      },
+      alcance_do_nudge: {
+        alcancaveis_hoje: alcancaveis.length, // com push + ativo nos últimos 30d
+        pulados_por_inatividade_30d: pushInativos.length,
+        receberam_nudge_ultimas_24h: recebeuOntem.size,
+        receberam_nudge_24_48h: recebeuAnteontem.size,
+        alcancaveis_que_nao_receberam_24h: alcancaveisSemNudge.length,
+      },
+      diagnostico:
+        comPush.length === 0
+          ? "⚠️ NINGUÉM tem push ativo — verificar VAPID/permissões."
+          : recebeuOntem.size === 0
+          ? "⚠️ 0 nudges nas últimas 24h — o cron pode não ter rodado na janela das 18h, ou ninguém elegível. Confira os logs do cron."
+          : `✅ ${recebeuOntem.size} usuário(s) receberam o nudge nas últimas 24h. ${semPush.length} ainda SEM push (não recebem até ativarem). ${pushInativos.length} pulado(s) por inatividade (+30d).`,
+      sem_push_exemplos: semPush.slice(0, 25).map((p) => p.user_id),
+    });
+  }
+
   // ── AUDITORIA (relatório) ──
   // Vazamentos = plano != free, JÁ vencido, mas status não está "inactive"
   // (deveriam estar congelados). O esperado é ZERO.
@@ -271,6 +369,7 @@ export async function GET(request: NextRequest) {
       congelar_vencidos_agora: "?acao=congelar_vencidos",
       backfill_trial_grants: "?acao=backfill_trial_grants",
       check_confirmados: "?acao=check_confirmados",
+      check_push: "?acao=check_push",
     },
   });
 }

@@ -3,6 +3,12 @@ import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { sendPushToUser } from "@/lib/push";
 
 /**
+ * ⚠️ DESCONTINUADA — NÃO RELIGAR. Substituída pelo Database Webhook
+ * `/api/webhooks/item-changed` (dispara pelo banco, notifica TODOS os
+ * participantes do local + agrupa rajadas). Esta rota antiga notifica só o dono
+ * e SEM agrupamento; se ela voltar a ser chamada junto com o webhook, o usuário
+ * recebe notificação DUPLICADA. Mantida só por histórico — ninguém a chama.
+ *
  * Feature 2 (GRÁTIS): Notifica o dono da casa quando alguém marca um item
  * como "Acabou" ou "Está acabando"
  */
