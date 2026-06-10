@@ -63,6 +63,17 @@ export function usePushNotifications() {
       // recria em SILÊNCIO e re-salva no servidor, sem obrigar o usuário a
       // reativar na mão. É o que evita o "parou de receber e não volta sozinho".
       if (Notification.permission === "granted") {
+        // RESPEITA o "Desativar" deliberado: se o usuário desligou DE PROPÓSITO
+        // (flag acabou_push_off), NÃO religa sozinho — fica desligado, e o convite
+        // o re-convida depois (sem forçar, como os apps grandes). Só auto-cura
+        // quando a inscrição se PERDEU sem o usuário pedir (sem flag = rotação/
+        // expiração/reinstalação/limpeza).
+        let optedOut = false;
+        try { optedOut = !!localStorage.getItem("acabou_push_off"); } catch {}
+        if (optedOut) {
+          setState("prompt");
+          return;
+        }
         try {
           const fresh = await reg.pushManager.subscribe({
             userVisibleOnly: true,
@@ -136,17 +147,19 @@ export function usePushNotifications() {
         });
       }
 
-      // Salva no servidor
+      // Salva no servidor. deliberate=true → reativação pelo usuário: limpa o
+      // opt-out no servidor (o SW volta a poder re-cadastrar em rotações).
       const response = await fetch("/api/push/subscribe", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ subscription: subscription.toJSON() }),
+        body: JSON.stringify({ subscription: subscription.toJSON(), deliberate: true }),
       });
 
       if (!response.ok) {
         throw new Error("Erro ao salvar subscription no servidor");
       }
 
+      try { localStorage.removeItem("acabou_push_off"); } catch {} // reativou → limpa o opt-out
       setState("subscribed");
       return true;
     } catch (err: any) {
@@ -162,16 +175,24 @@ export function usePushNotifications() {
       const sub = await reg.pushManager.getSubscription();
 
       if (sub) {
-        // Remove do servidor
+        // Remove do servidor + marca opt-out DELIBERADO (optout:true) → o servidor
+        // barra o re-cadastro automático do SW (que não lê localStorage).
         await fetch("/api/push/subscribe", {
           method: "DELETE",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ endpoint: sub.endpoint }),
+          body: JSON.stringify({ endpoint: sub.endpoint, optout: true }),
         });
 
         await sub.unsubscribe();
       }
 
+      // Marca o "Desativar" DELIBERADO → o auto-cura NÃO religa sozinho. E reseta
+      // o cooldown do convite, pra ele NÃO re-convidar na hora (espera os ~5 dias
+      // antes de oferecer de novo — respeita a escolha recente, sem incomodar).
+      try {
+        localStorage.setItem("acabou_push_off", String(Date.now()));
+        localStorage.setItem("acabou_optin_last", String(Date.now()));
+      } catch {}
       setState("prompt");
       return true;
     } catch (err: any) {
