@@ -103,7 +103,7 @@ export async function sendWelcomeEmail(email: string, name: string, houseName: s
     replyTo: REPLY_TO,
     subject: `Bem-vindo(a) ao Acabou?, ${firstName}! 🏠`,
     html: emailLayout(`
-      ${greenHeader("Acabou?", "Sua despensa inteligente", MASCOTE.acenando)}
+      ${greenHeader("Acabou?", "Que bom ter voc&ecirc; por aqui! 💚", MASCOTE.acenando)}
       <div style="padding: 40px 32px; border: 1px solid #e5e7eb; border-top: none;">
         <h2 style="margin: 0 0 16px; font-size: 22px; color: #111827;">
           Ei, ${firstName}! Que bom ter voc&ecirc; aqui! 🎉
@@ -133,7 +133,7 @@ export async function sendWelcomeEmail(email: string, name: string, houseName: s
         <div style="text-align: center; margin: 32px 0;">
           <a href="${APP_URL}/home" style="display: inline-block; background: #16a34a; color: white; text-decoration: none; font-weight: 700; font-size: 16px; padding: 14px 40px; border-radius: 12px;">Abrir minha despensa</a>
         </div>
-        <p style="margin: 0; font-size: 14px; color: #111827;">Um abra&ccedil;o,<br><strong>Equipe Acabou?</strong> 🛒</p>
+        <p style="margin: 0; font-size: 14px; color: #111827;">Qualquer coisa, &eacute; s&oacute; me chamar — vou estar por aqui. 💚<br><strong>Sacolino &amp; time Acabou?</strong> 🛒</p>
       </div>
     `),
   });
@@ -234,11 +234,11 @@ export async function sendPaymentApprovedEmail(
         </div>
 
         <p style="margin: 0 0 8px; font-size: 14px; color: #6b7280; line-height: 1.6;">
-          Qualquer d&uacute;vida sobre sua assinatura, responda este e-mail.
+          Qualquer d&uacute;vida sobre sua assinatura, &eacute; s&oacute; responder este e-mail — a gente te ajuda de verdade.
         </p>
         <p style="margin: 24px 0 0; font-size: 14px; color: #111827;">
-          Obrigado por confiar no Acabou?!<br>
-          <strong>Equipe Acabou?</strong> 🛒
+          Obrigado por confiar na gente! 💚<br>
+          <strong>Sacolino &amp; time Acabou?</strong> 🛒
         </p>
       </div>
     `),
@@ -322,11 +322,11 @@ export async function sendPlanExpiringEmail(
         </div>
 
         <p style="margin: 0 0 8px; font-size: 14px; color: #6b7280; line-height: 1.6;">
-          Se precisar de ajuda, responda este e-mail.
+          Se precisar de qualquer ajuda, &eacute; s&oacute; responder este e-mail — t&ocirc; aqui pra te ajudar. 💚
         </p>
         <p style="margin: 24px 0 0; font-size: 14px; color: #111827;">
-          Conte com a gente,<br>
-          <strong>Equipe Acabou?</strong> 🛒
+          Conta com a gente sempre,<br>
+          <strong>Sacolino &amp; time Acabou?</strong> 🛒
         </p>
       </div>
     `),
