@@ -8,9 +8,9 @@ interface LogoProps {
   linked?: boolean;
 }
 
-// Logo definitiva (a bonita) em raster otimizado (~17KB), usada em toda a UI.
-// Observacao: o favicon da aba (public/favicon.svg e app/icon.svg) segue na
-// versao chapada DE PROPOSITO — em ~16px o degrade/sombra viram borrao.
+// Logo definitiva (a bonita), usada em toda a UI — gerada da logo OFICIAL
+// (public/logo-oficial.png). O favicon da aba usa o kit oficial sob medida
+// (app/favicon.ico + favicon-16x16/32x32.png), gerado da mesma logo.
 export function LogoIcon({ size = 40 }: { size?: number }) {
   return (
     // eslint-disable-next-line @next/next/no-img-element

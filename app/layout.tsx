@@ -15,12 +15,15 @@ export const metadata: Metadata = {
     "Marque o que acabou em segundos, compartilhe com sua família e vá ao mercado com a lista certa.",
   manifest: "/manifest.json",
   icons: {
+    // Kit oficial de favicon (gerado da logo oficial). O .ico multi-tamanho fica
+    // em app/favicon.ico (servido pelo Next em /favicon.ico).
     icon: [
-      { url: "/favicon.svg", type: "image/svg+xml" },
+      { url: "/favicon-32x32.png", type: "image/png", sizes: "32x32" },
+      { url: "/favicon-16x16.png", type: "image/png", sizes: "16x16" },
       { url: "/web-app-manifest-192x192.png", type: "image/png", sizes: "192x192" },
       { url: "/web-app-manifest-512x512.png", type: "image/png", sizes: "512x512" },
     ],
-    shortcut: "/web-app-manifest-192x192.png",
+    shortcut: "/favicon.ico",
     apple: "/apple-touch-icon.png",
   },
   appleWebApp: { capable: true, statusBarStyle: "default", title: "Acabou?" },
