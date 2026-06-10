@@ -17,7 +17,9 @@ function dataUri(relPath: string): string {
 }
 
 export default async function OpengraphImage() {
-  const logo = dataUri("public/marketing/Logos/Logo.png");
+  // Logo OFICIAL (cópia versionada de marketing/Logos/Logo.png, que é gitignorada
+  // → daria ENOENT na Vercel). Mesma logo do banner da Play Store = padrão único.
+  const logo = dataUri("public/logo-oficial.png");
   const mascote = dataUri("public/mascote/sacolino-acenando.png");
 
   return new ImageResponse(
