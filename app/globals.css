@@ -46,7 +46,15 @@ body {
 html {
   scroll-behavior: smooth;
   overscroll-behavior-y: contain;
+  /* Fundo do PRÓPRIO <html> (atrás de tudo). Sem isto, o html ficava
+     transparente → o navegador mostrava BRANCO nos frames de carga/navegação
+     antes do conteúdo pintar = "flash branco" (pior no modo escuro). O script
+     inline no <head> adiciona `.dark` ANTES do paint, então html.dark já entra
+     escuro. Claro = branco (igual ao padrão atual; landing/login cobrem com o
+     próprio fundo). */
+  background-color: #ffffff;
 }
+html.dark { background-color: #0f172a; }
 
 /* Previne zoom em inputs no iOS */
 input, select, textarea {
