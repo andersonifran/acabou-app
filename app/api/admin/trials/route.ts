@@ -391,6 +391,25 @@ export async function GET(request: NextRequest) {
   // envia de verdade (em lotes pra não estourar timeout/rate). Idempotente:
   // marca push_reengage_at após enviar → nunca manda 2x.
   if (acao === "reengage_push") {
+    // Modo TESTE: ?acao=reengage_push&test=seu@email.com → manda UM e-mail real
+    // pra você revisar (sem checar elegibilidade, sem marcar nada). Pra aprovar
+    // o visual antes de disparar pros usuários.
+    const testEmail = request.nextUrl.searchParams.get("test");
+    if (testEmail) {
+      try {
+        await sendPushReengageEmail(testEmail, "Anderson");
+        return NextResponse.json({
+          ok: true,
+          acao: "reengage_push",
+          modo: "teste",
+          enviado_para: testEmail,
+          message: "E-mail de TESTE enviado — confira a caixa de entrada (e o spam).",
+        });
+      } catch (e: any) {
+        return NextResponse.json({ ok: false, erro: e?.message || "falha no envio" }, { status: 500 });
+      }
+    }
+
     const dias = Math.max(1, parseInt(request.nextUrl.searchParams.get("dias") || "45", 10));
     const lote = Math.max(1, Math.min(60, parseInt(request.nextUrl.searchParams.get("lote") || "30", 10)));
     const enviar = request.nextUrl.searchParams.get("send") === "1";
