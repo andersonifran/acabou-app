@@ -76,6 +76,6 @@ export const config = {
      * - .well-known/ (Digital Asset Links do TWA — NUNCA pode redirecionar,
      *   senão a verificação do app na Play falha e a barra de URL aparece)
      */
-    "/((?!_next/static|_next/image|\\.well-known|favicon\\.ico|manifest\\.json|sw\\.js|.*\\.png|.*\\.svg|.*\\.mp4|.*\\.webm|.*\\.jpg|.*\\.jpeg|.*\\.webp|.*\\.html|.*\\.ico|.*\\.xml|.*\\.txt|api/).*)",
+    "/((?!_next/static|_next/image|opengraph-image|twitter-image|\\.well-known|favicon\\.ico|manifest\\.json|sw\\.js|.*\\.png|.*\\.svg|.*\\.mp4|.*\\.webm|.*\\.jpg|.*\\.jpeg|.*\\.webp|.*\\.html|.*\\.ico|.*\\.xml|.*\\.txt|api/).*)",
   ],
 };
