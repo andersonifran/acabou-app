@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { X, Search, Plus } from "lucide-react";
 import { Item, ItemStatus, Category, STATUS_LABELS, SHOPPING_LIST_STATUSES } from "@/types";
 import { cn, customCategoryIcon } from "@/lib/utils";
 import { SUGGESTED_ITEMS } from "@/lib/item-catalog";
+import { CUSTOM_CATEGORY_CATALOG } from "@/lib/custom-category-catalog";
 import { recordItemUse, getLearnedItems, type LearnedItem } from "@/lib/learned-items";
 import { hapticSuccess } from "@/lib/haptics";
 
@@ -79,10 +80,16 @@ export function AddItemModal({
   // categoria selecionada é "Outros". É dado do item (escopo da casa), não global.
   const [newCustomCategory, setNewCustomCategory] = useState("");
   const [loading, setLoading] = useState(false);
+  // Ref do campo "Outros" — ao focar, rolamos ele pra área visível (acima do
+  // teclado do celular), pra não ficar coberto/confuso. Ajuste escopado (sem
+  // mexer no viewport global, que é arriscado pros usuários ativos).
+  const customFieldRef = useRef<HTMLDivElement>(null);
   // Item existente sendo editado (null = criando item novo)
   const [editingItem, setEditingItem] = useState<Item | null>(null);
   // Mostra o autocomplete embaixo do campo "Nome do item" (só enquanto digita).
   const [showNameSug, setShowNameSug] = useState(false);
+  // Idem pro campo "O que é?" (categoria do "Outros").
+  const [showCustomSug, setShowCustomSug] = useState(false);
   // Itens que o usuário aprende a usar (entre TODAS as casas) — carregados ao abrir.
   const [learned, setLearned] = useState<LearnedItem[]>([]);
 
@@ -97,6 +104,7 @@ export function AddItemModal({
       setNewCustomCategory("");
       setEditingItem(null);
       setShowNameSug(false);
+      setShowCustomSug(false);
       setLearned(getLearnedItems());
       if (categories.length > 0) setNewCategoryId(categories[0].id);
     }
@@ -167,6 +175,7 @@ export function AddItemModal({
     setNewQty(item.quantity_text ?? "");
     setNewCustomCategory(item.custom_category ?? "");
     setShowNameSug(false);
+    setShowCustomSug(false);
     setMode("create");
   }
 
@@ -180,6 +189,7 @@ export function AddItemModal({
     setNewQty("");
     setNewCustomCategory("");
     setShowNameSug(false);
+    setShowCustomSug(false);
     setMode("create");
   }
 
@@ -200,10 +210,11 @@ export function AddItemModal({
   // Categoria "Outros" selecionada? → o campo de etiqueta só aparece (e só salva) nela.
   const selectedCategory = categories.find((c) => c.id === newCategoryId);
   const isOutros = (selectedCategory?.name ?? "").toLowerCase() === "outros";
-  // Chips de REUSO: etiquetas de "Outros" que ESTA casa já usou. Derivado do que já
-  // está na memória (zero consulta nova) e vive só nos dados da casa — nunca global.
+
+  // Rótulos de "Outros" que ESTA casa já usou (derivado da memória, zero consulta;
+  // vive só nos dados da casa — nunca global). Alimenta os chips + o autocomplete.
   const outrosCategoryId = categories.find((c) => (c.name ?? "").toLowerCase() === "outros")?.id;
-  const usedOutrosLabels = isOutros
+  const houseOutrosLabels = isOutros
     ? Array.from(
         new Set(
           existingItems
@@ -213,9 +224,39 @@ export function AddItemModal({
             .map((i) => i.custom_category!.trim())
         )
       )
-        .filter((l) => l.trim() !== newCustomCategory.trim())
-        .slice(0, 6)
     : [];
+  // Chips de reuso (rápido): só os diferentes do que já está digitado.
+  const usedOutrosLabels = houseOutrosLabels
+    .filter((l) => l.trim() !== newCustomCategory.trim())
+    .slice(0, 6);
+
+  // Autocomplete do "O que é?" — MESMO motor do nome do item (matchScore + sem
+  // acento). Rótulos DA CASA primeiro (boost), depois o catálogo BR de categorias.
+  function rankCustomCats(query: string) {
+    const houseNorm = new Set(houseOutrosLabels.map((l) => normalize(l)));
+    const pool: { label: string; aliases?: string[]; house?: boolean }[] = [
+      ...houseOutrosLabels.map((label) => ({ label, house: true })),
+      ...CUSTOM_CATEGORY_CATALOG.filter((c) => !houseNorm.has(normalize(c.label))),
+    ];
+    return pool
+      .map((c) => {
+        const base = matchScore(c.label, c.aliases, query);
+        return { c, score: base > 0 ? base + (c.house ? 14 : 0) : 0 };
+      })
+      .filter((x) => x.score > 0)
+      .sort((a, b) => b.score - a.score || a.c.label.localeCompare(b.c.label, "pt-BR"))
+      .map((x) => x.c);
+  }
+  const customSuggestions =
+    isOutros && showCustomSug && newCustomCategory.trim()
+      ? rankCustomCats(newCustomCategory)
+          .filter((c) => normalize(c.label) !== normalize(newCustomCategory))
+          .slice(0, 6)
+      : [];
+  function pickCustomSuggestion(label: string) {
+    setNewCustomCategory(label);
+    setShowCustomSug(false);
+  }
 
   async function handleCreate() {
     if (!newName.trim() || !newCategoryId) return;
@@ -436,7 +477,7 @@ export function AddItemModal({
                   Opcional, fica visível pra casa (como a observação) e NUNCA vira
                   categoria global. Chips reusam o que esta casa já etiquetou. */}
               {isOutros && (
-                <div className="mt-2.5 animate-reveal-field">
+                <div className="mt-2.5 animate-reveal-field" ref={customFieldRef}>
                   <label className="block text-xs font-medium text-gray-600 mb-1">
                     O que é? <span className="text-gray-400 font-normal">(opcional)</span>
                   </label>
@@ -449,13 +490,42 @@ export function AddItemModal({
                     <input
                       type="text"
                       value={newCustomCategory}
-                      onChange={(e) => setNewCustomCategory(e.target.value)}
+                      onChange={(e) => {
+                        setNewCustomCategory(e.target.value);
+                        setShowCustomSug(true);
+                      }}
+                      onFocus={() => {
+                        setShowCustomSug(true);
+                        setTimeout(
+                          () => customFieldRef.current?.scrollIntoView({ block: "center", behavior: "smooth" }),
+                          300
+                        );
+                      }}
                       placeholder="Ex: Adega, Almoxarifado, Remédios, Pet…"
                       maxLength={40}
                       className="w-full pl-10 pr-4 py-2.5 bg-green-50/60 rounded-xl border border-green-200 focus:outline-none focus:border-green-400 text-gray-900 placeholder:text-gray-400 text-sm"
                     />
+                    {/* Teclado inteligente: sugere categorias do catálogo + as que a
+                        casa já usou (mesmo motor do nome do item). Flutua sobre os chips. */}
+                    {customSuggestions.length > 0 && (
+                      <div className="absolute left-0 right-0 top-full mt-1 z-20 bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden max-h-60 overflow-y-auto">
+                        {customSuggestions.map((c) => (
+                          <button
+                            key={c.label}
+                            type="button"
+                            onClick={() => pickCustomSuggestion(c.label)}
+                            className="w-full flex items-center gap-2 text-left px-4 py-2.5 hover:bg-green-50 border-b border-gray-50 last:border-b-0 transition-colors"
+                          >
+                            <span className="leading-none">{customCategoryIcon(c.label)}</span>
+                            <span className="font-medium text-gray-900 text-sm">{c.label}</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </div>
-                  {usedOutrosLabels.length > 0 && (
+                  {/* Chips de reuso rápido — só com o campo vazio (ao digitar, quem
+                      manda é o dropdown acima). */}
+                  {!newCustomCategory.trim() && usedOutrosLabels.length > 0 && (
                     <div className="flex flex-wrap gap-1.5 mt-2">
                       {usedOutrosLabels.map((label) => (
                         <button
