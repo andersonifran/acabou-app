@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/server";
 import { sendPushToUser } from "@/lib/push";
+import { sendDailyNotifReport } from "@/lib/emails";
 
 /**
  * Cron (Vercel Pro) — roda a cada 15 minutos.
@@ -368,6 +369,32 @@ export async function GET(request: NextRequest) {
           });
           nudgesSent++;
         }
+      }
+
+      // ── RELATÓRIO DIÁRIO pro admin (1x/dia, logo após o nudge das 18h) ──
+      // Em try próprio: nunca afeta a entrega (o nudge já foi acima). Dá pro
+      // Anderson acompanhar a saúde das notificações sozinho, todo dia.
+      try {
+        const { count: totalContas } = await admin
+          .from("profiles")
+          .select("user_id", { count: "exact", head: true });
+        const { count: ativos30d } = await admin
+          .from("profiles")
+          .select("user_id", { count: "exact", head: true })
+          .gte("last_active_at", new Date(now - 30 * 24 * 60 * 60 * 1000).toISOString());
+        const total = totalContas ?? 0;
+        const comPush = pushUserIds.length;
+        await sendDailyNotifReport({
+          totalContas: total,
+          comPush,
+          semPush: Math.max(0, total - comPush),
+          coberturaPct: total > 0 ? Math.round((comPush / total) * 100) : 0,
+          ativos30d: ativos30d ?? 0,
+          nudgesHoje: nudgesSent,
+          lembretesHoje: remindersSent,
+        });
+      } catch (err) {
+        console.error("[Cron] Erro no relatório diário:", err);
       }
     } catch (err) {
       console.error("[Cron] Erro na Parte 2 (nudge):", err);

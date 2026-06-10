@@ -87,29 +87,43 @@ export default function HomePage() {
   // que exigiria Suspense). Só mostra se a permissão ainda não foi decidida.
   const push = usePushNotifications();
   const [showOptIn, setShowOptIn] = useState(false);
+  const [optInMode, setOptInMode] = useState<"ask" | "reenable">("ask");
   useEffect(() => {
     if (typeof window === "undefined") return;
-    // Só pra quem AINDA não decidiu a permissão (não incomoda quem ativou nem
-    // quem bloqueou — esse último vê instrução de religar nas Configurações).
-    if (push.state !== "prompt") return;
-    // Veio do e-mail de reconquista → abre na hora.
-    if (new URLSearchParams(window.location.search).get("ativar") === "notificacoes") {
-      setShowOptIn(true);
-      return;
+    const deepLink = new URLSearchParams(window.location.search).get("ativar") === "notificacoes";
+
+    if (push.state === "prompt") {
+      // INDECISO (nunca ativou) → convite premium pra ativar.
+      if (deepLink) { setOptInMode("ask"); setShowOptIn(true); return; } // veio do e-mail
+      // FORÇA GENTIL: usuário EXISTENTE sem push vê o convite ao abrir a home —
+      // no máx 1x a cada 5 dias (cooldown compartilhado com o onboarding).
+      try {
+        const last = Number(localStorage.getItem("acabou_optin_last") || 0);
+        if (Date.now() - last >= 5 * 24 * 60 * 60 * 1000) {
+          const t = setTimeout(() => {
+            setOptInMode("ask");
+            setShowOptIn(true);
+            localStorage.setItem("acabou_optin_last", String(Date.now()));
+          }, 900);
+          return () => clearTimeout(t);
+        }
+      } catch {}
+    } else if (push.state === "denied") {
+      // BLOQUEOU no sistema → mostra "como religar" (cooldown maior, 14 dias:
+      // não dá pra resolver pela web, então não insiste muito).
+      try {
+        const last = Number(localStorage.getItem("acabou_reenable_last") || 0);
+        if (Date.now() - last >= 14 * 24 * 60 * 60 * 1000) {
+          const t = setTimeout(() => {
+            setOptInMode("reenable");
+            setShowOptIn(true);
+            localStorage.setItem("acabou_reenable_last", String(Date.now()));
+          }, 1200);
+          return () => clearTimeout(t);
+        }
+      } catch {}
     }
-    // FORÇA GENTIL: usuário EXISTENTE sem push vê o convite premium ao abrir a
-    // home — no máximo 1x a cada 5 dias (cooldown compartilhado com o onboarding,
-    // pra não duplicar). É o que traz os 88% que nunca ativaram.
-    try {
-      const last = Number(localStorage.getItem("acabou_optin_last") || 0);
-      if (Date.now() - last >= 5 * 24 * 60 * 60 * 1000) {
-        const t = setTimeout(() => {
-          setShowOptIn(true);
-          localStorage.setItem("acabou_optin_last", String(Date.now()));
-        }, 900);
-        return () => clearTimeout(t);
-      }
-    } catch {}
+    // subscribed/loading/unsupported → não mostra nada (quem já ativou fica em paz).
   }, [push.state]);
 
   const shoppingItems = items.filter((i) => SHOPPING_LIST_STATUSES.includes(i.status as any));
@@ -261,7 +275,7 @@ export default function HomePage() {
 
   return (
     <div>
-      <NotificationOptInModal open={showOptIn} onClose={() => setShowOptIn(false)} />
+      <NotificationOptInModal open={showOptIn} onClose={() => setShowOptIn(false)} mode={optInMode} />
 
       {/* Header com ícone do imóvel + seletor de casas */}
       <header className="sticky top-0 z-40 bg-white border-b border-gray-100 px-4 py-3">

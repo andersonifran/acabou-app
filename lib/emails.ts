@@ -395,7 +395,61 @@ export async function sendPushReengageEmail(email: string, name: string) {
 }
 
 // =============================================
-// 5. ALERTA DE VAZAMENTO (interno — só admin)
+// 5. RELATÓRIO DIÁRIO de notificações (interno — só admin)
+// =============================================
+// Enviado pelo cron logo após o nudge das 18h. Dá pro Anderson acompanhar a
+// saúde das notificações TODO dia, sozinho: cobertura de push + envios do dia.
+export async function sendDailyNotifReport(stats: {
+  totalContas: number;
+  comPush: number;
+  semPush: number;
+  coberturaPct: number;
+  ativos30d: number;
+  nudgesHoje: number;
+  lembretesHoje: number;
+}) {
+  if (!process.env.RESEND_API_KEY) return;
+  const resend = getResend();
+  const hoje = new Date().toLocaleDateString("pt-BR", { day: "2-digit", month: "long" });
+
+  const linha = (label: string, valor: string | number, cor = "#111827") => `
+    <tr>
+      <td style="padding:10px 12px;border-bottom:1px solid #f0f0f0;font-size:14px;color:#6b7280;">${label}</td>
+      <td style="padding:10px 12px;border-bottom:1px solid #f0f0f0;font-size:14px;font-weight:700;text-align:right;color:${cor};">${valor}</td>
+    </tr>`;
+
+  const corCobertura = stats.coberturaPct >= 50 ? "#16a34a" : stats.coberturaPct >= 25 ? "#d97706" : "#dc2626";
+
+  await resend.emails.send({
+    from: FROM,
+    to: ADMIN_EMAILS,
+    replyTo: REPLY_TO,
+    subject: `📊 Notificações ${hoje}: ${stats.nudgesHoje} enviadas · ${stats.coberturaPct}% com push`,
+    html: emailLayout(`
+      ${greenHeader("Relatório do dia 📊", `Saúde das notificações · ${hoje}`, MASCOTE.feliz)}
+      <div style="padding: 32px; border: 1px solid #e5e7eb; border-top: none;">
+        <table style="width:100%;border-collapse:collapse;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;">
+          ${linha("Contas no total", stats.totalContas)}
+          ${linha("Com push ativo", `${stats.comPush} (${stats.coberturaPct}%)`, corCobertura)}
+          ${linha("Sem push (não recebem)", stats.semPush, stats.semPush > 0 ? "#dc2626" : "#16a34a")}
+          ${linha("Ativos nos últimos 30 dias", stats.ativos30d)}
+          ${linha("Nudges enviados HOJE", stats.nudgesHoje, stats.nudgesHoje > 0 ? "#16a34a" : "#d97706")}
+          ${linha("Lembretes de compra HOJE", stats.lembretesHoje)}
+        </table>
+        <p style="margin: 20px 0 0; font-size: 13px; color: #6b7280; line-height: 1.6;">
+          ${stats.coberturaPct < 50
+            ? `💡 Cobertura em ${stats.coberturaPct}%. O convite no app + e-mail de reconquista ajudam a subir esse número.`
+            : `✅ Boa cobertura! Continue convidando pra manter o engajamento alto.`}
+        </p>
+      </div>
+    `),
+  });
+
+  console.log(`[Email] 📊 Relatório diário enviado (push ${stats.coberturaPct}%, nudges ${stats.nudgesHoje})`);
+}
+
+// =============================================
+// 6. ALERTA DE VAZAMENTO (interno — só admin)
 // =============================================
 // Disparado pela faxina diária (check-subscriptions) SE — depois de congelar
 // tudo — ainda sobrar alguma casa com plano pago/trial vencido e não-inativa

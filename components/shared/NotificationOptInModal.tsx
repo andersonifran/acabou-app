@@ -20,9 +20,13 @@ import { usePushNotifications } from "@/hooks/usePushNotifications";
 export function NotificationOptInModal({
   open,
   onClose,
+  mode = "ask",
 }: {
   open: boolean;
   onClose: (activated: boolean) => void;
+  /** "ask" = convite normal (permissão indecisa). "reenable" = bloqueado no
+   *  sistema → mostra COMO religar (o botão "Ativar" não funciona se bloqueado). */
+  mode?: "ask" | "reenable";
 }) {
   const { subscribe, isDenied } = usePushNotifications();
   const [loading, setLoading] = useState(false);
@@ -77,6 +81,47 @@ export function NotificationOptInModal({
               </span>
               Notificações ativadas
             </div>
+          </div>
+        ) : mode === "reenable" ? (
+          // ───── Bloqueado no sistema → COMO religar (botão "Ativar" não
+          //        funciona quando bloqueado; aqui só ensinamos o caminho) ─────
+          <div className="relative">
+            <button
+              onClick={() => onClose(false)}
+              className="absolute -top-2 -right-2 p-1.5 text-gray-400 hover:text-gray-600 rounded-full"
+              aria-label="Fechar"
+            >
+              <X size={18} />
+            </button>
+            <div className="flex justify-center mb-2">
+              <Mascote mood="alerta" size={88} />
+            </div>
+            <h2 className="text-center text-xl font-black text-gray-900 leading-tight">
+              Suas notificações estão pausadas 🔕
+            </h2>
+            <p className="text-center text-gray-500 text-sm mt-2 max-w-[18rem] mx-auto leading-snug">
+              As notificações do Acabou? foram bloqueadas no aparelho. Pra voltar a receber os lembretes, é rapidinho:
+            </p>
+            <div className="mt-4 space-y-2">
+              {[
+                { n: "1", t: "Abra as Configurações do celular" },
+                { n: "2", t: 'Toque em "Apps" e procure "Acabou?"' },
+                { n: "3", t: 'Em "Notificações", ligue "Permitir"' },
+              ].map((s) => (
+                <div key={s.n} className="flex items-center gap-3 bg-green-50 rounded-xl px-3.5 py-2.5">
+                  <span className="w-6 h-6 rounded-full bg-green-600 text-white text-xs font-black flex items-center justify-center shrink-0">
+                    {s.n}
+                  </span>
+                  <span className="text-sm font-medium text-gray-700">{s.t}</span>
+                </div>
+              ))}
+            </div>
+            <button
+              onClick={() => onClose(false)}
+              className="w-full mt-5 bg-green-600 text-white font-black py-3.5 rounded-2xl hover:bg-green-700 transition-colors active:scale-[0.98]"
+            >
+              Entendi 👍
+            </button>
           </div>
         ) : blocked ? (
           // ───── Recusou no nativo / bloqueado ─────
