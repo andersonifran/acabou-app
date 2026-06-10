@@ -44,20 +44,47 @@ export function usePushNotifications() {
       const reg = await navigator.serviceWorker.ready;
       const sub = await reg.pushManager.getSubscription();
       if (sub) {
-        // RE-SINCRONIZA com o servidor (upsert idempotente). Corrige o bug em que
+        // RE-SINCRONIZA com o servidor (upsert idempotente). Corrige o caso em que
         // a subscription expira/rotaciona (ou é removida do servidor após um envio
         // com falha 410) e o aparelho continua mostrando "Ativado", mas o servidor
-        // fica SEM nenhuma subscription — fazendo o usuário não receber nada.
-        // Como o usuário abre o app com frequência, isso se auto-corrige sozinho.
+        // fica SEM nenhuma subscription. Como o usuário abre o app com frequência,
+        // isso se auto-corrige sozinho.
         fetch("/api/push/subscribe", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ subscription: sub.toJSON() }),
         }).catch(() => {});
         setState("subscribed");
-      } else {
-        setState("prompt");
+        return;
       }
+
+      // SEM subscription no aparelho, MAS o usuário JÁ concedeu a permissão → a
+      // inscrição se PERDEU (rotação/expiração/reinstalação/limpeza). AUTO-CURA:
+      // recria em SILÊNCIO e re-salva no servidor, sem obrigar o usuário a
+      // reativar na mão. É o que evita o "parou de receber e não volta sozinho".
+      if (Notification.permission === "granted") {
+        try {
+          const fresh = await reg.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY) as BufferSource,
+          });
+          await fetch("/api/push/subscribe", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ subscription: fresh.toJSON() }),
+          });
+          setState("subscribed");
+          return;
+        } catch {
+          // subscribe() falhou → notificações bloqueadas no SISTEMA (não dá pra
+          // recriar pela web). Mostra o convite de reativar (com instrução).
+          setState("prompt");
+          return;
+        }
+      }
+
+      // Nunca concedeu permissão ainda → mostra o convite normal.
+      setState("prompt");
     } catch {
       setState("prompt");
     }
@@ -74,18 +101,40 @@ export function usePushNotifications() {
       }
 
       const reg = await navigator.serviceWorker.ready;
+      const appServerKey = urlBase64ToUint8Array(VAPID_PUBLIC_KEY) as BufferSource;
 
-      // Cancela subscription antiga se existir
-      const existingSub = await reg.pushManager.getSubscription();
-      if (existingSub) {
-        await existingSub.unsubscribe();
+      // Remove QUALQUER inscrição antiga — do SERVIDOR e do navegador — antes de
+      // criar a nova. Sem isso, o aparelho podia ficar preso numa inscrição MORTA
+      // (410) ou com chave VAPID antiga, e o re-cadastro falhava (caso real no
+      // S24 após trocar PWA↔TWA). Limpar primeiro garante uma inscrição fresca.
+      const old = await reg.pushManager.getSubscription();
+      if (old) {
+        try {
+          await fetch("/api/push/subscribe", {
+            method: "DELETE",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ endpoint: old.endpoint }),
+          });
+        } catch {}
+        try { await old.unsubscribe(); } catch {}
       }
 
-      // Cria nova subscription
-      const subscription = await reg.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY) as BufferSource,
-      });
+      // Cria nova subscription. Se falhar por já existir uma com outra chave
+      // (InvalidStateError), limpa o que sobrou e tenta UMA vez mais.
+      let subscription: PushSubscription;
+      try {
+        subscription = await reg.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: appServerKey,
+        });
+      } catch {
+        const leftover = await reg.pushManager.getSubscription();
+        if (leftover) { try { await leftover.unsubscribe(); } catch {} }
+        subscription = await reg.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: appServerKey,
+        });
+      }
 
       // Salva no servidor
       const response = await fetch("/api/push/subscribe", {

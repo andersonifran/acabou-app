@@ -41,6 +41,7 @@ async function handle() {
   let sent = 0;
   let expired = 0;
   let failed = 0;
+  const expiredIds: string[] = [];
   await Promise.all(
     subs.map(async (sub) => {
       const r = await sendPushNotification(sub, {
@@ -51,10 +52,16 @@ async function handle() {
         tag: "teste-push",
       });
       if (r.success) sent++;
-      else if (r.expired) expired++;
+      else if (r.expired) { expired++; expiredIds.push(sub.id); }
       else failed++;
     })
   );
+
+  // Limpa inscrições MORTAS (410/404) — assim o app volta a pedir pra ativar e
+  // o usuário cria uma inscrição nova e válida (em vez de tentar uma morta).
+  if (expiredIds.length > 0) {
+    await admin.from("push_subscriptions").delete().in("id", expiredIds);
+  }
 
   return NextResponse.json({
     ok: sent > 0,
