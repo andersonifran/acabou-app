@@ -49,7 +49,7 @@ let homeCacheReminders: { id: string; name: string }[] = [];
 export default function HomePage() {
   const router = useRouter();
   const supabase = createClient();
-  const { items, currentHouse, allHouses, setCurrentHouse, setAllHouses, setMembers, setItems, setAddItemModalOpen, setInitialStatus, dataSyncComplete } = useAppStore();
+  const { items, currentHouse, allHouses, setCurrentHouse, setAllHouses, setMembers, setItems, setAddItemModalOpen, setInitialStatus, dataSyncComplete, setToast } = useAppStore();
 
   const [currentUserId, setCurrentUserId] = useState<string>("");
   // Inicia com o cache da MESMA casa → render instantâneo, sem flash de vazio.
@@ -213,12 +213,12 @@ export default function HomePage() {
     if (allHouses.length <= 1) return;
     setDeletingHouse(true);
     try {
-      await supabase.from("item_events").delete().eq("house_id", houseId);
-      await supabase.from("items").delete().eq("house_id", houseId);
-      await supabase.from("invite_tokens").delete().eq("house_id", houseId);
-      await supabase.from("house_members").delete().eq("house_id", houseId);
-      await supabase.from("subscriptions").delete().eq("house_id", houseId);
-      await supabase.from("houses").delete().eq("id", houseId);
+      // UM único delete: todas as tabelas-filhas (items, item_events, membros,
+      // convites, assinaturas, sessões, push, notificações) têm ON DELETE CASCADE
+      // no schema → o banco apaga tudo ATOMICAMENTE numa só transação. Antes eram
+      // 6 deletes sequenciais que podiam deixar dados órfãos se a rede caísse no meio.
+      const { error } = await supabase.from("houses").delete().eq("id", houseId);
+      if (error) throw error;
 
       const remaining = allHouses.filter(h => h.id !== houseId);
       setAllHouses(remaining);
@@ -228,8 +228,9 @@ export default function HomePage() {
         await switchHouse(remaining[0]);
       }
     } catch (err) {
+      // Rede/erro do banco → toast premium (em vez do alert nativo) e nada apagado.
       console.error("Erro ao excluir local:", err);
-      alert("Erro ao excluir local. Tente novamente.");
+      setToast("Sem conexão — não consegui excluir. Tente de novo. 📶");
     } finally {
       setDeletingHouse(false);
       setConfirmDeleteHouseId(null);
