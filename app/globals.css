@@ -456,7 +456,9 @@ input, select, textarea {
    PRINTS #1/#2/#7. text-red-800/900 não tinham override → caíam no
    #991b1b do Tailwind sobre tint vermelho = ilegível. Sobe p/ #fca5a5.
    Mantém #f87171 só p/ ícones/links de baixa ênfase (red-500/400). */
-.dark .text-red-900,
+/* TÍTULO negrito do banner vermelho ("Conta congelada") um tom acima do corpo
+   (#fca5a5) → mesma hierarquia premium do âmbar. Contraste ~12:1 (AAA). */
+.dark .text-red-900 { color: #fecaca !important; }
 .dark .text-red-800,
 .dark .text-red-700,
 .dark .text-red-600 { color: #fca5a5 !important; }
@@ -475,6 +477,12 @@ input, select, textarea {
 .dark .text-amber-800,
 .dark .text-amber-700,
 .dark .text-amber-600 { color: #fcd34d !important; }
+/* TÍTULO negrito dos banners âmbar (amber-900) NÃO tinha override → ficava no
+   marrom escuro padrão do Tailwind (#78350f), ILEGÍVEL no fundo escuro ("vermelho
+   difícil de ver" do PRINT "Upgrade para o Plano Família" / "Teste grátis
+   encerrado" / "Recursos limitados"). Âmbar claro, um tom ACIMA do corpo
+   (#fcd34d) → hierarquia premium. Contraste no banner (#1a1f2e) ~13:1 (AAA). */
+.dark .text-amber-900 { color: #fde68a !important; }
 .dark .border-amber-100 { border-color: rgba(245, 158, 11, 0.30) !important; }
 .dark .border-amber-200 { border-color: rgba(245, 158, 11, 0.40) !important; }
 

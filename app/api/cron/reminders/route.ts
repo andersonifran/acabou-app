@@ -5,31 +5,79 @@ import { sendPushToUser } from "@/lib/push";
 /**
  * Cron (Vercel Pro) — roda a cada 15 minutos.
  *
- * PARTE 1 (PAGO) — Lembrete de compras: "Hora de ir às compras".
- *   Enviado no HORÁRIO QUE O USUÁRIO ESCOLHEU (reminder_time), dentro da
- *   janela de 15 min correspondente. Só para casas com plano válido + itens.
+ * PARTE 1 (PAGO) — Lembrete de compras no HORÁRIO QUE O USUÁRIO ESCOLHEU
+ *   (reminder_time): "você tem N itens pra comprar". Só casas com plano válido +
+ *   itens pendentes. Frase ROTACIONA (não repete dia a dia).
  *
- * PARTE 2 (GRÁTIS) — Nudge diário de re-engajamento (estilo Duolingo):
- *   Roda 1x/dia, SÓ na janela das 18h. Vai para quem tem push ativo, NÃO
- *   abriu o app hoje e NÃO recebeu outra notificação hoje.
+ * PARTE 2 (GRÁTIS) — Nudge diário de re-engajamento (estilo Duolingo), 1x/dia
+ *   na janela das 18h, pra quem tem push e NÃO recebeu outra notificação hoje:
+ *     • TEM itens pendentes  → lembrete "tem N pra comprar" (pra quem não marcou
+ *       horário — assim ninguém esquece os itens da lista).
+ *     • SEM itens            → nudge de despensa (confere o que tá acabando).
  *
  * Regra de ouro: no máximo 1 notificação/dia por usuário (sem colisão).
+ *
+ * Variedade premium: a frase é escolhida por (dia-do-ano + offset do usuário) →
+ * muda TODO dia (nunca repete a de ontem) e é diferente entre usuários. Cada
+ * frase carrega uma POSE do Sacolino que combina com o contexto. O `tag` leva a
+ * data → cada dia é uma notificação NOVA (não substitui silenciosamente a de
+ * ontem, que era parte do "parece a mesma mensagem repetida").
  */
 
-const NUDGE_PHRASES = [
-  { title: "Dá uma olhada na despensa hoje 👀", body: "Marque o que tá acabando pra não faltar nada." },
-  { title: "Tá faltando algo em casa? 🏠", body: "Deixa marcado pra não esquecer no mercado." },
-  { title: "Bora manter a casa abastecida? 🛒", body: "Confere a despensa em 10 segundos." },
-  { title: "Café, arroz, sabão... 🤔", body: "Se tá no fim, deixa anotado no Acabou?" },
-  { title: "Antes de ir ao mercado 📝", body: "Marque o que falta — a lista se monta sozinha." },
-  { title: "10 segundos agora 🙈", body: "Evite o 'ah, esqueci!' na hora das compras." },
-  { title: "Sua família conta com você 💚", body: "Marque o que tá faltando em casa." },
-  { title: "Despensa em dia = vida tranquila 😌", body: "Dá uma conferida rapidinho?" },
-  { title: "O que será que tá acabando aí? 👀", body: "Confere rapidinho na despensa." },
-  { title: "Nada pior que ver que faltou 😅", body: "Olha a despensa antes de sair de casa!" },
+// ── Poses do Sacolino (ícone da notificação) por contexto ──
+const POSE = {
+  placa: "/mascote/sacolino-placa.png",        // segurando a lista/placa
+  buscando: "/mascote/sacolino-buscando.png",  // procurando/conferindo
+  acenando: "/mascote/sacolino-acenando.png",  // chamando/oi
+  feliz: "/mascote/sacolino-feliz.png",        // leve, do dia a dia
+  comemorando: "/mascote/sacolino-comemorando.png", // fim de semana
+  alerta: "/mascote/sacolino-alerta.png",      // atenção, tá faltando
+};
+
+// LEMBRETE DE COMPRAS — quando há itens pendentes. {n}=qtd, {p}=item/itens,
+// {c}=nome da casa. Frases pensadas pra funcionar no singular e no plural.
+const PENDING_PHRASES: {
+  title: string;
+  body: (n: number, p: string, c: string) => string;
+  pose: string;
+}[] = [
+  { title: "🛒 Hora de ir às compras!", body: (n, p, c) => `Você tem ${n} ${p} pra comprar na "${c}".`, pose: POSE.placa },
+  { title: "Bora resolver as compras? 🛍️", body: (n, p, c) => `Tem ${n} ${p} esperando na lista da "${c}".`, pose: POSE.buscando },
+  { title: "Sua lista já tá pronta 📝", body: (n, p, c) => `Tem ${n} ${p} pra pegar no mercado da "${c}".`, pose: POSE.placa },
+  { title: "Vai ao mercado hoje? 🛒", body: (n, p, c) => `Não esqueça: ${n} ${p} na lista da "${c}".`, pose: POSE.buscando },
+  { title: "Tem coisa faltando em casa 👀", body: (n, p, c) => `Você marcou ${n} ${p} pra comprar na "${c}".`, pose: POSE.alerta },
+  { title: "Psiu, lembra das compras? 🙋", body: (n, p, c) => `Tem ${n} ${p} te esperando na lista da "${c}".`, pose: POSE.acenando },
+  { title: "Antes que esqueça… 📌", body: (n, p, c) => `Você tem ${n} ${p} pra comprar na "${c}".`, pose: POSE.placa },
+  { title: "Lista cheia, despensa vazia? 🛒", body: (n, p, c) => `Tem ${n} ${p} aguardando compra na "${c}".`, pose: POSE.buscando },
 ];
-const NUDGE_FRIDAY = { title: "Fim de semana chegando! 🛒", body: "Vê o que falta antes das compras." };
-const NUDGE_SUNDAY = { title: "Bora começar a semana abastecido? 🗓️", body: "Confere a despensa e monte a lista." };
+
+// NUDGE DE DESPENSA — re-engajamento pra quem NÃO tem itens pendentes.
+const NUDGE_PHRASES: { title: string; body: string; pose: string }[] = [
+  { title: "Dá uma olhada na despensa hoje 👀", body: "Marque o que tá acabando pra não faltar nada.", pose: POSE.buscando },
+  { title: "Tá faltando algo em casa? 🏠", body: "Deixa marcado pra não esquecer no mercado.", pose: POSE.buscando },
+  { title: "Bora manter a casa abastecida? 🛒", body: "Confere a despensa em 10 segundos.", pose: POSE.placa },
+  { title: "Café, arroz, sabão... 🤔", body: "Se tá no fim, deixa anotado no Acabou?", pose: POSE.buscando },
+  { title: "Antes de ir ao mercado 📝", body: "Marque o que falta — a lista se monta sozinha.", pose: POSE.placa },
+  { title: "10 segundos agora 🙈", body: "Evite o 'ah, esqueci!' na hora das compras.", pose: POSE.acenando },
+  { title: "Sua família conta com você 💚", body: "Marque o que tá faltando em casa.", pose: POSE.feliz },
+  { title: "Despensa em dia = vida tranquila 😌", body: "Dá uma conferida rapidinho?", pose: POSE.feliz },
+  { title: "O que será que tá acabando aí? 👀", body: "Confere rapidinho na despensa.", pose: POSE.buscando },
+  { title: "Nada pior que ver que faltou 😅", body: "Olha a despensa antes de sair de casa!", pose: POSE.alerta },
+];
+const NUDGE_FRIDAY = { title: "Fim de semana chegando! 🛒", body: "Vê o que falta antes das compras.", pose: POSE.comemorando };
+const NUDGE_SUNDAY = { title: "Bora começar a semana abastecido? 🗓️", body: "Confere a despensa e monte a lista.", pose: POSE.feliz };
+
+// Escolhe um item do array de forma estável pelo "seed" (dia + usuário).
+function pick<T>(arr: T[], seed: number): T {
+  return arr[((Math.floor(seed) % arr.length) + arr.length) % arr.length];
+}
+// Offset estável por usuário → frases variam ENTRE pessoas (não é todo mundo a
+// mesma frase no mesmo dia), sem precisar guardar nada no banco.
+function userOffset(uid: string): number {
+  let h = 0;
+  for (let i = 0; i < uid.length; i++) h = (h + uid.charCodeAt(i)) % 9973;
+  return h;
+}
 
 export async function GET(request: NextRequest) {
   // Token de segurança do Vercel Cron
@@ -50,6 +98,14 @@ export async function GET(request: NextRequest) {
   const brasilMinute = d.getUTCMinutes();
   const currentMinutes = brasilHour * 60 + brasilMinute;
   const slotStart = Math.floor(currentMinutes / 15) * 15; // 0,15,30,45...
+
+  // Seeds do dia (BRT) — compartilhados pela Parte 1 e 2 pra rotação consistente.
+  const brasilNow = new Date(now - 3 * 60 * 60 * 1000);
+  const dayOfWeek = brasilNow.getUTCDay();
+  const dayOfYear = Math.floor(
+    (brasilNow.getTime() - Date.UTC(brasilNow.getUTCFullYear(), 0, 0)) / 86_400_000
+  );
+  const dayKey = `${brasilNow.getUTCFullYear()}-${String(brasilNow.getUTCMonth() + 1).padStart(2, "0")}-${String(brasilNow.getUTCDate()).padStart(2, "0")}`;
 
   // Dedup global: no máximo 1 notificação/dia por usuário.
   const notifiedToday = new Set<string>();
@@ -98,21 +154,27 @@ export async function GET(request: NextRequest) {
       if (!count || count === 0) continue;
 
       const plural = count === 1 ? "item" : "itens";
-      await sendPushToUser(admin, house.owner_id, {
-        title: "🛒 Hora de ir às compras!",
-        body: `Você tem ${count} ${plural} para comprar na "${house.name}"`,
-        url: "/lista",
-        tag: `reminder-${house.id}`,
-      });
+      const ph = pick(PENDING_PHRASES, dayOfYear + userOffset(house.owner_id));
+      const body = ph.body(count, plural, house.name);
+      // Grava ANTES de enviar: o dedup lê a tabela `notifications`. Se o cron cair
+      // entre enviar e gravar, a próxima execução já vê o registro e NÃO reenvia
+      // (sem duplicata). Push falho é inofensivo — fica o histórico in-app.
       await admin.from("notifications").insert({
         user_id: house.owner_id,
         house_id: house.id,
         type: "reminder",
-        title: "Hora de ir às compras!",
-        body: `Você tem ${count} ${plural} para comprar`,
+        title: ph.title,
+        body,
         data: { items_count: count },
       });
       notifiedToday.add(house.owner_id);
+      await sendPushToUser(admin, house.owner_id, {
+        title: ph.title,
+        body,
+        icon: ph.pose,
+        url: "/lista",
+        tag: `reminder-${house.id}-${dayKey}`,
+      });
       remindersSent++;
     }
   } catch (err) {
@@ -128,14 +190,31 @@ export async function GET(request: NextRequest) {
       const { data: subs } = await admin.from("push_subscriptions").select("user_id");
       const pushUserIds = [...new Set((subs ?? []).map((s: { user_id: string }) => s.user_id))];
 
-      // Mapa dono → uma casa (pra registrar o nudge em notifications: dedup + histórico).
+      // Casa primária de cada dono (id + nome) → registrar o nudge + saber se tem
+      // itens pendentes. Mantém a 1ª casa (a maioria tem só uma).
       const { data: nudgeHouses } = await admin
         .from("houses")
-        .select("id, owner_id")
-        .in("owner_id", pushUserIds.length > 0 ? pushUserIds : ["__none__"]);
-      const ownerToHouse = new Map<string, string>();
-      for (const h of (nudgeHouses ?? []) as { id: string; owner_id: string }[]) {
-        if (!ownerToHouse.has(h.owner_id)) ownerToHouse.set(h.owner_id, h.id);
+        .select("id, owner_id, name")
+        .in("owner_id", pushUserIds.length > 0 ? pushUserIds : ["__none__"])
+        .order("id", { ascending: true }); // determinístico: mesma casa primária todo dia
+      const ownerPrimary = new Map<string, { houseId: string; name: string }>();
+      for (const h of (nudgeHouses ?? []) as { id: string; owner_id: string; name: string }[]) {
+        if (!ownerPrimary.has(h.owner_id)) ownerPrimary.set(h.owner_id, { houseId: h.id, name: h.name });
+      }
+
+      // Quantos itens pendentes por casa primária (1 query só) → pra decidir, por
+      // usuário, entre "lembrete de compras" e "nudge de despensa".
+      const primaryHouseIds = [...ownerPrimary.values()].map((v) => v.houseId);
+      const pendingByHouse = new Map<string, number>();
+      if (primaryHouseIds.length > 0) {
+        const { data: pendingItems } = await admin
+          .from("items")
+          .select("house_id")
+          .in("house_id", primaryHouseIds)
+          .in("status", ["acabou", "acabando", "comprar"]);
+        for (const it of (pendingItems ?? []) as { house_id: string }[]) {
+          pendingByHouse.set(it.house_id, (pendingByHouse.get(it.house_id) ?? 0) + 1);
+        }
       }
 
       if (pushUserIds.length > 0) {
@@ -152,17 +231,6 @@ export async function GET(request: NextRequest) {
           .in("user_id", pushUserIds);
         for (const n of notifsToday ?? []) notifiedToday.add((n as { user_id: string }).user_id);
 
-        // Frase do dia (determinística; sexta e domingo têm variações).
-        const brasil = new Date(now - 3 * 60 * 60 * 1000);
-        const dayOfWeek = brasil.getUTCDay();
-        const dayOfYear = Math.floor(
-          (brasil.getTime() - Date.UTC(brasil.getUTCFullYear(), 0, 0)) / 86_400_000
-        );
-        const phrase =
-          dayOfWeek === 5 ? NUDGE_FRIDAY
-          : dayOfWeek === 0 ? NUDGE_SUNDAY
-          : NUDGE_PHRASES[dayOfYear % NUDGE_PHRASES.length];
-
         const MAX_INACTIVE = 30 * 24 * 60 * 60 * 1000;
 
         for (const prof of profs ?? []) {
@@ -174,25 +242,56 @@ export async function GET(request: NextRequest) {
           // quem abriu o app hoje (mantém engajado). Só pula quem sumiu há +30d.
           if (la && now - new Date(la).getTime() > MAX_INACTIVE) continue;
 
-          await sendPushToUser(admin, uid, {
-            title: phrase.title,
-            body: phrase.body,
-            icon: "/mascote/sacolino-acenando.png",
-            url: "/despensa",
-            tag: `nudge-${uid}`,
-          });
-          // Registra o nudge (dedup entre execuções + histórico in-app).
-          const hid = ownerToHouse.get(uid);
-          if (hid) {
+          const primary = ownerPrimary.get(uid);
+          const pendingCount = primary ? (pendingByHouse.get(primary.houseId) ?? 0) : 0;
+
+          let title: string;
+          let body: string;
+          let icon: string;
+          let url: string;
+          let type: string;
+
+          if (pendingCount > 0 && primary) {
+            // TEM itens pendentes → lembra das compras (rotaciona + pose).
+            const plural = pendingCount === 1 ? "item" : "itens";
+            const ph = pick(PENDING_PHRASES, dayOfYear + userOffset(uid));
+            title = ph.title;
+            body = ph.body(pendingCount, plural, primary.name);
+            icon = ph.pose;
+            url = "/lista";
+            type = "reminder";
+          } else {
+            // SEM itens → nudge de despensa (sexta/domingo têm variações).
+            const ph =
+              dayOfWeek === 5 ? NUDGE_FRIDAY
+              : dayOfWeek === 0 ? NUDGE_SUNDAY
+              : pick(NUDGE_PHRASES, dayOfYear + userOffset(uid));
+            title = ph.title;
+            body = ph.body;
+            icon = ph.pose;
+            url = "/despensa";
+            type = "nudge";
+          }
+
+          // Grava ANTES de enviar (dedup entre execuções + histórico in-app).
+          if (primary) {
             await admin.from("notifications").insert({
               user_id: uid,
-              house_id: hid,
-              type: "nudge",
-              title: phrase.title,
-              body: phrase.body,
+              house_id: primary.houseId,
+              type,
+              title,
+              body,
+              ...(pendingCount > 0 ? { data: { items_count: pendingCount } } : {}),
             });
           }
           notifiedToday.add(uid);
+          await sendPushToUser(admin, uid, {
+            title,
+            body,
+            icon,
+            url,
+            tag: `nudge-${uid}-${dayKey}`,
+          });
           nudgesSent++;
         }
       }
