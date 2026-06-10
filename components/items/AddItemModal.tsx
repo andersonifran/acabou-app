@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { X, Search, Plus } from "lucide-react";
 import { Item, ItemStatus, Category, STATUS_LABELS, SHOPPING_LIST_STATUSES } from "@/types";
-import { cn } from "@/lib/utils";
+import { cn, customCategoryIcon } from "@/lib/utils";
 import { SUGGESTED_ITEMS } from "@/lib/item-catalog";
 import { recordItemUse, getLearnedItems, type LearnedItem } from "@/lib/learned-items";
 import { hapticSuccess } from "@/lib/haptics";
@@ -52,9 +52,10 @@ interface AddItemModalProps {
     status: ItemStatus;
     note?: string;
     quantity_text?: string;
+    custom_category?: string | null;
   }) => Promise<unknown>;
   onUpdateStatus: (itemId: string, status: ItemStatus) => Promise<boolean | void>;
-  onUpdateItem?: (itemId: string, data: { name: string; note?: string; quantity_text?: string }) => Promise<void>;
+  onUpdateItem?: (itemId: string, data: { name: string; note?: string; quantity_text?: string; custom_category?: string | null }) => Promise<void>;
 }
 
 export function AddItemModal({
@@ -74,6 +75,9 @@ export function AddItemModal({
   const [newStatus, setNewStatus] = useState<ItemStatus>(initialStatus);
   const [newNote, setNewNote] = useState("");
   const [newQty, setNewQty] = useState("");
+  // Etiqueta opcional do "Outros" (ex.: "Ferramentas") — só aparece/salva quando a
+  // categoria selecionada é "Outros". É dado do item (escopo da casa), não global.
+  const [newCustomCategory, setNewCustomCategory] = useState("");
   const [loading, setLoading] = useState(false);
   // Item existente sendo editado (null = criando item novo)
   const [editingItem, setEditingItem] = useState<Item | null>(null);
@@ -90,6 +94,7 @@ export function AddItemModal({
       setNewStatus(initialStatus);
       setNewNote("");
       setNewQty("");
+      setNewCustomCategory("");
       setEditingItem(null);
       setShowNameSug(false);
       setLearned(getLearnedItems());
@@ -160,6 +165,7 @@ export function AddItemModal({
     setNewStatus(initialStatus);
     setNewNote(item.note ?? "");
     setNewQty(item.quantity_text ?? "");
+    setNewCustomCategory(item.custom_category ?? "");
     setShowNameSug(false);
     setMode("create");
   }
@@ -172,6 +178,7 @@ export function AddItemModal({
     setNewStatus(initialStatus);
     setNewNote("");
     setNewQty("");
+    setNewCustomCategory("");
     setShowNameSug(false);
     setMode("create");
   }
@@ -190,6 +197,26 @@ export function AddItemModal({
     setShowNameSug(false);
   }
 
+  // Categoria "Outros" selecionada? → o campo de etiqueta só aparece (e só salva) nela.
+  const selectedCategory = categories.find((c) => c.id === newCategoryId);
+  const isOutros = (selectedCategory?.name ?? "").toLowerCase() === "outros";
+  // Chips de REUSO: etiquetas de "Outros" que ESTA casa já usou. Derivado do que já
+  // está na memória (zero consulta nova) e vive só nos dados da casa — nunca global.
+  const outrosCategoryId = categories.find((c) => (c.name ?? "").toLowerCase() === "outros")?.id;
+  const usedOutrosLabels = isOutros
+    ? Array.from(
+        new Set(
+          existingItems
+            .filter(
+              (i) => i.category_id === outrosCategoryId && i.custom_category && i.custom_category.trim()
+            )
+            .map((i) => i.custom_category!.trim())
+        )
+      )
+        .filter((l) => l.trim() !== newCustomCategory.trim())
+        .slice(0, 6)
+    : [];
+
   async function handleCreate() {
     if (!newName.trim() || !newCategoryId) return;
     setLoading(true);
@@ -202,6 +229,8 @@ export function AddItemModal({
             name: newName.trim(),
             note: newNote || undefined,
             quantity_text: newQty || undefined,
+            // Só manda a etiqueta quando é "Outros" (presença = editItem atualiza).
+            ...(isOutros ? { custom_category: newCustomCategory.trim() || null } : {}),
           });
         }
       } else {
@@ -212,6 +241,10 @@ export function AddItemModal({
           status: newStatus,
           note: newNote || undefined,
           quantity_text: newQty || undefined,
+          // Só manda a etiqueta quando é "Outros" (consistente com a edição). Item
+          // comum NUNCA referencia a coluna → seguro mesmo se o deploy vier antes da
+          // migration. Vazio em "Outros" → null explícito (não undefined).
+          ...(isOutros ? { custom_category: newCustomCategory.trim() || null } : {}),
         });
       }
       // Aprende: registra o uso (alimenta sugestões entre casas + ranking).
@@ -385,6 +418,10 @@ export function AddItemModal({
               </label>
               <select
                 value={newCategoryId}
+                // NÃO limpa a etiqueta ao trocar de categoria: assim o que o usuário
+                // digitou volta caso ele retorne pra "Outros" (rewind premium). Salvar
+                // só manda a etiqueta quando é "Outros" (handleCreate) → item comum
+                // nunca a recebe, então não há etiqueta órfã.
                 onChange={(e) => setNewCategoryId(e.target.value)}
                 className="w-full px-4 py-3 bg-gray-50 rounded-xl border border-gray-200 focus:outline-none focus:border-green-400 text-gray-900"
               >
@@ -394,6 +431,47 @@ export function AddItemModal({
                   </option>
                 ))}
               </select>
+
+              {/* Etiqueta do "Outros": aparece SÓ quando a categoria é "Outros".
+                  Opcional, fica visível pra casa (como a observação) e NUNCA vira
+                  categoria global. Chips reusam o que esta casa já etiquetou. */}
+              {isOutros && (
+                <div className="mt-2.5 animate-reveal-field">
+                  <label className="block text-xs font-medium text-gray-600 mb-1">
+                    O que é? <span className="text-gray-400 font-normal">(opcional)</span>
+                  </label>
+                  {/* Ícone "inteligente" AO VIVO: muda enquanto digita (Adega→🍷,
+                      Almoxarifado→📦). Dá a sensação de app esperto, sem atrito. */}
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-base leading-none pointer-events-none">
+                      {customCategoryIcon(newCustomCategory)}
+                    </span>
+                    <input
+                      type="text"
+                      value={newCustomCategory}
+                      onChange={(e) => setNewCustomCategory(e.target.value)}
+                      placeholder="Ex: Adega, Almoxarifado, Remédios, Pet…"
+                      maxLength={40}
+                      className="w-full pl-10 pr-4 py-2.5 bg-green-50/60 rounded-xl border border-green-200 focus:outline-none focus:border-green-400 text-gray-900 placeholder:text-gray-400 text-sm"
+                    />
+                  </div>
+                  {usedOutrosLabels.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 mt-2">
+                      {usedOutrosLabels.map((label) => (
+                        <button
+                          key={label}
+                          type="button"
+                          onClick={() => setNewCustomCategory(label)}
+                          className="inline-flex items-center gap-1 text-xs pl-1.5 pr-2.5 py-1 rounded-full bg-white border border-green-200 text-green-700 font-medium hover:bg-green-50 active:scale-95 transition-all"
+                        >
+                          <span className="leading-none">{customCategoryIcon(label)}</span>
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             <div>

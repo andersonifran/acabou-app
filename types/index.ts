@@ -62,6 +62,9 @@ export interface Item {
   status: ItemStatus;
   note?: string;
   quantity_text?: string;
+  /** Etiqueta pessoal opcional p/ itens da categoria "Outros" (ex.: "Ferramentas").
+   *  Escopo da casa (como o note); NÃO é uma categoria global. */
+  custom_category?: string | null;
   is_recurring: boolean;
   recurrence_type?: RecurrenceType;
   next_reminder_at?: string;

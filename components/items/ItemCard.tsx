@@ -4,7 +4,7 @@ import { useState, useRef, useEffect, memo } from "react";
 import { Item, ItemStatus } from "@/types";
 import { StatusButtons } from "./StatusButtons";
 import { StatusBadge } from "@/components/shared/StatusBadge";
-import { cn, truncate } from "@/lib/utils";
+import { cn, truncate, customCategoryIcon } from "@/lib/utils";
 import { ChevronDown, ChevronUp, MoreVertical, Pencil, Trash2, Check, X, StickyNote } from "lucide-react";
 
 interface ItemCardProps {
@@ -14,7 +14,7 @@ interface ItemCardProps {
   showPurchaseButton?: boolean;
   compact?: boolean;
   onEdit?: (itemId: string, newName: string) => Promise<void>;
-  onEditFull?: (itemId: string, data: { name: string; note?: string; quantity_text?: string }) => Promise<void>;
+  onEditFull?: (itemId: string, data: { name: string; note?: string; quantity_text?: string; custom_category?: string | null }) => Promise<void>;
   onDelete?: (itemId: string) => Promise<void>;
 }
 
@@ -35,6 +35,9 @@ export const ItemCard = memo(function ItemCard({
   const [editName, setEditName] = useState(item.name);
   const [editNote, setEditNote] = useState(item.note || "");
   const [editQuantity, setEditQuantity] = useState(item.quantity_text || "");
+  const [editCustomCategory, setEditCustomCategory] = useState(item.custom_category || "");
+  // Item da categoria "Outros"? → mostra o selinho da etiqueta + permite editá-la inline.
+  const itemIsOutros = (item.category?.name ?? "").toLowerCase() === "outros";
   const [confirmDelete, setConfirmDelete] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const editInputRef = useRef<HTMLInputElement>(null);
@@ -78,6 +81,8 @@ export const ItemCard = memo(function ItemCard({
           name: editName,
           note: editNote || undefined,
           quantity_text: editQuantity || undefined,
+          // Só manda a etiqueta se o item é "Outros" (presença = editItem atualiza).
+          ...(itemIsOutros ? { custom_category: editCustomCategory.trim() || null } : {}),
         });
       } else if (onEdit) {
         await onEdit(item.id, editName);
@@ -87,6 +92,7 @@ export const ItemCard = memo(function ItemCard({
       setEditName(item.name);
       setEditNote(item.note || "");
       setEditQuantity(item.quantity_text || "");
+      setEditCustomCategory(item.custom_category || "");
     } finally {
       setLoading(false);
     }
@@ -96,6 +102,7 @@ export const ItemCard = memo(function ItemCard({
     setEditName(item.name);
     setEditNote(item.note || "");
     setEditQuantity(item.quantity_text || "");
+    setEditCustomCategory(item.custom_category || "");
     setEditMode(true);
     setMenuOpen(false);
   }
@@ -105,6 +112,7 @@ export const ItemCard = memo(function ItemCard({
     setEditName(item.name);
     setEditNote(item.note || "");
     setEditQuantity(item.quantity_text || "");
+    setEditCustomCategory(item.custom_category || "");
   }
 
   async function handleDelete() {
@@ -168,6 +176,16 @@ export const ItemCard = memo(function ItemCard({
                     className="w-full text-xs text-gray-700 border border-gray-200 rounded-lg px-3 py-2 bg-gray-50 outline-none focus:border-green-300 focus:ring-1 focus:ring-green-100 transition-colors resize-none"
                     maxLength={200}
                   />
+                  {/* Etiqueta do "Outros" — editável só pra itens dessa categoria. */}
+                  {itemIsOutros && (
+                    <input
+                      value={editCustomCategory}
+                      onChange={(e) => setEditCustomCategory(e.target.value)}
+                      placeholder="O que é? (ex: Ferramentas, Pet…)"
+                      className="w-full text-xs text-gray-700 border border-green-200 rounded-lg px-3 py-2 bg-green-50/60 outline-none focus:border-green-400 focus:ring-1 focus:ring-green-100 transition-colors"
+                      maxLength={40}
+                    />
+                  )}
                 </div>
               ) : (
                 <div>
@@ -187,11 +205,19 @@ export const ItemCard = memo(function ItemCard({
                   )}
                 </div>
               )}
-              {item.category && !editMode && (
-                <span className="text-xs text-gray-500 mt-0.5 block">
-                  {item.category.icon} {item.category.name}
-                </span>
-              )}
+              {!editMode &&
+                (itemIsOutros && item.custom_category ? (
+                  // Selinho premium: chip com ícone inteligente + o rótulo livre do
+                  // usuário (ex.: 🍷 Adega · 🔧 Almoxarifado de ferramentas · 📦 Estoque).
+                  <span className="inline-flex items-center gap-1 mt-1 max-w-full text-xs font-medium text-green-700 bg-green-50 border border-green-200 rounded-full pl-1.5 pr-2 py-0.5">
+                    <span className="shrink-0 leading-none">{customCategoryIcon(item.custom_category)}</span>
+                    <span className="truncate">{item.custom_category}</span>
+                  </span>
+                ) : item.category ? (
+                  <span className="text-xs text-gray-500 mt-0.5 block">
+                    {item.category.icon} {item.category.name}
+                  </span>
+                ) : null)}
             </div>
             <div className="flex items-center gap-1.5 shrink-0">
               {!editMode && <StatusBadge status={item.status} />}

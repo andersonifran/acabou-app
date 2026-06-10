@@ -299,6 +299,11 @@ input, select, textarea {
 /* Convite de notificação — fade do fundo + pop do card */
 @keyframes optinFadeIn { from { opacity: 0; } to { opacity: 1; } }
 .animate-optin-fade { animation: optinFadeIn 0.2s ease-out; }
+/* Revela um campo que aparece sob condição (ex.: campo do "Outros") — fade + leve
+   deslize pra baixo. Suave o bastante pra parecer premium, rápido pra não atrasar. */
+@keyframes revealField { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
+.animate-reveal-field { animation: revealField 0.22s ease-out; }
+@media (prefers-reduced-motion: reduce) { .animate-reveal-field { animation: none; } }
 @keyframes optinPop {
   0% { opacity: 0; transform: translateY(14px) scale(0.96); }
   100% { opacity: 1; transform: translateY(0) scale(1); }

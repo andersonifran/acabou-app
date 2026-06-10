@@ -145,6 +145,7 @@ export function useItems() {
       status: ItemStatus;
       note?: string;
       quantity_text?: string;
+      custom_category?: string | null; // etiqueta opcional p/ categoria "Outros"
     }) => {
       const { currentHouse, userId } = useAppStore.getState();
       if (!currentHouse) throw new Error("Nenhuma casa selecionada");
@@ -282,7 +283,10 @@ export function useItems() {
   );
 
   const editItem = useCallback(
-    async (itemId: string, data: { name: string; note?: string; quantity_text?: string }) => {
+    async (
+      itemId: string,
+      data: { name: string; note?: string; quantity_text?: string; custom_category?: string | null }
+    ) => {
       const trimmed = data.name.trim();
       if (!trimmed) throw new Error("Nome inválido");
 
@@ -291,10 +295,16 @@ export function useItems() {
       const original = cur.find((i) => i.id === itemId);
       if (!original) return;
 
+      // custom_category só é tocado quando o caller MANDA a chave (presença). Assim
+      // editar um item COMUM nunca mexe (nem apaga) a etiqueta de itens "Outros".
+      const hasCustom = "custom_category" in data;
+      const customVal = (data.custom_category ?? "").toString().trim() || null;
+
       updateItem(itemId, {
         name: trimmed,
         note: data.note?.trim() || undefined,
         quantity_text: data.quantity_text?.trim() || undefined,
+        ...(hasCustom ? { custom_category: customVal } : {}),
       });
 
       // Captura TUDO (rede "Failed to fetch" + erro do banco) — antes a rejeição
@@ -307,6 +317,7 @@ export function useItems() {
             note: data.note?.trim() || null,
             quantity_text: data.quantity_text?.trim() || null,
             updated_by: userId,
+            ...(hasCustom ? { custom_category: customVal } : {}),
           })
           .eq("id", itemId);
         if (error) throw error;
@@ -315,6 +326,7 @@ export function useItems() {
           name: original.name,
           note: original.note,
           quantity_text: original.quantity_text,
+          ...(hasCustom ? { custom_category: original.custom_category ?? null } : {}),
         });
         setToast("Sem conexão — não consegui salvar. Tente de novo. 📶");
         console.warn("[editItem] falhou:", e);
