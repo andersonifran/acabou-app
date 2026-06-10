@@ -212,7 +212,7 @@ export default function CadastroPage() {
           <p className="text-gray-500 text-sm mt-2">
             Clique no link pra ativar sua conta e começar os <strong>14 dias grátis</strong>.
           </p>
-          <div className="bg-green-50 rounded-xl p-3 mt-4 text-left">
+          <div className="bg-green-50 rounded-xl p-3 mt-4 text-center">
             <p className="text-sm text-green-800">
               💡 Não chegou? Olhe o <strong>spam</strong>/lixo eletrônico — pode levar 1-2 minutos.
             </p>
