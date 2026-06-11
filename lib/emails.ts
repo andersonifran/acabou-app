@@ -405,48 +405,55 @@ export async function sendWinbackEmail(email: string, name: string) {
   if (!process.env.RESEND_API_KEY) return;
 
   const firstName = (name || "").split(" ")[0] || "Oi";
-  const appHost = APP_URL.replace(/^https?:\/\//, "");
   const resend = getResend();
 
   await resend.emails.send({
-    // Remetente com NOME DE PESSOA (mesmo endereço/domínio) → sinal forte de
-    // "e-mail pessoal" pro Gmail (ajuda a cair na Principal, não em Promoções).
-    from: "Anderson do Acabou? <notificacoes@acabouapp.com.br>",
+    from: FROM,
     to: email,
     replyTo: REPLY_TO,
-    // List-Unsubscribe: exigência dos provedores p/ envio em volume + ajuda MUITO
-    // a reputação/entrega (cair na caixa certa).
+    // List-Unsubscribe: invisível (não muda a aparência), exigência dos provedores
+    // p/ envio em volume + ajuda na reputação/entrega. Mantido no visual caprichado.
     headers: {
       "List-Unsubscribe": "<mailto:contato@acabouapp.com.br?subject=Sair%20dos%20e-mails>",
       "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
     },
-    // Assunto SEM "grátis/oferta/🎁" e sem emojis de promo → menos cara de campanha.
-    subject: `${esc(firstName)}, sua despensa ficou te esperando`,
-    // Carta PESSOAL (texto, sem banner/botão gigante) — parece e-mail de gente,
-    // não panfleto. Converte melhor em reconquista E vai mais p/ a Principal.
-    html: `
-      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 540px; margin: 0 auto; color: #1f2937; font-size: 15px; line-height: 1.7;">
-        <p style="margin: 0 0 16px;">Oi, ${esc(firstName)}! 👋</p>
-        <p style="margin: 0 0 16px;">Aqui &eacute; o Anderson, do <strong>Acabou?</strong>. Vi que voc&ecirc; chegou a testar o app e acabou saindo — e lembrei de voc&ecirc;.</p>
-        <p style="margin: 0 0 16px;"><strong>Tudo que voc&ecirc; criou continua salvo</strong>: suas listas, sua despensa, sua casa. Est&aacute; tudo aqui, do jeitinho que voc&ecirc; deixou.</p>
-        <p style="margin: 0 0 8px;">E a gente melhorou bastante desde ent&atilde;o:</p>
-        <ul style="margin: 0 0 16px; padding-left: 20px; color: #374151;">
-          <li style="margin-bottom: 6px;">Lembrete na hora certa (quando algo acaba e na hora do mercado)</li>
-          <li style="margin-bottom: 6px;">Lista pronta pra mandar no WhatsApp pra fam&iacute;lia</li>
-          <li style="margin-bottom: 6px;">Busca inteligente de itens e bem mais r&aacute;pido</li>
-        </ul>
-        <p style="margin: 0 0 16px;">Ent&atilde;o fiz o seguinte: <strong>deixei seu acesso liberado de novo por 7 dias, sem custo nenhum</strong>. Quis te dar uma segunda chance de ver como ficou — sem compromisso.</p>
-        <p style="margin: 0 0 20px;">&Eacute; s&oacute; voltar por aqui &rarr; <a href="${APP_URL}/home" style="color: #15803d; font-weight: 700;">${appHost}/home</a></p>
-        <p style="margin: 0 0 16px;">Qualquer d&uacute;vida, &eacute; s&oacute; responder este e-mail — eu leio. 💚</p>
-        <p style="margin: 0;">Um abra&ccedil;o,<br><strong>Anderson</strong> &middot; Acabou?</p>
-        <p style="margin: 28px 0 0; font-size: 12px; color: #9ca3af; border-top: 1px solid #f0f0f0; padding-top: 14px;">
-          Voc&ecirc; recebeu este e-mail porque criou uma conta no Acabou?. Se n&atilde;o quiser mais receber, &eacute; s&oacute; responder "sair".
-          &nbsp;&middot;&nbsp;<a href="${APP_URL}/privacidade" style="color: #9ca3af;">Privacidade</a>
+    subject: `${esc(firstName)}, sua despensa ficou te esperando 🛒💚`,
+    html: emailLayout(`
+      ${greenHeader("Que saudade!", "A gente guardou tudo pra voc&ecirc; 💚", MASCOTE.acenando)}
+      <div style="padding: 40px 32px; border: 1px solid #e5e7eb; border-top: none;">
+        <h2 style="margin: 0 0 16px; font-size: 22px; color: #111827;">
+          Oi, ${esc(firstName)}! Que saudade. 👋
+        </h2>
+        <p style="margin: 0 0 20px; font-size: 15px; color: #4b5563; line-height: 1.7;">
+          Lembra do <strong>Acabou?</strong> Pois &eacute; — <strong>tudo que voc&ecirc; criou continua salvo</strong>:
+          suas listas, sua despensa, sua casa. Est&aacute; tudo aqui, do jeitinho que voc&ecirc; deixou. 🥹
         </p>
-      </div>`,
+        <p style="margin: 0 0 12px; font-size: 15px; color: #4b5563; line-height: 1.7;">
+          E a gente n&atilde;o parou um minuto. Melhorou demais:
+        </p>
+        <div style="background: #f0fdf4; border-radius: 12px; padding: 20px 24px; margin: 0 0 24px;">
+          <p style="margin: 0 0 10px; font-size: 14px; color: #111827; line-height: 1.6;">✅ &nbsp;<strong>Lembrete na hora certa</strong> (quando algo acaba e na hora do mercado)</p>
+          <p style="margin: 0 0 10px; font-size: 14px; color: #111827; line-height: 1.6;">✅ &nbsp;<strong>Lista pronta pra mandar no WhatsApp</strong> pra fam&iacute;lia</p>
+          <p style="margin: 0 0 10px; font-size: 14px; color: #111827; line-height: 1.6;">✅ &nbsp;<strong>Busca inteligente</strong> de itens (digita "caf&eacute;" e ele j&aacute; sabe)</p>
+          <p style="margin: 0; font-size: 14px; color: #111827; line-height: 1.6;">✅ &nbsp;<strong>Bem mais r&aacute;pido</strong> — abre num piscar de olhos</p>
+        </div>
+        <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:12px;padding:18px 24px;margin:0 0 8px;text-align:center;">
+          <p style="margin:0;color:#92400e;font-size:16px;font-weight:700;">🎁 Liberamos 7 dias gr&aacute;tis de volta pra voc&ecirc;</p>
+          <p style="margin:6px 0 0;color:#b45309;font-size:13px;line-height:1.5;">Uma oportunidade s&oacute; sua, pra voltar e ver tudo de novo — sem compromisso.</p>
+        </div>
+        <div style="text-align: center; margin: 28px 0 8px;">
+          <a href="${APP_URL}/home" style="display: inline-block; background: #16a34a; color: white; text-decoration: none; font-weight: 700; font-size: 16px; padding: 14px 44px; border-radius: 12px;">Voltar pro Acabou? &rarr;</a>
+        </div>
+        <p style="margin: 0 0 20px; font-size: 12px; color: #9ca3af; text-align: center;">🔒 Voc&ecirc; controla. Cancela quando quiser.</p>
+        <p style="margin: 0; font-size: 14px; color: #111827;">
+          A gente fez o Acabou? pra <strong>nunca mais faltar nada na sua casa</strong> — e a sua casa ainda lembra de voc&ecirc;. 💚<br>
+          <strong>Sacolino &amp; time Acabou?</strong> 🛒
+        </p>
+      </div>
+    `),
   });
 
-  console.log(`[Email] ✅ Win-back (+7d, carta pessoal) enviado para ${email}`);
+  console.log(`[Email] ✅ Win-back (+7d) enviado para ${email}`);
 }
 
 // =============================================
