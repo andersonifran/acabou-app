@@ -99,13 +99,22 @@ export default function HomePage() {
       // no máx 1x a cada 5 dias (cooldown compartilhado com o onboarding).
       try {
         const last = Number(localStorage.getItem("acabou_optin_last") || 0);
-        if (Date.now() - last >= 5 * 24 * 60 * 60 * 1000) {
-          const t = setTimeout(() => {
-            setOptInMode("ask");
-            setShowOptIn(true);
-            localStorage.setItem("acabou_optin_last", String(Date.now()));
-          }, 900);
-          return () => clearTimeout(t);
+        const dismisses = Number(localStorage.getItem("acabou_optin_dismisses") || 0);
+        // Recuo profissional: re-oferece algumas vezes (pega o "fechei/cliquei
+        // não sem querer") com intervalo CRESCENTE; depois de algumas dispensas
+        // recua e respeita — nunca vira chato (ainda dá pra ativar pelo sininho
+        // ou nas Configurações). Dias de espera por nº de dispensas:
+        const COOLDOWN_DAYS = [4, 12, 30];
+        if (dismisses < COOLDOWN_DAYS.length) {
+          const cooldown = COOLDOWN_DAYS[dismisses] * 24 * 60 * 60 * 1000;
+          if (Date.now() - last >= cooldown) {
+            const t = setTimeout(() => {
+              setOptInMode("ask");
+              setShowOptIn(true);
+              localStorage.setItem("acabou_optin_last", String(Date.now()));
+            }, 900);
+            return () => clearTimeout(t);
+          }
         }
       } catch {}
     } else if (push.state === "denied") {
@@ -284,7 +293,20 @@ export default function HomePage() {
 
   return (
     <div>
-      <NotificationOptInModal open={showOptIn} onClose={() => setShowOptIn(false)} mode={optInMode} />
+      <NotificationOptInModal
+        open={showOptIn}
+        mode={optInMode}
+        onClose={(activated) => {
+          setShowOptIn(false);
+          if (!activated && optInMode === "ask") {
+            // dispensou o convite → recuo: aumenta o intervalo da próxima vez
+            try {
+              const n = Number(localStorage.getItem("acabou_optin_dismisses") || 0);
+              localStorage.setItem("acabou_optin_dismisses", String(n + 1));
+            } catch {}
+          }
+        }}
+      />
 
       {/* Header com ícone do imóvel + seletor de casas */}
       <header className="sticky top-0 z-40 bg-white border-b border-gray-100 px-4 py-3">

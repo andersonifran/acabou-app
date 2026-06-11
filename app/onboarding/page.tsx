@@ -111,6 +111,9 @@ function OnboardingContent() {
   const push = usePushNotifications();
   const [showOptIn, setShowOptIn] = useState(false);
   const [optInAsked, setOptInAsked] = useState(false);
+  // Quando o convite aparece a partir do "Começar sem itens", ao fechá-lo a
+  // gente segue pra home (redirect adiado até o usuário responder o convite).
+  const [pendingRedirect, setPendingRedirect] = useState(false);
 
   useEffect(() => {
     async function init() {
@@ -384,6 +387,18 @@ function OnboardingContent() {
       // Salva o houseId selecionado para que o layout abra neste local
       localStorage.setItem("acabou_selected_house", houseId);
 
+      // "Começar sem itens" (ou terminar sem marcar nenhum) e ainda não viu o
+      // convite: oferece a tela caprichada de notificação AQUI, antes de ir pra
+      // home — mesma experiência de quem marcou um item. Só se a permissão está
+      // indecisa. Ao fechar o convite, segue pra home (pendingRedirect).
+      if (selected.size === 0 && !optInAsked && push.state === "prompt") {
+        setOptInAsked(true);
+        try { localStorage.setItem("acabou_optin_last", String(Date.now())); } catch {}
+        setPendingRedirect(true);
+        setShowOptIn(true);
+        return; // espera o convite fechar (o finally já zera o loading)
+      }
+
       router.push("/home");
       router.refresh();
     } finally {
@@ -514,7 +529,24 @@ function OnboardingContent() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
-      <NotificationOptInModal open={showOptIn} onClose={() => setShowOptIn(false)} />
+      <NotificationOptInModal
+        open={showOptIn}
+        onClose={(activated) => {
+          setShowOptIn(false);
+          if (!activated) {
+            // dispensou (não ativou) → conta pro recuo profissional da home
+            try {
+              const n = Number(localStorage.getItem("acabou_optin_dismisses") || 0);
+              localStorage.setItem("acabou_optin_dismisses", String(n + 1));
+            } catch {}
+          }
+          if (pendingRedirect) {
+            setPendingRedirect(false);
+            router.push("/home");
+            router.refresh();
+          }
+        }}
+      />
 
       {/* Header fixo */}
       <div className="sticky top-0 bg-white z-10 border-b border-gray-100 shadow-sm">

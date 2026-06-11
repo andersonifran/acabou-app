@@ -56,6 +56,9 @@ next-env.d.ts
 !/scripts/check-theme-flash.mjs
 !/scripts/check-secrets.mjs
 
+# Arquivos de trabalho do Play Console (exports/CSV do Data Safety) — só local
+/play-console/
+
 # gerador de screenshots de marketing (arquivo local pesado, não deve ir pra produção)
 /public/marketing/
 

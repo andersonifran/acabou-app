@@ -159,7 +159,8 @@ export function usePushNotifications() {
         throw new Error("Erro ao salvar subscription no servidor");
       }
 
-      try { localStorage.removeItem("acabou_push_off"); } catch {} // reativou → limpa o opt-out
+      // reativou → limpa o opt-out E o contador de dispensas (recuo recomeça do zero)
+      try { localStorage.removeItem("acabou_push_off"); localStorage.removeItem("acabou_optin_dismisses"); } catch {}
       setState("subscribed");
       return true;
     } catch (err: any) {

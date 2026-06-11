@@ -118,7 +118,7 @@ export function NotificationOptInModal({
             </div>
             <button
               onClick={() => onClose(false)}
-              className="w-full mt-5 bg-green-600 text-white font-black py-3.5 rounded-2xl hover:bg-green-700 transition-colors active:scale-[0.98]"
+              className="w-full mt-5 bg-green-600 text-white font-black py-3.5 rounded-2xl hover:bg-green-700 transition-all duration-100 shadow-md shadow-green-200 active:scale-[0.97] active:translate-y-0.5 active:shadow-sm"
             >
               Entendi 👍
             </button>
@@ -191,7 +191,7 @@ export function NotificationOptInModal({
               <button
                 onClick={handleActivate}
                 disabled={loading}
-                className="w-full bg-green-600 text-white font-black py-3.5 rounded-2xl hover:bg-green-700 transition-colors disabled:opacity-70 text-base shadow-md shadow-green-200 active:scale-[0.98] flex items-center justify-center gap-2"
+                className="w-full bg-green-600 text-white font-black py-3.5 rounded-2xl hover:bg-green-700 transition-all duration-100 disabled:opacity-70 text-base shadow-md shadow-green-200 active:scale-[0.97] active:translate-y-0.5 active:shadow-sm flex items-center justify-center gap-2"
               >
                 {loading ? (
                   "Ativando..."
@@ -214,7 +214,7 @@ export function NotificationOptInModal({
               <button
                 onClick={() => onClose(false)}
                 disabled={loading}
-                className="w-full mt-1.5 py-2 text-sm font-semibold text-gray-500 hover:text-gray-700 disabled:opacity-60"
+                className="w-full mt-1.5 py-2 text-sm font-semibold text-gray-500 hover:text-gray-700 disabled:opacity-60 transition-all duration-100 active:scale-[0.97]"
               >
                 Agora não
               </button>
