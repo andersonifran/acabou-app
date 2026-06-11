@@ -110,8 +110,15 @@ function PlanosContent() {
   // Se sim, NÃO mostramos nada do Mercado Pago (exigência do Google: app da Loja
   // só pode usar/mostrar o pagamento do Google). Web/PWA continua com Mercado Pago.
   const [isTwa, setIsTwa] = useState(false);
+  // twaChecked = a detecção de TWA já resolveu? Enquanto não resolve, NÃO
+  // mostramos nenhum selo de pagamento — assim o Mercado Pago nunca pisca dentro
+  // do app da Play Store antes de virar o selo do Google (compliance).
+  const [twaChecked, setTwaChecked] = useState(false);
   useEffect(() => {
-    isPlayBillingAvailable().then(setIsTwa).catch(() => setIsTwa(false));
+    isPlayBillingAvailable()
+      .then(setIsTwa)
+      .catch(() => setIsTwa(false))
+      .finally(() => setTwaChecked(true));
   }, []);
 
   // Assinatura recorrente paga e ativa (não trial) → pode cancelar
@@ -564,12 +571,15 @@ function PlanosContent() {
         ))}
 
         {/* Selo de pagamento: no app da Play Store mostra "Google Play" (confiança
-            + exigência do Google); na web/PWA mostra o Mercado Pago. */}
-        {isTwa ? (
-          <PlayStoreTrust className="pt-2 pb-2" />
-        ) : (
-          <PaymentTrust className="pt-2 pb-2" />
-        )}
+            + exigência do Google); na web/PWA mostra o Mercado Pago.
+            Só renderiza DEPOIS de resolver se é TWA (twaChecked) → o Mercado Pago
+            nunca pisca dentro do app da Loja. Na web resolve num microtask. */}
+        {twaChecked &&
+          (isTwa ? (
+            <PlayStoreTrust className="pt-2 pb-2" />
+          ) : (
+            <PaymentTrust className="pt-2 pb-2" />
+          ))}
 
         <p className="text-center text-xs text-gray-400 pb-4">
           Cancelamento a qualquer momento. Sem multa.
