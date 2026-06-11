@@ -54,6 +54,7 @@ next-env.d.ts
 /scripts/*
 !/scripts/check-sw-rsc.mjs
 !/scripts/check-theme-flash.mjs
+!/scripts/check-secrets.mjs
 
 # gerador de screenshots de marketing (arquivo local pesado, não deve ir pra produção)
 /public/marketing/
