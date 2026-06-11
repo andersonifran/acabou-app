@@ -7,6 +7,7 @@ const PUBLIC_PATHS = [
   "/cadastro",
   "/privacidade",
   "/termos",
+  "/excluir-conta",
   "/convite",
   "/onboarding",
   "/debug-pwa",
