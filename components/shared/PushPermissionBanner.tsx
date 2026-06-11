@@ -46,13 +46,13 @@ export function PushPermissionBanner() {
           <button
             onClick={handleEnable}
             disabled={loading}
-            className="px-4 py-1.5 bg-green-600 text-white text-xs font-semibold rounded-full hover:bg-green-700 transition-all duration-100 disabled:opacity-50 shadow-sm shadow-green-200 active:scale-[0.96] active:translate-y-0.5 active:shadow-none"
+            className="px-4 py-1.5 bg-green-600 text-white text-xs font-semibold rounded-full hover:bg-green-700 transition-transform duration-100 disabled:opacity-50 active:scale-[0.95]"
           >
             {loading ? "Ativando..." : "Ativar"}
           </button>
           <button
             onClick={handleDismiss}
-            className="px-3 py-1.5 text-xs text-gray-500 hover:text-gray-700 transition-all duration-100 active:scale-[0.96]"
+            className="px-3 py-1.5 text-xs text-gray-500 hover:text-gray-700 transition-transform duration-100 active:scale-[0.96]"
           >
             Agora não
           </button>
