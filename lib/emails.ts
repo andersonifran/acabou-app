@@ -395,6 +395,62 @@ export async function sendPushReengageEmail(email: string, name: string) {
 }
 
 // =============================================
+// WIN-BACK (+7 dias de volta) — congelados que SÓ pegaram 7 dias de trial.
+// =============================================
+// Enviado UMA vez por pessoa (controle em profiles.winback_granted_at +
+// winback_grants por hash) pela rota admin reengage_winback. A concessão dos +7
+// dias é feita lá (service_role); aqui é só o e-mail. Copy: gancho emocional
+// ("seus dados continuam SALVOS") + melhorias + oportunidade ÚNICA, sem ser chato.
+export async function sendWinbackEmail(email: string, name: string) {
+  if (!process.env.RESEND_API_KEY) return;
+
+  const firstName = (name || "").split(" ")[0] || "Oi";
+  const resend = getResend();
+
+  await resend.emails.send({
+    from: FROM,
+    to: email,
+    replyTo: REPLY_TO,
+    subject: `${esc(firstName)}, sua despensa ficou te esperando 🛒💚`,
+    html: emailLayout(`
+      ${greenHeader("Que saudade!", "A gente guardou tudo pra voc&ecirc; 💚", MASCOTE.acenando)}
+      <div style="padding: 40px 32px; border: 1px solid #e5e7eb; border-top: none;">
+        <h2 style="margin: 0 0 16px; font-size: 22px; color: #111827;">
+          Oi, ${esc(firstName)}! Que saudade. 👋
+        </h2>
+        <p style="margin: 0 0 20px; font-size: 15px; color: #4b5563; line-height: 1.7;">
+          Lembra do <strong>Acabou?</strong> Pois &eacute; — <strong>tudo que voc&ecirc; criou continua salvo</strong>:
+          suas listas, sua despensa, sua casa. Est&aacute; tudo aqui, do jeitinho que voc&ecirc; deixou. 🥹
+        </p>
+        <p style="margin: 0 0 12px; font-size: 15px; color: #4b5563; line-height: 1.7;">
+          E a gente n&atilde;o parou um minuto. Melhorou demais:
+        </p>
+        <div style="background: #f0fdf4; border-radius: 12px; padding: 20px 24px; margin: 0 0 24px;">
+          <p style="margin: 0 0 10px; font-size: 14px; color: #111827; line-height: 1.6;">✅ &nbsp;<strong>Lembrete na hora certa</strong> (quando algo acaba e na hora do mercado)</p>
+          <p style="margin: 0 0 10px; font-size: 14px; color: #111827; line-height: 1.6;">✅ &nbsp;<strong>Lista pronta pra mandar no WhatsApp</strong> pra fam&iacute;lia</p>
+          <p style="margin: 0 0 10px; font-size: 14px; color: #111827; line-height: 1.6;">✅ &nbsp;<strong>Busca inteligente</strong> de itens (digita "caf&eacute;" e ele j&aacute; sabe)</p>
+          <p style="margin: 0; font-size: 14px; color: #111827; line-height: 1.6;">✅ &nbsp;<strong>Bem mais r&aacute;pido</strong> — abre num piscar de olhos</p>
+        </div>
+        <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:12px;padding:18px 24px;margin:0 0 8px;text-align:center;">
+          <p style="margin:0;color:#92400e;font-size:16px;font-weight:700;">🎁 Liberamos 7 dias gr&aacute;tis de volta pra voc&ecirc;</p>
+          <p style="margin:6px 0 0;color:#b45309;font-size:13px;line-height:1.5;">Uma oportunidade s&oacute; sua, pra voltar e ver tudo de novo — sem compromisso.</p>
+        </div>
+        <div style="text-align: center; margin: 28px 0 8px;">
+          <a href="${APP_URL}/home" style="display: inline-block; background: #16a34a; color: white; text-decoration: none; font-weight: 700; font-size: 16px; padding: 14px 44px; border-radius: 12px;">Voltar pro Acabou? &rarr;</a>
+        </div>
+        <p style="margin: 0 0 20px; font-size: 12px; color: #9ca3af; text-align: center;">🔒 Voc&ecirc; controla. Cancela quando quiser.</p>
+        <p style="margin: 0; font-size: 14px; color: #111827;">
+          A gente fez o Acabou? pra <strong>nunca mais faltar nada na sua casa</strong> — e a sua casa ainda lembra de voc&ecirc;. 💚<br>
+          <strong>Sacolino &amp; time Acabou?</strong> 🛒
+        </p>
+      </div>
+    `),
+  });
+
+  console.log(`[Email] ✅ Win-back (+7d) enviado para ${email}`);
+}
+
+// =============================================
 // 5. RELATÓRIO DIÁRIO de notificações (interno — só admin)
 // =============================================
 // Enviado pelo cron logo após o nudge das 18h. Dá pro Anderson acompanhar a

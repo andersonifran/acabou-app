@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
-import { sendAdminLeakAlert, sendPushReengageEmail } from "@/lib/emails";
+import { sendAdminLeakAlert, sendPushReengageEmail, sendWinbackEmail } from "@/lib/emails";
 import { emailTrialHash } from "@/lib/trial-email";
 import { sendPushNotification } from "@/lib/push";
 
@@ -492,6 +492,124 @@ export async function GET(request: NextRequest) {
     });
   }
 
+  // ── WIN-BACK: +7 dias de volta SÓ pros congelados que pegaram só 7 dias ──
+  // Anti-farm BLINDADO: UMA vez por pessoa, marcado em profiles.winback_granted_at
+  // + winback_grants (hash, sobrevive a apagar/recriar). Quem recebeu e não
+  // assinou NUNCA mais recebe. Os +7d são por DATA → o cron recongela depois
+  // (pay-or-frozen). Segmento: trial de ~7 dias (os de 14 ficam de fora) + nunca
+  // pagou. test=email → 1 teste; dry (padrão) → só conta/preview; send=1 → executa.
+  if (acao === "reengage_winback") {
+    const testEmail = request.nextUrl.searchParams.get("test");
+    if (testEmail) {
+      try {
+        await sendWinbackEmail(testEmail, "Anderson");
+        return NextResponse.json({ ok: true, acao: "reengage_winback", modo: "teste", enviado_para: testEmail, message: "E-mail de TESTE enviado — confira a caixa (e o spam). NÃO concedeu nada." });
+      } catch (e: any) {
+        return NextResponse.json({ ok: false, erro: e?.message || "falha no envio" }, { status: 500 });
+      }
+    }
+
+    const SETE = 24 * 60 * 60 * 1000;
+    const lote = Math.max(1, Math.min(60, parseInt(request.nextUrl.searchParams.get("lote") || "30", 10)));
+    const maxTrialDias = Math.max(1, parseInt(request.nextUrl.searchParams.get("maxdias") || "9", 10)); // ~7d entra; 14d fica de fora
+    const enviar = request.nextUrl.searchParams.get("send") === "1";
+
+    // 1) Casas NÃO-free e JÁ vencidas (trial/plano que expirou = congelado por data).
+    const casas: { id: string; owner_id: string; plan_expires_at: string | null; created_at: string }[] = [];
+    for (let i = 0; i < 50; i++) {
+      const { data, error } = await admin
+        .from("houses")
+        .select("id, owner_id, plan_expires_at, created_at")
+        .neq("plan", "free")
+        .lt("plan_expires_at", nowISO)
+        .range(i * 1000, i * 1000 + 999);
+      if (error || !data || data.length === 0) break;
+      casas.push(...(data as any));
+      if (data.length < 1000) break;
+    }
+
+    // 2) Casas que JÁ tiveram assinatura (pagaram) → EXCLUIR.
+    const casasPagaram = new Set<string>();
+    for (let i = 0; i < 50; i++) {
+      const { data, error } = await admin.from("subscriptions").select("house_id").range(i * 1000, i * 1000 + 999);
+      if (error || !data || data.length === 0) break;
+      for (const s of data as any) if (s.house_id) casasPagaram.add(s.house_id as string);
+      if (data.length < 1000) break;
+    }
+
+    // 3) Hashes que JÁ receberam o win-back (anti apagar+recriar) → EXCLUIR.
+    const hashesUsados = new Set<string>();
+    for (let i = 0; i < 50; i++) {
+      const { data, error } = await admin.from("winback_grants").select("email_hash").range(i * 1000, i * 1000 + 999);
+      if (error || !data || data.length === 0) break;
+      for (const g of data as any) hashesUsados.add(g.email_hash as string);
+      if (data.length < 1000) break;
+    }
+
+    // 4) Só casas com trial de ~7 dias (não pagou) — os de 14 dias ficam de fora.
+    const candidatas = casas.filter((h) => {
+      if (casasPagaram.has(h.id)) return false;
+      if (!h.plan_expires_at || !h.created_at) return false;
+      const dias = (new Date(h.plan_expires_at).getTime() - new Date(h.created_at).getTime()) / SETE;
+      return dias > 0 && dias <= maxTrialDias;
+    });
+
+    // 5) Donos elegíveis: perfil com e-mail, winback_granted_at null, hash livre.
+    const elegiveis: { user_id: string; house_id: string; email: string; full_name: string | null; trial_dias: number; venceu_em: string }[] = [];
+    for (const h of candidatas) {
+      const { data: prof } = await admin
+        .from("profiles")
+        .select("user_id, email, full_name, winback_granted_at")
+        .eq("user_id", h.owner_id)
+        .maybeSingle();
+      const p = prof as any;
+      if (!p || !p.email) continue;
+      if (p.winback_granted_at) continue;                       // já recebeu o win-back
+      if (hashesUsados.has(emailTrialHash(p.email))) continue;  // recriou conta → bloqueado
+      elegiveis.push({
+        user_id: p.user_id, house_id: h.id, email: p.email, full_name: p.full_name ?? null,
+        trial_dias: Math.round((new Date(h.plan_expires_at as string).getTime() - new Date(h.created_at).getTime()) / SETE),
+        venceu_em: (h.plan_expires_at as string).slice(0, 10),
+      });
+    }
+
+    if (!enviar) {
+      return NextResponse.json({
+        ok: true, acao: "reengage_winback", modo: "dry_run",
+        criterio: `congelado + nunca pagou + trial de ~${maxTrialDias}d ou menos (os de 14 ficam de fora) + nunca recebeu win-back`,
+        elegiveis: elegiveis.length,
+        detalhe: elegiveis.slice(0, 40).map((e) => ({ email: e.email, trial_dias: e.trial_dias, venceu_em: e.venceu_em })),
+        como_enviar: "Teste 1 e-mail: &test=seu@email.com. Depois execute: &send=1 (concede +7d e envia, em lotes).",
+      });
+    }
+
+    // ENVIO: MARCA PRIMEIRO (anti dupla-concessão se algo falhar) → +7d → e-mail.
+    const novoExpira = new Date(Date.now() + 7 * SETE).toISOString();
+    const alvo = elegiveis.slice(0, lote);
+    let feitos = 0; const falhas: string[] = [];
+    for (const e of alvo) {
+      try {
+        // (a) MARCA — uma vez pra sempre (perfil + hash anti-recria). PRIMEIRO de propósito.
+        await admin.from("profiles").update({ winback_granted_at: nowISO }).eq("user_id", e.user_id);
+        await admin.from("winback_grants").upsert({ email_hash: emailTrialHash(e.email) }, { onConflict: "email_hash" });
+        // (b) concede +7 dias (data-based; cron recongela depois) + descongela convidados da casa
+        await admin.from("houses").update({ plan: "monthly", plan_status: "trialing", plan_expires_at: novoExpira }).eq("id", e.house_id);
+        await admin.from("house_members").update({ status: "active" }).eq("house_id", e.house_id).eq("status", "frozen");
+        // (c) e-mail
+        await sendWinbackEmail(e.email, e.full_name || "");
+        feitos++;
+      } catch (err: any) {
+        falhas.push(`${e.email}: ${err?.message || "erro"}`);
+      }
+    }
+    return NextResponse.json({
+      ok: true, acao: "reengage_winback", modo: "envio",
+      elegiveis_total: elegiveis.length, concedidos_e_enviados: feitos, falhas: falhas.length, falhas_detalhe: falhas.slice(0, 10),
+      restantes: elegiveis.length - feitos,
+      message: elegiveis.length - feitos > 0 ? `Feito ${feitos}. Faltam ${elegiveis.length - feitos} — rode de novo pro próximo lote.` : `Feito ${feitos}. Todos os elegíveis contatados. ✅`,
+    });
+  }
+
   // ── AUDITORIA (relatório) ──
   // Vazamentos = plano != free, JÁ vencido, mas status não está "inactive"
   // (deveriam estar congelados). O esperado é ZERO.
@@ -573,6 +691,7 @@ export async function GET(request: NextRequest) {
       check_push: "?acao=check_push",
       push_debug: "?acao=push_debug&email=...&send=1",
       reengage_push: "?acao=reengage_push (dry) | &send=1 pra enviar",
+      reengage_winback: "?acao=reengage_winback (dry) | &test=email | &send=1 — +7d 1x só p/ congelados que pegaram só 7 dias (anti-farm por hash)",
     },
   });
 }
