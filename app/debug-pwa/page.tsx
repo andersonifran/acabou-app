@@ -2,125 +2,99 @@
 
 import { useEffect, useState } from "react";
 
-interface DebugInfo {
-  ua?: string;
-  isStandalone?: boolean;
-  hasSW?: boolean;
-  promptCaptured?: boolean;
-  swRegistrations?: number;
-  swScopes?: string[];
-  swFileStatus?: number | string;
-  swContentType?: string | null;
-  manifestStatus?: number | string;
-  promptFiredNow?: boolean;
-  readyState?: string;
-}
-
+// Página TEMPORÁRIA de diagnóstico offline/PWA. Pública (middleware).
+// Objetivo: mostrar se o Service Worker está CONTROLANDO a página e o que está
+// guardado no cache — pra descobrir por que o app não abre offline (ERR_FAILED).
 export default function DebugPWAPage() {
-  const [info, setInfo] = useState<DebugInfo>({});
-  const [log, setLog] = useState<string[]>([]);
-
-  function addLog(msg: string) {
-    setLog((prev) => [...prev, `${new Date().toISOString().slice(11, 23)} — ${msg}`]);
-  }
+  const [lines, setLines] = useState<string[]>([]);
+  const add = (m: string) => setLines((p) => [...p, m]);
 
   useEffect(() => {
-    const ua = navigator.userAgent;
-    const isStandalone = window.matchMedia("(display-mode: standalone)").matches;
-    const hasSW = "serviceWorker" in navigator;
-    const promptCaptured = !!(window as any).__pwaPrompt;
+    (async () => {
+      add("ONLINE agora: " + navigator.onLine);
+      add("Standalone (instalado/TWA): " + window.matchMedia("(display-mode: standalone)").matches);
+      add("UA: " + navigator.userAgent.slice(0, 100));
+      add("");
 
-    setInfo({ ua, isStandalone, hasSW, promptCaptured, readyState: document.readyState });
-    addLog(`UA: ${ua.slice(0, 80)}`);
-    addLog(`Standalone: ${isStandalone} | SW suportado: ${hasSW}`);
-    addLog(`__pwaPrompt capturado: ${promptCaptured}`);
-    addLog(`document.readyState: ${document.readyState}`);
+      if (!("serviceWorker" in navigator)) {
+        add("❌ Service Worker NÃO suportado neste navegador.");
+        return;
+      }
 
-    // Checa registros SW
-    if (hasSW) {
-      navigator.serviceWorker.getRegistrations().then((regs) => {
-        setInfo((p) => ({ ...p, swRegistrations: regs.length, swScopes: regs.map((r) => r.scope) }));
-        addLog(`SWs registrados: ${regs.length} — ${regs.map((r) => r.scope + "(" + (r.active?.state ?? "sem ativo") + ")").join(", ")}`);
-        if (regs.length === 0) addLog("⚠️ NENHUM SERVICE WORKER REGISTRADO! Este é o problema.");
+      // 1) ESTE é o ponto-chave: o SW está controlando a página?
+      const ctrl = navigator.serviceWorker.controller;
+      if (ctrl) {
+        add("✅ SW CONTROLANDO esta página");
+        add("   script: " + ctrl.scriptURL);
+      } else {
+        add("❌ SW NÃO está controlando esta página (controller = null)");
+        add("   → é por isso que offline dá ERR_FAILED (o SW nem intercepta).");
+      }
+      add("");
+
+      // 2) Registros do SW
+      const regs = await navigator.serviceWorker.getRegistrations();
+      add("SWs registrados: " + regs.length);
+      regs.forEach((r, i) => {
+        add(
+          "  #" + (i + 1) + " scope=" + r.scope +
+          " | active=" + (r.active ? r.active.state : "—") +
+          " | waiting=" + (r.waiting ? "SIM" : "não") +
+          " | installing=" + (r.installing ? "SIM" : "não")
+        );
+        if (r.active) add("     activeScript=" + r.active.scriptURL);
       });
-    }
+      add("");
 
-    // Checa arquivo sw.js
-    fetch("/sw.js", { cache: "no-store" })
-      .then((r) => {
-        const ct = r.headers.get("content-type");
-        setInfo((p) => ({ ...p, swFileStatus: r.status, swContentType: ct }));
-        addLog(`/sw.js: HTTP ${r.status} | Content-Type: ${ct}`);
-        if (r.status !== 200) addLog("❌ sw.js não está sendo servido corretamente!");
-      })
-      .catch((e) => {
-        setInfo((p) => ({ ...p, swFileStatus: "ERRO" }));
-        addLog(`❌ Erro ao buscar /sw.js: ${e}`);
-      });
-
-    // Checa manifest.json
-    fetch("/manifest.json", { cache: "no-store" })
-      .then((r) => {
-        setInfo((p) => ({ ...p, manifestStatus: r.status }));
-        addLog(`/manifest.json: HTTP ${r.status}`);
-      })
-      .catch((e) => {
-        setInfo((p) => ({ ...p, manifestStatus: "ERRO" }));
-        addLog(`❌ Erro ao buscar /manifest.json: ${e}`);
-      });
-
-    // Escuta se o evento chegar durante esta página
-    const handler = (e: Event) => {
-      e.preventDefault();
-      setInfo((p) => ({ ...p, promptFiredNow: true }));
-      addLog("✅ beforeinstallprompt DISPAROU enquanto você estava nesta página!");
-    };
-    window.addEventListener("beforeinstallprompt", handler);
-
-    // Tenta registrar o SW manualmente desta página
-    if (hasSW) {
-      navigator.serviceWorker
-        .register("/sw.js", { scope: "/" })
-        .then((reg) => {
-          addLog(`SW register() chamado: scope=${reg.scope} estado=${reg.active?.state ?? "aguardando"}`);
-        })
-        .catch((err) => {
-          addLog(`❌ SW register() ERRO: ${err}`);
-        });
-    }
-
-    return () => window.removeEventListener("beforeinstallprompt", handler);
+      // 3) Caches: o que está guardado?
+      const names = await caches.keys();
+      add("Caches: [" + names.join(", ") + "]");
+      for (const n of names) {
+        try {
+          const c = await caches.open(n);
+          const keys = await c.keys();
+          const paths = keys.map((req) => {
+            try { return new URL(req.url).pathname; } catch { return req.url; }
+          });
+          const nextCount = paths.filter((p) => p.startsWith("/_next/")).length;
+          const has = (p: string) => (paths.includes(p) ? "✅" : "❌");
+          add(
+            "  [" + n + "] " + keys.length + " itens" +
+            " | /home:" + has("/home") +
+            " | /:" + has("/") +
+            " | manifest:" + has("/manifest.json") +
+            " | _next:" + nextCount
+          );
+        } catch (e) {
+          add("  [" + n + "] erro ao ler: " + e);
+        }
+      }
+      add("");
+      add("=== fim do diagnóstico — tire um print desta tela ===");
+    })().catch((e) => add("❌ ERRO no diagnóstico: " + e));
   }, []);
 
   return (
-    <div className="min-h-screen bg-gray-900 text-green-300 p-4 font-mono text-xs">
-      <h1 className="text-white text-lg font-bold mb-4">🔍 PWA Debug — Acabou?</h1>
-
-      <div className="bg-gray-800 rounded-xl p-4 mb-4 space-y-1">
-        <p><span className="text-gray-400">Standalone (já instalado):</span> <span className={info.isStandalone ? "text-green-400" : "text-yellow-400"}>{String(info.isStandalone)}</span></p>
-        <p><span className="text-gray-400">Service Worker suportado:</span> <span className={info.hasSW ? "text-green-400" : "text-red-400"}>{String(info.hasSW)}</span></p>
-        <p><span className="text-gray-400">SWs registrados:</span> <span className={info.swRegistrations === 0 ? "text-red-400 font-bold" : "text-green-400"}>{info.swRegistrations ?? "..."}</span></p>
-        <p><span className="text-gray-400">/sw.js HTTP status:</span> <span className={info.swFileStatus === 200 ? "text-green-400" : "text-red-400"}>{info.swFileStatus ?? "..."}</span></p>
-        <p><span className="text-gray-400">/manifest.json status:</span> <span className={info.manifestStatus === 200 ? "text-green-400" : "text-red-400"}>{info.manifestStatus ?? "..."}</span></p>
-        <p><span className="text-gray-400">__pwaPrompt capturado:</span> <span className={info.promptCaptured ? "text-green-400" : "text-yellow-400"}>{String(info.promptCaptured)}</span></p>
-        <p><span className="text-gray-400">Prompt disparou agora:</span> <span className={info.promptFiredNow ? "text-green-400 font-bold" : "text-gray-500"}>{String(info.promptFiredNow ?? false)}</span></p>
-      </div>
-
-      <div className="bg-gray-800 rounded-xl p-4 mb-4">
-        <p className="text-white font-bold mb-2">Log em tempo real:</p>
-        {log.map((line, i) => (
-          <p key={i} className={line.includes("❌") || line.includes("⚠️") ? "text-red-400" : line.includes("✅") ? "text-green-400" : "text-gray-300"}>
-            {line}
+    <div className="min-h-screen bg-gray-900 text-green-300 p-4 font-mono text-[13px] leading-relaxed">
+      <h1 className="text-white text-lg font-bold mb-3">🔍 Diagnóstico Offline — Acabou?</h1>
+      <div className="bg-gray-800 rounded-xl p-4 space-y-1">
+        {lines.length === 0 && <p className="text-gray-500">Carregando…</p>}
+        {lines.map((line, i) => (
+          <p
+            key={i}
+            className={
+              line.includes("❌")
+                ? "text-red-400 font-bold"
+                : line.includes("✅")
+                ? "text-green-400"
+                : "text-gray-300 break-all"
+            }
+          >
+            {line || " "}
           </p>
         ))}
-        {log.length === 0 && <p className="text-gray-500">Carregando...</p>}
       </div>
-
-      <div className="bg-gray-800 rounded-xl p-3">
-        <p className="text-gray-400 break-all">{info.ua}</p>
-      </div>
-
-      <p className="text-gray-600 mt-4 text-center">Esta página é temporária — só para diagnóstico</p>
+      <p className="text-gray-600 mt-4 text-center">Página temporária — só diagnóstico</p>
     </div>
   );
 }
