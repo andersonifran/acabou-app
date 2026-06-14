@@ -1,13 +1,24 @@
-// Service Worker — Acabou? v3
-const CACHE = "acabou-v144";
+// Service Worker — Acabou? v4 (offline-first)
+// ⚠️ NOME DO CACHE É ESTÁVEL — NÃO versionar por deploy (ex.: NÃO voltar pra
+// "acabou-v145"). Ver AGENTS.md: cache versionado ZERAVA o offline a cada deploy
+// (a casca sumia → "Sem conexão" até reabrir online). Com nome estável, a casca e
+// os estáticos (hash imutável) ficam guardados ENTRE deploys; o frescor online vem
+// do network-first (navegação + manifest) e do bypass de RSC (é o RSC bypass que
+// evita a "tarja azul", NÃO o zerar-cache). Pra forçar limpeza geral algum dia,
+// aí sim renomeie o CACHE (o activate apaga os de nome diferente).
+const CACHE = "acabou-pwa";
+
+// Casca do app pra ABRIR offline. /home é o start_url; / é a landing. Tentamos
+// guardar /home já na instalação (se logado); se falhar (deslogado → redirect pro
+// /login, que o Cache API rejeita), o network-first guarda na 1ª abertura online.
+const APP_SHELL = ["/", "/manifest.json", "/home"];
 
 // ── Instalação ──
 self.addEventListener("install", (event) => {
   event.waitUntil(
     caches.open(CACHE).then(async (cache) => {
-      const urls = ["/", "/manifest.json"];
-      for (const url of urls) {
-        try { await cache.add(url); } catch (e) { console.warn("[SW] Cache falhou:", url); }
+      for (const url of APP_SHELL) {
+        try { await cache.add(url); } catch (e) { console.warn("[SW] Precache falhou:", url); }
       }
     }).then(() => self.skipWaiting())
   );
@@ -98,16 +109,26 @@ self.addEventListener("fetch", (event) => {
           return response;
         })
         .catch(function() {
+          // OFFLINE: serve a CASCA do cache pro app ABRIR e renderizar do cache
+          // local (localStorage → store). Ordem: a própria URL → /home (start_url)
+          // → /. Só cai no "Sem conexão" se NUNCA tiver aberto online (sem casca).
           return caches.match(event.request).then(function(cached) {
-            return cached || new Response(
-              '<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Sem conexão</title></head>' +
-              '<body style="font-family:system-ui;text-align:center;padding:60px 20px">' +
-              '<div style="font-size:64px">📶</div><h1>Sem conexão</h1>' +
-              '<p style="color:#666">Verifique sua internet e tente novamente.</p>' +
-              '<button onclick="location.reload()" style="background:#16a34a;color:#fff;border:none;padding:12px 32px;border-radius:12px;font-size:16px;cursor:pointer;margin-top:16px">Tentar novamente</button>' +
-              '</body></html>',
-              { status: 503, headers: { "Content-Type": "text/html" } }
-            );
+            if (cached) return cached;
+            return caches.match("/home").then(function(shellHome) {
+              if (shellHome) return shellHome;
+              return caches.match("/").then(function(shellRoot) {
+                if (shellRoot) return shellRoot;
+                return new Response(
+                  '<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Sem conexão</title></head>' +
+                  '<body style="font-family:system-ui;text-align:center;padding:60px 20px">' +
+                  '<div style="font-size:64px">📶</div><h1>Sem conexão</h1>' +
+                  '<p style="color:#666">Verifique sua internet e tente novamente.</p>' +
+                  '<button onclick="location.reload()" style="background:#16a34a;color:#fff;border:none;padding:12px 32px;border-radius:12px;font-size:16px;cursor:pointer;margin-top:16px">Tentar novamente</button>' +
+                  '</body></html>',
+                  { status: 503, headers: { "Content-Type": "text/html" } }
+                );
+              });
+            });
           });
         })
     );

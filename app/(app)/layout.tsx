@@ -53,6 +53,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   // Convidado cujo dono deixou o plano expirar → membership vira "frozen" (no
   // banco) e a RLS bloqueia o acesso. Mostramos a tela "Acesso pausado".
   const [accessPaused, setAccessPaused] = useState(false);
+  // Offline na PRIMEIRA vez (sem cache): não dá pra carregar nada. Mostra uma
+  // tela honesta pedindo pra abrir uma vez conectado (depois funciona offline).
+  const [offlineNoData, setOfflineNoData] = useState(false);
   // Verifica DIRETAMENTE no localStorage se já tem casa em cache (app já usado).
   // Se tem, o app abre INSTANTÂNEO no conteúdo — sem spinner, sem overlay verde
   // (a splash nativa do Android já cobriu a abertura). É o caso de ~99% das
@@ -132,6 +135,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     }
 
     async function refreshInBackground() {
+     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
@@ -179,11 +183,31 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       // Marca que os dados foram confirmados com o servidor
       // (banners de plano podem agora confiar nos dados)
       setDataSyncComplete(true);
+     } catch {
+      // OFFLINE / rede ruim: o app já renderizou do cache. Não redireciona,
+      // não quebra — só não atualiza agora (atualiza quando a rede voltar).
+      return;
+     }
     }
 
     async function loadData() {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { router.push("/login"); return; }
+      let user = null;
+      try {
+        const res = await supabase.auth.getUser();
+        user = res.data.user;
+      } catch {
+        user = null;
+      }
+      if (!user) {
+        // OFFLINE sem cache: não adianta ir pro /login (também precisa de rede).
+        if (typeof navigator !== "undefined" && navigator.onLine === false) {
+          setOfflineNoData(true);
+          setIsReady(true);
+          return;
+        }
+        router.push("/login");
+        return;
+      }
 
       // Salva userId no store (evita chamadas repetidas de getUser em hooks)
       setUserId(user.id);
@@ -290,6 +314,28 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const isOwnerOfCurrent = !!(userId && currentHouse && (currentHouse as any).owner_id === userId);
   const housePremiumActive = isPaid || isTrialing;
   const blockGuestMember = dataSyncComplete && !!currentHouse && !isOwnerOfCurrent && !housePremiumActive;
+
+  if (offlineNoData) {
+    return (
+      <>
+      {splashOverlay}
+      <div className="min-h-screen app-bg flex flex-col items-center justify-center px-6 text-center gap-4">
+        <div className="text-6xl">📶</div>
+        <h1 className="text-xl font-bold text-gray-900">Sem internet</h1>
+        <p className="text-gray-500 max-w-sm leading-relaxed">
+          Na primeira vez, abra o Acabou? <strong className="text-gray-700">com internet</strong> pra
+          ele guardar suas listas. Depois funciona offline! 💚
+        </p>
+        <button
+          onClick={() => window.location.reload()}
+          className="mt-2 px-6 py-3 rounded-2xl bg-[#1E9839] text-white font-semibold transition-transform duration-100 active:scale-[0.96]"
+        >
+          Tentar novamente
+        </button>
+      </div>
+      </>
+    );
+  }
 
   if (blockGuestMember || accessPaused) {
     return (

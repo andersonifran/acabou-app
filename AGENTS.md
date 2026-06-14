@@ -17,10 +17,33 @@ de aba**. Já aconteceu e custou caro (commit 39923c0).
   estratégia de cache (`return;` sem `respondWith`).
 - Há um guard de build (`scripts/check-sw-rsc.mjs`, roda no `npm run build`/Vercel)
   que **bloqueia o deploy** se o bypass sumir. NÃO remova o guard.
-- Ao mexer no `sw.js`, **suba a versão do `CACHE`** (ex.: `acabou-v142` → `v143`)
-  pra que o SW novo limpe o cache antigo dos usuários no `activate`.
+- ⚠️ **NÃO versionar o nome do `CACHE` por deploy.** Desde v4 ele é ESTÁVEL
+  (`acabou-pwa`). Cache versionado (`acabou-v144`→`v145`…) **ZERAVA o offline a
+  cada deploy** — o `activate` apagava a casca, e o app caía no "Sem conexão" até
+  reabrir online (foi o bug que o Anderson pegou no modo avião). O SW atualiza
+  sozinho quando o `sw.js` muda (registrado com `updateViaCache:'none'` +
+  `skipWaiting`/`clients.claim`), **sem** precisar bumpar o nome do cache. Quem
+  protege da "tarja azul" é o **bypass de RSC** (acima), NÃO o zerar-cache. Só
+  renomeie o `CACHE` se um dia precisar forçar uma limpeza geral (o `activate`
+  apaga caches de nome diferente do atual).
 - Templates do Next (`template.tsx`) remontam a página a cada navegação → NÃO usar
   em rotas de aba (causa "recarregar toda vez", inclusive ao clicar na aba atual).
+
+# ℹ️ OFFLINE-FIRST (PWA) — como o app abre/funciona sem internet
+
+- **Abrir offline:** no `catch` da navegação (rede falhou), o `sw.js` serve a
+  CASCA do cache nesta ordem: a própria URL → `/home` (start_url) → `/`. Assim o
+  app ABRE offline e o cliente renderiza do **cache local** (`localStorage` →
+  store Zustand `acabou-app-cache`). Só cai no HTML "Sem conexão" se NUNCA tiver
+  aberto online (sem casca guardada).
+- **Auth offline:** `app/(app)/layout.tsx` renderiza na hora se há casa no cache
+  (`hasCachedHouse()`); os `getUser()` de fundo estão em `try/catch` → rede ruim
+  NÃO redireciona pro `/login` nem quebra (mantém o cache). 1ª vez sem internet
+  (sem cache) → tela honesta `offlineNoData` ("abra uma vez conectado").
+- **TODO (Etapa 2 — combinada):** marcar/editar offline hoje **reverte** (sem
+  fila). Falta uma FILA de escrita offline + sync ao voltar a rede (respeitando o
+  anti-burla no servidor) pra cumprir a promessa "marca offline, sincroniza
+  depois" da landing. Ver memória `offline-first-pwa`.
 
 # ⚠️ REGRA CRÍTICA — não declarar `themeColor` no viewport (tarja branca no topo)
 
