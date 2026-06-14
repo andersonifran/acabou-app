@@ -31,11 +31,17 @@ de aba**. Já aconteceu e custou caro (commit 39923c0).
 
 # ℹ️ OFFLINE-FIRST (PWA) — como o app abre/funciona sem internet
 
+- ⚠️ **REGRA DE OURO (v5):** NUNCA cachear nem servir uma resposta **REDIRECIONADA**
+  numa NAVEGAÇÃO. O Chrome recusa "redirected response" em navegação (redirect mode
+  != follow) → **ERR_FAILED** ao abrir offline. A raiz `/` redireciona pra `/home`
+  (logado) e o **app da Play (TWA) abre na `/`** (`startUrl:"/"` no twa-manifest) →
+  por isso NUNCA cacheamos `/` e filtramos `response.redirected` ao cachear E ao
+  servir. Isso já quebrou o offline (ERR_FAILED) e custou 3 tentativas — não voltar.
 - **Abrir offline:** no `catch` da navegação (rede falhou), o `sw.js` serve a
-  CASCA do cache nesta ordem: a própria URL → `/home` (start_url) → `/`. Assim o
-  app ABRE offline e o cliente renderiza do **cache local** (`localStorage` →
-  store Zustand `acabou-app-cache`). Só cai no HTML "Sem conexão" se NUNCA tiver
-  aberto online (sem casca guardada).
+  CASCA do cache nesta ordem: a própria URL → `/home` (start_url) → `/`, **pulando
+  qualquer resposta redirecionada/opaque**. Assim o app ABRE offline e o cliente
+  renderiza do **cache local** (`localStorage` → store Zustand `acabou-app-cache`).
+  Só cai no HTML "Sem conexão" se NUNCA tiver aberto online (sem casca guardada).
 - **Auth offline:** `app/(app)/layout.tsx` renderiza na hora se há casa no cache
   (`hasCachedHouse()`); os `getUser()` de fundo estão em `try/catch` → rede ruim
   NÃO redireciona pro `/login` nem quebra (mantém o cache). 1ª vez sem internet

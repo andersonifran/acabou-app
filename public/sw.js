@@ -1,34 +1,36 @@
-// Service Worker — Acabou? v4 (offline-first)
-// ⚠️ NOME DO CACHE É ESTÁVEL — NÃO versionar por deploy (ex.: NÃO voltar pra
-// "acabou-v145"). Ver AGENTS.md: cache versionado ZERAVA o offline a cada deploy
-// (a casca sumia → "Sem conexão" até reabrir online). Com nome estável, a casca e
-// os estáticos (hash imutável) ficam guardados ENTRE deploys; o frescor online vem
-// do network-first (navegação + manifest) e do bypass de RSC (é o RSC bypass que
-// evita a "tarja azul", NÃO o zerar-cache). Pra forçar limpeza geral algum dia,
-// aí sim renomeie o CACHE (o activate apaga os de nome diferente).
+// Service Worker — Acabou? v5 (offline-first; conserto do "redirected response")
+// ⚠️ NOME DO CACHE É ESTÁVEL — NÃO versionar por deploy. Ver AGENTS.md.
+// ⚠️ REGRA DE OURO: NUNCA cachear NEM servir uma resposta REDIRECIONADA numa
+//    NAVEGAÇÃO. O Chrome recusa "redirected response" em navegação (redirect mode
+//    != follow) e mostra ERR_FAILED. A raiz "/" redireciona pra /home (logado) e o
+//    app da Play (TWA) ABRE na "/" → cachear "/" envenenava o offline (= ERR_FAILED).
 const CACHE = "acabou-pwa";
 
-// Casca do app pra ABRIR offline. /home é o start_url; / é a landing. Tentamos
-// guardar /home já na instalação (se logado); se falhar (deslogado → redirect pro
-// /login, que o Cache API rejeita), o network-first guarda na 1ª abertura online.
-const APP_SHELL = ["/", "/manifest.json", "/home"];
-
-// ── Instalação ──
+// ── Instalação: precache mínimo e SEGURO (nada que redirecione) ──
+// /manifest.json (sempre 200) + /home só se vier 200 LIMPO (logado). Deslogado,
+// /home vem redirecionado pro /login → a gente PULA (não envenena). O resto o
+// network-first guarda, sempre filtrando respostas redirecionadas.
 self.addEventListener("install", (event) => {
   event.waitUntil(
     caches.open(CACHE).then(async (cache) => {
-      for (const url of APP_SHELL) {
-        try { await cache.add(url); } catch (e) { console.warn("[SW] Precache falhou:", url); }
-      }
+      try { await cache.add("/manifest.json"); } catch (e) {}
+      try {
+        const r = await fetch("/home", { redirect: "follow" });
+        if (r.ok && !r.redirected) { await cache.put("/home", r.clone()); }
+      } catch (e) {}
     }).then(() => self.skipWaiting())
   );
 });
 
-// ── Ativação: limpa caches antigos ──
+// ── Ativação: limpa caches antigos + remove a "/" envenenada ──
 self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches.keys()
       .then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k))))
+      // Remove a entrada "/" (redirecionada) que a v4 guardou — era ela que causava
+      // o ERR_FAILED ao abrir offline na raiz (o app da Play abre na "/").
+      .then(() => caches.open(CACHE))
+      .then((cache) => cache.delete("/").catch(function() {}))
       .then(() => self.clients.claim())
   );
 });
@@ -102,22 +104,26 @@ self.addEventListener("fetch", (event) => {
     event.respondWith(
       fetch(event.request)
         .then(function(response) {
-          if (response.ok) {
+          // SÓ cacheia 200 NÃO-redirecionado (resposta redirecionada quebra a
+          // navegação offline com ERR_FAILED — ver REGRA DE OURO no topo).
+          if (response.ok && !response.redirected) {
             var clone = response.clone();
             caches.open(CACHE).then(function(cache) { cache.put(event.request, clone); });
           }
           return response;
         })
         .catch(function() {
-          // OFFLINE: serve a CASCA do cache pro app ABRIR e renderizar do cache
-          // local (localStorage → store). Ordem: a própria URL → /home (start_url)
-          // → /. Só cai no "Sem conexão" se NUNCA tiver aberto online (sem casca).
+          // OFFLINE: serve a CASCA pro app ABRIR e renderizar do cache local
+          // (localStorage → store). Ordem: a própria URL → /home → /. PULA qualquer
+          // resposta redirecionada/opaque (o Chrome a recusa em navegação =
+          // ERR_FAILED). Só cai no "Sem conexão" se NUNCA tiver aberto online.
+          var ok = function(r) { return r && !r.redirected && r.type !== "opaqueredirect"; };
           return caches.match(event.request).then(function(cached) {
-            if (cached) return cached;
+            if (ok(cached)) return cached;
             return caches.match("/home").then(function(shellHome) {
-              if (shellHome) return shellHome;
+              if (ok(shellHome)) return shellHome;
               return caches.match("/").then(function(shellRoot) {
-                if (shellRoot) return shellRoot;
+                if (ok(shellRoot)) return shellRoot;
                 return new Response(
                   '<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Sem conexão</title></head>' +
                   '<body style="font-family:system-ui;text-align:center;padding:60px 20px">' +
