@@ -67,17 +67,17 @@ const PENDING_PHRASES: {
 const NUDGE_PHRASES: { title: string; body: string; pose: string }[] = [
   { title: "Dá uma olhada no que tá acabando 👀", body: "Marque os itens no fim pra não faltar nada.", pose: POSE.buscando },
   { title: "Tá faltando alguma coisa? 🛒", body: "Deixa marcado pra não esquecer no mercado.", pose: POSE.buscando },
-  { title: "Bora manter tudo abastecido? 🛒", body: "Confere seu estoque em 10 segundos.", pose: POSE.placa },
+  { title: "Bora manter tudo abastecido? 🛒", body: "Confira seu estoque em 10 segundos.", pose: POSE.placa },
   { title: "Café, arroz, sabão... 🤔", body: "Se tá no fim, deixa anotado no Acabou?", pose: POSE.buscando },
   { title: "Antes de ir ao mercado 📝", body: "Marque o que falta — a lista se monta sozinha.", pose: POSE.placa },
   { title: "10 segundinhos agora 🙈", body: "Evite o 'ah, esqueci!' na hora das compras.", pose: POSE.acenando },
   { title: "Conta com a gente pra não esquecer 💚", body: "Marque o que estiver faltando.", pose: POSE.feliz },
   { title: "Estoque em dia = vida tranquila 😌", body: "Dá uma conferida rapidinho?", pose: POSE.feliz },
-  { title: "O que será que tá acabando? 👀", body: "Confere rapidinho sua lista.", pose: POSE.buscando },
-  { title: "Nada pior que ver que faltou 😅", body: "Confere antes de sair pro mercado!", pose: POSE.alerta },
+  { title: "O que será que tá acabando? 👀", body: "Confira rapidinho sua lista.", pose: POSE.buscando },
+  { title: "Nada pior que ver que faltou 😅", body: "Confira antes de sair pro mercado!", pose: POSE.alerta },
 ];
 const NUDGE_FRIDAY = { title: "Fim de semana chegando! 🛒", body: "Vê o que falta antes das compras.", pose: POSE.comemorando };
-const NUDGE_SUNDAY = { title: "Bora começar a semana abastecido? 🗓️", body: "Confere o estoque e monte a lista.", pose: POSE.feliz };
+const NUDGE_SUNDAY = { title: "Bora começar a semana abastecido? 🗓️", body: "Confira o estoque e monte a lista.", pose: POSE.feliz };
 
 // Escolhe um item do array de forma estável pelo "seed" (dia + usuário).
 function pick<T>(arr: T[], seed: number): T {

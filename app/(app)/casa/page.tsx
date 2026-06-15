@@ -401,20 +401,22 @@ export default function CasaPage() {
     if (!currentHouse || addingMemberId) return; // guarda contra double-click (duplicado/23505)
     setAddingMemberId(userId);
     try {
-      const { error } = await supabase
-        .from("house_members")
-        .insert({
-          house_id: currentHouse.id,
-          user_id: userId,
-          role: "member",
-          status: "active",
-          invited_by: currentUserId,
+      // Inserção de membro ATIVO vai pro SERVIDOR (service_role): o trigger
+      // anti-burla `guard_member_status` bloqueia esse insert pelo cliente. A
+      // rota valida dono + Plano Família ativo + que a pessoa já é membro seu.
+      const res = await fetch("/api/adicionar-membro", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          houseId: currentHouse.id,
+          userId,
           display_name: memberData.display_name,
           member_type: memberData.member_type,
           relation_label: memberData.relation_label,
-        });
-
-      if (error) throw error;
+        }),
+      });
+      const data = await res.json().catch(() => ({} as any));
+      if (!res.ok) throw new Error(data?.error || "Erro ao adicionar membro. Tente novamente.");
 
       // Recarrega membros
       setExistingMembers(prev => prev.filter(m => m.user_id !== userId));
@@ -441,12 +443,8 @@ export default function CasaPage() {
 
       alert(`${memberData.profile?.full_name || "Membro"} foi adicionado a ${currentHouse.name}!`);
     } catch (err: any) {
-      if (err?.code === "23505") {
-        alert("Este membro já está neste local.");
-      } else {
-        console.error("Erro ao adicionar membro:", err);
-        alert("Erro ao adicionar membro. Tente novamente.");
-      }
+      console.error("Erro ao adicionar membro:", err);
+      alert(err?.message || "Erro ao adicionar membro. Tente novamente.");
     } finally {
       setAddingMemberId(null);
     }
