@@ -78,7 +78,10 @@ export async function POST(request: NextRequest) {
       .eq("user_id", marker)
       .maybeSingle();
 
-    const userName = profile?.full_name?.split(" ")[0] ?? "Alguém";
+    // 1º nome do perfil — usado só como FALLBACK (convidado quase nunca preenche
+    // o full_name → caía em "Alguém"). O nome bom vem do display_name do membro
+    // (apelido que o DONO cadastrou), resolvido abaixo após buscar os membros.
+    const fullFirst = (profile?.full_name ?? "").trim().split(/\s+/)[0] || "";
     const statusText = newStatus === "acabou" ? "acabou" : "está acabando";
     const itemName = record.name ?? "um item";
     const emoji = locationEmoji(house.property_type as string | null);
@@ -87,14 +90,25 @@ export async function POST(request: NextRequest) {
     const tag = `item-${house.id}-${marker}`; // MESMA tag por local+marcador
 
     // Destinatários: todos os membros ATIVOS do local, MENOS quem marcou.
-    // (status="active" já exclui convidados congelados.)
+    // (status="active" já exclui convidados congelados.) Trazemos display_name
+    // pra resolver o NOME de quem marcou (o apelido que o dono deu ao membro).
     const { data: members } = await admin
       .from("house_members")
-      .select("user_id")
+      .select("user_id, display_name")
       .eq("house_id", house.id)
       .eq("status", "active");
+
+    // Nome de quem marcou: PREFERE o display_name do membro neste local (o dono
+    // sempre define ao convidar) → senão 1º nome do perfil → senão "Alguém".
+    const markerDisplay = (members ?? [])
+      .find((m: { user_id: string; display_name: string | null }) => m.user_id === marker)
+      ?.display_name?.trim();
+    const userName = markerDisplay || fullFirst || "Alguém";
+
     const recipients = [
-      ...new Set((members ?? []).map((m: { user_id: string }) => m.user_id)),
+      ...new Set(
+        (members ?? []).map((m: { user_id: string; display_name: string | null }) => m.user_id)
+      ),
     ].filter((uid) => uid && uid !== marker);
 
     if (recipients.length === 0) {

@@ -44,7 +44,14 @@ export async function sendPushNotification(
   });
 
   try {
-    await webpush.sendNotification(pushSubscription, notificationPayload);
+    // urgency:"high" + TTL: faz o push tentar FURAR a economia de bateria/Doze do
+    // Android (alta prioridade na FCM = acorda o aparelho pra entregar na hora) e
+    // segura a mensagem por até 24h se o device estiver offline/dormindo. É o TETO
+    // do que a web/PWA controla — entrega 100% independente de bateria só no nativo.
+    await webpush.sendNotification(pushSubscription, notificationPayload, {
+      urgency: "high",
+      TTL: 60 * 60 * 24,
+    });
     return { success: true };
   } catch (error: any) {
     // 404 ou 410 = subscription expirada, deve ser removida
