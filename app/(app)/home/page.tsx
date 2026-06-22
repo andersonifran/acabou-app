@@ -443,6 +443,37 @@ export default function HomePage() {
 
       <div className="max-w-lg mx-auto px-4 py-4 space-y-5">
 
+        {/* Card PERMANENTE de ativar notificações — SEMPRE visível pra quem não
+            ativou (passivo, NÃO é popup → não incomoda). O botão abre o convite
+            caprichado (NotificationOptInModal). É a alavanca nº1 de opt-in:
+            e-mail converte pouco, o botão dentro do app fica sempre à mão. */}
+        {(push.state === "prompt" || push.state === "denied") && (
+          <div className="bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200 rounded-2xl p-4 flex items-center gap-3.5">
+            <div className="w-11 h-11 bg-green-100 rounded-full flex items-center justify-center shrink-0">
+              <Bell size={22} className="text-green-600" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-bold text-gray-900">
+                {push.state === "denied" ? "Notificações bloqueadas 🔕" : "Você não está recebendo avisos 🔔"}
+              </p>
+              <p className="text-xs text-gray-600 mt-0.5 leading-snug">
+                {push.state === "denied"
+                  ? "Reative pra voltar a saber na hora que algo acaba na sua casa."
+                  : "Ative pra saber na hora que alguém marcar um item como acabou."}
+              </p>
+            </div>
+            <button
+              onClick={() => {
+                setOptInMode(push.state === "denied" ? "reenable" : "ask");
+                setShowOptIn(true);
+              }}
+              className="shrink-0 bg-green-600 text-white text-xs font-bold px-4 py-2.5 rounded-full hover:bg-green-700 transition-transform duration-100 active:scale-[0.95]"
+            >
+              {push.state === "denied" ? "Reativar" : "Ativar"}
+            </button>
+          </div>
+        )}
+
         {/* Loading ao trocar de casa */}
         {switchingHouse && (
           <div className="flex items-center justify-center py-8">

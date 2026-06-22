@@ -1,13 +1,19 @@
 "use client";
 
 import { useState } from "react";
+import { usePathname } from "next/navigation";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { Bell, X } from "lucide-react";
 
 export function PushPermissionBanner() {
   const { state, subscribe, isSupported } = usePushNotifications();
+  const pathname = usePathname();
   const [dismissed, setDismissed] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  // A HOME tem um card PERMANENTE de ativar (não some) → lá o banner não aparece,
+  // pra não duplicar. Nas outras telas o banner segue como nudge leve (3 dias).
+  if (pathname === "/home") return null;
 
   // Não mostra se: não suportado, já inscrito, negado, ou dispensado
   if (!isSupported || state !== "prompt" || dismissed) return null;
