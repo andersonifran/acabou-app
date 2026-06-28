@@ -98,6 +98,13 @@ export function useItems() {
         }
       }
 
+      // Confirmação clara quando o item ENTRA na Lista de Compras (sai da
+      // Despensa). Resolve o "cadê?" de quem marca "Acabou"/"Quero comprar" na
+      // Início ou na Despensa e vê o item sumir — agora mostra pra onde foi.
+      if (newStatus === "acabou" || newStatus === "comprar") {
+        setToast(`🛒 ${item.name} entrou na sua Lista de Compras`, { label: "Ver", href: "/lista" });
+      }
+
       return true;
     },
     [supabase, updateItem]
@@ -188,6 +195,15 @@ export function useItems() {
       }
 
       addItem(item as Item);
+
+      // Mesma confirmação do changeStatus quando um item NOVO já entra na Lista
+      // de Compras (ex.: "Criar novo item" marcado como Acabou/Comprar).
+      if (data.status === "acabou" || data.status === "comprar") {
+        useAppStore.getState().setToast(
+          `🛒 ${data.name} entrou na sua Lista de Compras`,
+          { label: "Ver", href: "/lista" }
+        );
+      }
 
       // Evento (não-crítico) — try/catch silencioso pra rede ruim não estourar.
       try {

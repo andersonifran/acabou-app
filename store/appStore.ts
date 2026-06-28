@@ -104,9 +104,11 @@ interface AppState {
   initialStatus: string | null;
   setInitialStatus: (status: string | null) => void;
 
-  // Toast global (ex.: "sem conexão") — some sozinho
+  // Toast global (ex.: "sem conexão") — some sozinho. Ação opcional (ex.: "Ver"
+  // que leva pra Lista quando um item entra na lista de compras).
   toast: string | null;
-  setToast: (msg: string | null) => void;
+  toastAction: { label: string; href: string } | null;
+  setToast: (msg: string | null, action?: { label: string; href: string } | null) => void;
 
   // Reset
   reset: () => void;
@@ -193,7 +195,8 @@ export const useAppStore = create<AppState>((set, get) => {
     setInitialStatus: (status) => set({ initialStatus: status }),
 
     toast: null,
-    setToast: (msg) => set({ toast: msg }),
+    toastAction: null,
+    setToast: (msg, action = null) => set({ toast: msg, toastAction: msg ? action : null }),
 
     reset: () => {
       set({
@@ -211,6 +214,7 @@ export const useAppStore = create<AppState>((set, get) => {
         initialStatus: null,
         dataSyncComplete: false,
         toast: null, // não vaza toast entre contas no mesmo aparelho (app de família)
+        toastAction: null,
       });
       if (typeof window !== "undefined") {
         try { localStorage.removeItem(CACHE_KEY); } catch {}
