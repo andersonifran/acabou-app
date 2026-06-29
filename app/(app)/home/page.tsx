@@ -32,11 +32,13 @@ const PROPERTY_MAP: Record<string, { icon: string; label: string }> = {
 
 // Botões de ação — ícones 3D (public/acoes/). A borda colorida do card
 // mantém o "semáforo" de status (vermelho/âmbar/azul/verde).
-const ACTION_BUTTONS = [
+const ACTION_BUTTONS: { label: string; sublabel: string; img: string; bg: string; status: string; imgCls?: string }[] = [
   { label: "Acabou!", sublabel: "Precisa repor", img: "/acoes/acao-acabou.png", bg: "bg-white border-red-200 shadow-sm", status: "acabou" },
   { label: "Está acabando!", sublabel: "Já está no fim", img: "/acoes/acao-acabando.png", bg: "bg-white border-amber-200 shadow-sm", status: "acabando" },
+  // Desejos embaixo do "Acabou!" (coluna esquerda); Comprar fica onde o "Comprei!"
+  // estava (direita) → mantém a memória do "ir pra Lista" no mesmo lugar.
+  { label: "Desejos!", sublabel: "Sua lista de sonhos", img: "/acoes/acao-desejo.png", bg: "bg-white border-purple-200 shadow-sm", status: "desejo", imgCls: "scale-[1.15]" },
   { label: "Comprar!", sublabel: "Sua lista pra comprar", img: "/acoes/acao-comprar.png", bg: "bg-white border-blue-200 shadow-sm", status: "comprar_lista" },
-  { label: "Desejo de compras!", sublabel: "Sua lista de sonhos", img: "/acoes/acao-desejo.png", bg: "bg-white border-purple-200 shadow-sm", status: "desejo" },
 ];
 
 // Cache EM MEMÓRIA (persiste entre remontagens na mesma sessão). Ao voltar pra
@@ -631,14 +633,14 @@ export default function HomePage() {
                 O que aconteceu?
               </p>
               <div className="grid grid-cols-2 gap-3">
-                {ACTION_BUTTONS.map(({ label, sublabel, img, bg, status }) => (
+                {ACTION_BUTTONS.map(({ label, sublabel, img, bg, status, imgCls }) => (
                   <button
                     key={status}
                     onClick={() => openModal(status)}
                     className={`flex flex-col items-start p-4 rounded-2xl border transition-all hover:scale-[1.02] hover:shadow-md active:scale-[0.97] text-left ${bg}`}
                   >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={img} alt="" aria-hidden="true" draggable={false} className="w-12 h-12 object-contain mb-2 select-none pointer-events-none" />
+                    <img src={img} alt="" aria-hidden="true" draggable={false} className={`w-12 h-12 object-contain mb-2 select-none pointer-events-none ${imgCls ?? ""}`} />
                     <span className="font-black text-gray-900 text-sm leading-tight">{label}</span>
                     <span className="text-xs text-gray-400 mt-0.5 leading-tight">{sublabel}</span>
                   </button>
