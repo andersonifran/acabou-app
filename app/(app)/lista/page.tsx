@@ -38,6 +38,8 @@ export default function ListaPage() {
   const { setItems } = useAppStore();
   const setToast = useAppStore((s) => s.setToast);
   const [checkedIds, setCheckedIds] = useState<Set<string>>(new Set());
+  // Abas: "comprar" (lista de mercado) | "desejos" (lista de sonhos). Padrão: comprar.
+  const [activeTab, setActiveTab] = useState<"comprar" | "desejos">("comprar");
   const [finishing, setFinishing] = useState(false);
   const [done, setDone] = useState(false);
   const [showPurchasedModal, setShowPurchasedModal] = useState<string | null>(null);
@@ -52,6 +54,13 @@ export default function ListaPage() {
     const t = setTimeout(() => setPartialMsg(null), 2800);
     return () => clearTimeout(t);
   }, [partialMsg]);
+
+  // Deep-link: vindo do "Ver" de um desejo (/lista?ver=desejos) → abre na aba Desejos.
+  useEffect(() => {
+    if (typeof window !== "undefined" && new URLSearchParams(window.location.search).get("ver") === "desejos") {
+      setActiveTab("desejos");
+    }
+  }, []);
 
   // Agrupar por categoria (memoizado: só recalcula quando a lista muda)
   const byCategory = useMemo(
@@ -261,122 +270,144 @@ export default function ListaPage() {
           />
         ) : (
           <>
-            {shoppingListItems.length > 0 ? (
-              <>
-                {/* Botão WhatsApp — recurso do Plano Família */}
-                <button
-                  onClick={shareOnWhatsApp}
-                  className={cn(
-                    "w-full flex items-center justify-center gap-2.5 active:scale-[0.98] text-white font-bold py-4 rounded-2xl shadow-md transition-all mb-5 text-base",
-                    isPaid
-                      ? "bg-[#25D366] hover:bg-[#1fba59] shadow-green-200"
-                      : "bg-[#25D366]/80 shadow-green-100"
-                  )}
-                >
-                  <WhatsAppIcon size={22} />
-                  Compartilhar lista no WhatsApp
-                  {!isPaid && (
-                    <span className="inline-flex items-center gap-1 bg-white/25 text-white text-[11px] font-bold px-2 py-0.5 rounded-full">
-                      🔒 Família
-                    </span>
-                  )}
-                </button>
+            {/* Toggle: Comprar (mercado) | Desejos (sonhos) — premium, sem misturar */}
+            <div className="flex gap-1.5 mb-5 bg-gray-100 p-1 rounded-2xl">
+              <button
+                onClick={() => setActiveTab("comprar")}
+                className={cn(
+                  "flex-1 py-2.5 rounded-xl text-sm font-bold transition-colors active:scale-[0.98]",
+                  activeTab === "comprar" ? "bg-white text-green-700 shadow-sm" : "text-gray-500 hover:text-gray-700"
+                )}
+              >
+                🛒 Comprar{shoppingListItems.length > 0 ? ` (${shoppingListItems.length})` : ""}
+              </button>
+              <button
+                onClick={() => setActiveTab("desejos")}
+                className={cn(
+                  "flex-1 py-2.5 rounded-xl text-sm font-bold transition-colors active:scale-[0.98]",
+                  activeTab === "desejos" ? "bg-white text-purple-700 shadow-sm" : "text-gray-500 hover:text-gray-700"
+                )}
+              >
+                💭 Desejos{wishItems.length > 0 ? ` (${wishItems.length})` : ""}
+              </button>
+            </div>
 
-                <div className="space-y-5">
-                  {Object.entries(byCategory).sort(([a], [b]) => a.localeCompare(b)).map(([category, catItems]) => (
-                    <div key={category}>
-                      <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2 px-1">
-                        {catItems[0].category?.icon} {category}
-                      </p>
-                      <div className="space-y-2">
-                        {catItems.map((item) => (
-                          <div
-                            key={item.id}
-                            className={cn(
-                              "flex items-center gap-3 bg-white rounded-xl border border-gray-100 shadow-sm px-4 py-3.5 transition-all",
-                              checkedIds.has(item.id) && "opacity-60 bg-green-50 border-green-100"
-                            )}
-                          >
-                            <button
-                              onClick={() => toggleCheck(item.id)}
-                              className="shrink-0 text-gray-300 hover:text-green-600 transition-colors"
-                            >
-                              {checkedIds.has(item.id) ? (
-                                <CheckSquare size={22} className="text-green-600" />
-                              ) : (
-                                <Square size={22} />
+            {activeTab === "comprar" ? (
+              shoppingListItems.length > 0 ? (
+                <>
+                  {/* Botão WhatsApp — recurso do Plano Família */}
+                  <button
+                    onClick={shareOnWhatsApp}
+                    className={cn(
+                      "w-full flex items-center justify-center gap-2.5 active:scale-[0.98] text-white font-bold py-4 rounded-2xl shadow-md transition-all mb-5 text-base",
+                      isPaid
+                        ? "bg-[#25D366] hover:bg-[#1fba59] shadow-green-200"
+                        : "bg-[#25D366]/80 shadow-green-100"
+                    )}
+                  >
+                    <WhatsAppIcon size={22} />
+                    Compartilhar lista no WhatsApp
+                    {!isPaid && (
+                      <span className="inline-flex items-center gap-1 bg-white/25 text-white text-[11px] font-bold px-2 py-0.5 rounded-full">
+                        🔒 Família
+                      </span>
+                    )}
+                  </button>
+
+                  <div className="space-y-5">
+                    {Object.entries(byCategory).sort(([a], [b]) => a.localeCompare(b)).map(([category, catItems]) => (
+                      <div key={category}>
+                        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2 px-1">
+                          {catItems[0].category?.icon} {category}
+                        </p>
+                        <div className="space-y-2">
+                          {catItems.map((item) => (
+                            <div
+                              key={item.id}
+                              className={cn(
+                                "flex items-center gap-3 bg-white rounded-xl border border-gray-100 shadow-sm px-4 py-3.5 transition-all",
+                                checkedIds.has(item.id) && "opacity-60 bg-green-50 border-green-100"
                               )}
-                            </button>
-                            <div className="flex-1 min-w-0">
-                              <p className={cn("font-medium text-gray-900 break-words", checkedIds.has(item.id) && "line-through text-gray-500")}>
-                                {item.name}
-                              </p>
-                              {(item.note || item.quantity_text) && (
-                                <p className="text-xs text-gray-500 mt-0.5">
-                                  {item.quantity_text}
-                                  {item.quantity_text && item.note && " · "}
-                                  {item.note}
+                            >
+                              <button
+                                onClick={() => toggleCheck(item.id)}
+                                className="shrink-0 text-gray-300 hover:text-green-600 transition-colors"
+                              >
+                                {checkedIds.has(item.id) ? (
+                                  <CheckSquare size={22} className="text-green-600" />
+                                ) : (
+                                  <Square size={22} />
+                                )}
+                              </button>
+                              <div className="flex-1 min-w-0">
+                                <p className={cn("font-medium text-gray-900 break-words", checkedIds.has(item.id) && "line-through text-gray-500")}>
+                                  {item.name}
                                 </p>
-                              )}
+                                {(item.note || item.quantity_text) && (
+                                  <p className="text-xs text-gray-500 mt-0.5">
+                                    {item.quantity_text}
+                                    {item.quantity_text && item.note && " · "}
+                                    {item.note}
+                                  </p>
+                                )}
+                              </div>
+                              <button
+                                onClick={() => handleItemPurchased(item.id)}
+                                className="shrink-0 text-xs bg-green-100 text-green-700 font-semibold px-3 py-1.5 rounded-full hover:bg-green-200 active:scale-90 transition-all"
+                              >
+                                Comprado
+                              </button>
                             </div>
-                            <button
-                              onClick={() => handleItemPurchased(item.id)}
-                              className="shrink-0 text-xs bg-green-100 text-green-700 font-semibold px-3 py-1.5 rounded-full hover:bg-green-200 active:scale-90 transition-all"
-                            >
-                              Comprado
-                            </button>
-                          </div>
-                        ))}
+                          ))}
+                        </div>
                       </div>
+                    ))}
+                  </div>
+                </>
+              ) : (
+                <div className="text-center py-12">
+                  <p className="text-gray-500 text-sm">Tudo em dia por aqui! 🎉</p>
+                  <p className="text-gray-400 text-xs mt-1">Quando algo acabar, marque na Início e aparece aqui.</p>
+                </div>
+              )
+            ) : wishItems.length > 0 ? (
+              <div className="space-y-2">
+                {wishItems.map((item) => (
+                  <div
+                    key={item.id}
+                    className="flex items-center gap-3 bg-white rounded-xl border border-purple-100 shadow-sm px-4 py-3.5"
+                  >
+                    <div className="w-9 h-9 rounded-full bg-purple-50 flex items-center justify-center shrink-0">
+                      <span className="text-base">💜</span>
                     </div>
-                  ))}
-                </div>
-              </>
-            ) : (
-              <div className="text-center py-8">
-                <p className="text-gray-500 text-sm">Nenhum item pra comprar agora. 🎉</p>
-              </div>
-            )}
-
-            {/* Seção "Meus desejos" — lista de sonhos, SEPARADA do mercado da semana */}
-            {wishItems.length > 0 && (
-              <div className={cn(shoppingListItems.length > 0 ? "mt-8 pt-6 border-t border-gray-100" : "mt-2")}>
-                <div className="flex items-center gap-2 mb-3 px-1">
-                  <span className="text-base">💭</span>
-                  <p className="text-xs font-semibold text-purple-500 uppercase tracking-wide">Meus desejos</p>
-                </div>
-                <div className="space-y-2">
-                  {wishItems.map((item) => (
-                    <div
-                      key={item.id}
-                      className="flex items-center gap-3 bg-white rounded-xl border border-purple-100 shadow-sm px-4 py-3.5"
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-gray-900 break-words">{item.name}</p>
+                      {(item.note || item.quantity_text) && (
+                        <p className="text-xs text-gray-500 mt-0.5">
+                          {item.quantity_text}
+                          {item.quantity_text && item.note && " · "}
+                          {item.note}
+                        </p>
+                      )}
+                    </div>
+                    <button
+                      onClick={() => realizarDesejo(item.id)}
+                      className="shrink-0 text-xs bg-purple-100 text-purple-700 font-semibold px-3 py-1.5 rounded-full hover:bg-purple-200 active:scale-90 transition-all"
                     >
-                      <div className="w-9 h-9 rounded-full bg-purple-50 flex items-center justify-center shrink-0">
-                        <span className="text-base">💜</span>
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium text-gray-900 break-words">{item.name}</p>
-                        {(item.note || item.quantity_text) && (
-                          <p className="text-xs text-gray-500 mt-0.5">
-                            {item.quantity_text}
-                            {item.quantity_text && item.note && " · "}
-                            {item.note}
-                          </p>
-                        )}
-                      </div>
-                      <button
-                        onClick={() => realizarDesejo(item.id)}
-                        className="shrink-0 text-xs bg-purple-100 text-purple-700 font-semibold px-3 py-1.5 rounded-full hover:bg-purple-200 active:scale-90 transition-all"
-                      >
-                        Realizei!
-                      </button>
-                    </div>
-                  ))}
-                </div>
+                      Realizei!
+                    </button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-12">
+                <span className="text-4xl">💭</span>
+                <p className="text-gray-600 text-sm font-medium mt-3">Nenhum desejo ainda</p>
+                <p className="text-gray-400 text-xs mt-1">Adicione um sonho de compras pelo botão "Desejos!" na aba Início 💜</p>
               </div>
             )}
 
-            {checkedIds.size > 0 && (
+            {activeTab === "comprar" && checkedIds.size > 0 && (
               <div className="fixed bottom-[calc(5rem+env(safe-area-inset-bottom))] left-0 right-0 px-4">
                 <div className="max-w-lg mx-auto">
                   <button

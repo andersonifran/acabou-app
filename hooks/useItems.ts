@@ -104,7 +104,7 @@ export function useItems() {
       if (newStatus === "acabou" || newStatus === "comprar") {
         setToast(`🛒 ${item.name} entrou na sua Lista de Compras`, { label: "Ver", href: "/lista" });
       } else if (newStatus === "desejo") {
-        setToast(`💜 ${item.name} entrou nos seus Desejos`, { label: "Ver", href: "/lista" });
+        setToast(`💜 ${item.name} entrou nos seus Desejos`, { label: "Ver", href: "/lista?ver=desejos" });
       }
 
       return true;
@@ -208,7 +208,7 @@ export function useItems() {
       } else if (data.status === "desejo") {
         useAppStore.getState().setToast(
           `💜 ${data.name} entrou nos seus Desejos`,
-          { label: "Ver", href: "/lista" }
+          { label: "Ver", href: "/lista?ver=desejos" }
         );
       }
 
