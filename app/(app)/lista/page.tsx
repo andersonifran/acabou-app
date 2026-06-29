@@ -33,7 +33,7 @@ export default function ListaPage() {
   const { currentHouse, setAddItemModalOpen, setInitialStatus } = useAppStore();
   const propertyType = (currentHouse as any)?.property_type ?? "casa";
   const copy = LOCATION_COPY[propertyType] ?? LOCATION_COPY.casa;
-  const { shoppingListItems, changeStatus, markPurchased, items } = useItems();
+  const { shoppingListItems, changeStatus, markPurchased, deleteItem, items } = useItems();
   const supabase = createClient();
   const { setItems } = useAppStore();
   const setToast = useAppStore((s) => s.setToast);
@@ -64,6 +64,9 @@ export default function ListaPage() {
       }, {}),
     [shoppingListItems]
   );
+
+  // Desejos = itens com status "desejo" (lista de sonhos), à parte do mercado.
+  const wishItems = useMemo(() => items.filter((i) => i.status === "desejo"), [items]);
 
   function toggleCheck(id: string) {
     setCheckedIds((prev) => {
@@ -101,6 +104,14 @@ export default function ListaPage() {
     } finally {
       setPurchasing(false);
     }
+  }
+
+  // "Realizei!" um desejo → conclui (sai da lista de desejos) com comemoração.
+  async function realizarDesejo(itemId: string) {
+    const item = wishItems.find((i) => i.id === itemId);
+    await deleteItem(itemId);
+    hapticSuccess();
+    setToast(item ? `🎉 "${item.name}" realizado! Parabéns 💜` : "🎉 Desejo realizado! 💜");
   }
 
   async function finishShopping() {
@@ -234,7 +245,7 @@ export default function ListaPage() {
       />
 
       <div className="max-w-lg mx-auto px-4 py-4">
-        {shoppingListItems.length === 0 ? (
+        {shoppingListItems.length === 0 && wishItems.length === 0 ? (
           <EmptyState
             image="/lista-vazia.png"
             title="Tudo em dia! 🎉"
@@ -250,74 +261,120 @@ export default function ListaPage() {
           />
         ) : (
           <>
-            {/* Botão WhatsApp — recurso do Plano Família */}
-            <button
-              onClick={shareOnWhatsApp}
-              className={cn(
-                "w-full flex items-center justify-center gap-2.5 active:scale-[0.98] text-white font-bold py-4 rounded-2xl shadow-md transition-all mb-5 text-base",
-                isPaid
-                  ? "bg-[#25D366] hover:bg-[#1fba59] shadow-green-200"
-                  : "bg-[#25D366]/80 shadow-green-100"
-              )}
-            >
-              <WhatsAppIcon size={22} />
-              Compartilhar lista no WhatsApp
-              {!isPaid && (
-                <span className="inline-flex items-center gap-1 bg-white/25 text-white text-[11px] font-bold px-2 py-0.5 rounded-full">
-                  🔒 Família
-                </span>
-              )}
-            </button>
+            {shoppingListItems.length > 0 ? (
+              <>
+                {/* Botão WhatsApp — recurso do Plano Família */}
+                <button
+                  onClick={shareOnWhatsApp}
+                  className={cn(
+                    "w-full flex items-center justify-center gap-2.5 active:scale-[0.98] text-white font-bold py-4 rounded-2xl shadow-md transition-all mb-5 text-base",
+                    isPaid
+                      ? "bg-[#25D366] hover:bg-[#1fba59] shadow-green-200"
+                      : "bg-[#25D366]/80 shadow-green-100"
+                  )}
+                >
+                  <WhatsAppIcon size={22} />
+                  Compartilhar lista no WhatsApp
+                  {!isPaid && (
+                    <span className="inline-flex items-center gap-1 bg-white/25 text-white text-[11px] font-bold px-2 py-0.5 rounded-full">
+                      🔒 Família
+                    </span>
+                  )}
+                </button>
 
-            <div className="space-y-5">
-              {Object.entries(byCategory).sort(([a], [b]) => a.localeCompare(b)).map(([category, catItems]) => (
-                <div key={category}>
-                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2 px-1">
-                    {catItems[0].category?.icon} {category}
-                  </p>
-                  <div className="space-y-2">
-                    {catItems.map((item) => (
-                      <div
-                        key={item.id}
-                        className={cn(
-                          "flex items-center gap-3 bg-white rounded-xl border border-gray-100 shadow-sm px-4 py-3.5 transition-all",
-                          checkedIds.has(item.id) && "opacity-60 bg-green-50 border-green-100"
-                        )}
-                      >
-                        <button
-                          onClick={() => toggleCheck(item.id)}
-                          className="shrink-0 text-gray-300 hover:text-green-600 transition-colors"
-                        >
-                          {checkedIds.has(item.id) ? (
-                            <CheckSquare size={22} className="text-green-600" />
-                          ) : (
-                            <Square size={22} />
-                          )}
-                        </button>
-                        <div className="flex-1 min-w-0">
-                          <p className={cn("font-medium text-gray-900 break-words", checkedIds.has(item.id) && "line-through text-gray-500")}>
-                            {item.name}
-                          </p>
-                          {(item.note || item.quantity_text) && (
-                            <p className="text-xs text-gray-500 mt-0.5">
-                              {item.quantity_text}
-                              {item.quantity_text && item.note && " · "}
-                              {item.note}
-                            </p>
-                          )}
-                        </div>
-                        <button
-                          onClick={() => handleItemPurchased(item.id)}
-                          className="shrink-0 text-xs bg-green-100 text-green-700 font-semibold px-3 py-1.5 rounded-full hover:bg-green-200 active:scale-90 transition-all"
-                        >
-                          Comprado
-                        </button>
+                <div className="space-y-5">
+                  {Object.entries(byCategory).sort(([a], [b]) => a.localeCompare(b)).map(([category, catItems]) => (
+                    <div key={category}>
+                      <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2 px-1">
+                        {catItems[0].category?.icon} {category}
+                      </p>
+                      <div className="space-y-2">
+                        {catItems.map((item) => (
+                          <div
+                            key={item.id}
+                            className={cn(
+                              "flex items-center gap-3 bg-white rounded-xl border border-gray-100 shadow-sm px-4 py-3.5 transition-all",
+                              checkedIds.has(item.id) && "opacity-60 bg-green-50 border-green-100"
+                            )}
+                          >
+                            <button
+                              onClick={() => toggleCheck(item.id)}
+                              className="shrink-0 text-gray-300 hover:text-green-600 transition-colors"
+                            >
+                              {checkedIds.has(item.id) ? (
+                                <CheckSquare size={22} className="text-green-600" />
+                              ) : (
+                                <Square size={22} />
+                              )}
+                            </button>
+                            <div className="flex-1 min-w-0">
+                              <p className={cn("font-medium text-gray-900 break-words", checkedIds.has(item.id) && "line-through text-gray-500")}>
+                                {item.name}
+                              </p>
+                              {(item.note || item.quantity_text) && (
+                                <p className="text-xs text-gray-500 mt-0.5">
+                                  {item.quantity_text}
+                                  {item.quantity_text && item.note && " · "}
+                                  {item.note}
+                                </p>
+                              )}
+                            </div>
+                            <button
+                              onClick={() => handleItemPurchased(item.id)}
+                              className="shrink-0 text-xs bg-green-100 text-green-700 font-semibold px-3 py-1.5 rounded-full hover:bg-green-200 active:scale-90 transition-all"
+                            >
+                              Comprado
+                            </button>
+                          </div>
+                        ))}
                       </div>
-                    ))}
-                  </div>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
+              </>
+            ) : (
+              <div className="text-center py-8">
+                <p className="text-gray-500 text-sm">Nenhum item pra comprar agora. 🎉</p>
+              </div>
+            )}
+
+            {/* Seção "Meus desejos" — lista de sonhos, SEPARADA do mercado da semana */}
+            {wishItems.length > 0 && (
+              <div className={cn(shoppingListItems.length > 0 ? "mt-8 pt-6 border-t border-gray-100" : "mt-2")}>
+                <div className="flex items-center gap-2 mb-3 px-1">
+                  <span className="text-base">💭</span>
+                  <p className="text-xs font-semibold text-purple-500 uppercase tracking-wide">Meus desejos</p>
+                </div>
+                <div className="space-y-2">
+                  {wishItems.map((item) => (
+                    <div
+                      key={item.id}
+                      className="flex items-center gap-3 bg-white rounded-xl border border-purple-100 shadow-sm px-4 py-3.5"
+                    >
+                      <div className="w-9 h-9 rounded-full bg-purple-50 flex items-center justify-center shrink-0">
+                        <span className="text-base">💜</span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-gray-900 break-words">{item.name}</p>
+                        {(item.note || item.quantity_text) && (
+                          <p className="text-xs text-gray-500 mt-0.5">
+                            {item.quantity_text}
+                            {item.quantity_text && item.note && " · "}
+                            {item.note}
+                          </p>
+                        )}
+                      </div>
+                      <button
+                        onClick={() => realizarDesejo(item.id)}
+                        className="shrink-0 text-xs bg-purple-100 text-purple-700 font-semibold px-3 py-1.5 rounded-full hover:bg-purple-200 active:scale-90 transition-all"
+                      >
+                        Realizei!
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {checkedIds.size > 0 && (
               <div className="fixed bottom-[calc(5rem+env(safe-area-inset-bottom))] left-0 right-0 px-4">

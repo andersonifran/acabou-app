@@ -103,6 +103,8 @@ export function useItems() {
       // Início ou na Despensa e vê o item sumir — agora mostra pra onde foi.
       if (newStatus === "acabou" || newStatus === "comprar") {
         setToast(`🛒 ${item.name} entrou na sua Lista de Compras`, { label: "Ver", href: "/lista" });
+      } else if (newStatus === "desejo") {
+        setToast(`💜 ${item.name} entrou nos seus Desejos`, { label: "Ver", href: "/lista" });
       }
 
       return true;
@@ -201,6 +203,11 @@ export function useItems() {
       if (data.status === "acabou" || data.status === "comprar") {
         useAppStore.getState().setToast(
           `🛒 ${data.name} entrou na sua Lista de Compras`,
+          { label: "Ver", href: "/lista" }
+        );
+      } else if (data.status === "desejo") {
+        useAppStore.getState().setToast(
+          `💜 ${data.name} entrou nos seus Desejos`,
           { label: "Ver", href: "/lista" }
         );
       }

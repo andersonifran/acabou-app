@@ -35,8 +35,8 @@ const PROPERTY_MAP: Record<string, { icon: string; label: string }> = {
 const ACTION_BUTTONS = [
   { label: "Acabou!", sublabel: "Precisa repor", img: "/acoes/acao-acabou.png", bg: "bg-white border-red-200 shadow-sm", status: "acabou" },
   { label: "Está acabando!", sublabel: "Já está no fim", img: "/acoes/acao-acabando.png", bg: "bg-white border-amber-200 shadow-sm", status: "acabando" },
-  { label: "Quero comprar!", sublabel: "Adicionar à lista", img: "/acoes/acao-comprar.png", bg: "bg-white border-blue-200 shadow-sm", status: "comprar" },
-  { label: "Comprei!", sublabel: "Já comprou o item", img: "/acoes/acao-comprei.png", bg: "bg-white border-green-300 shadow-sm", status: "tem" },
+  { label: "Comprar!", sublabel: "Sua lista pra comprar", img: "/acoes/acao-comprar.png", bg: "bg-white border-blue-200 shadow-sm", status: "comprar_lista" },
+  { label: "Desejo de compras!", sublabel: "Sua lista de sonhos", img: "/acoes/acao-desejo.png", bg: "bg-white border-purple-200 shadow-sm", status: "desejo" },
 ];
 
 // Cache EM MEMÓRIA (persiste entre remontagens na mesma sessão). Ao voltar pra
@@ -248,30 +248,30 @@ export default function HomePage() {
   }
 
   function openModal(status: string) {
-    // "Comprei!" → vai direto para a lista de compras (para marcar itens como comprados)
-    if (status === "tem") {
+    // "Comprar!" → vai pra Lista de Compras (riscar/comprar o que já está na lista).
+    if (status === "comprar_lista") {
       router.replace("/lista"); // aba → replace (não empilha histórico)
       return;
     }
 
-    // "Quero comprar!" → abre modal de buscar/adicionar item para TODOS os usuários
-    // (membros podem buscar itens existentes e mudar status para "comprar")
-    if (status === "comprar") {
-      setInitialStatus(status);
+    // "Desejo de compras!" → modal pra adicionar um desejo (lista de sonhos).
+    // Entra na seção "Meus desejos" da Lista, separada do mercado da semana.
+    if (status === "desejo") {
+      setInitialStatus("desejo");
       setAddItemModalOpen(true);
       return;
     }
 
-    // "Acabou!" → abre o modal de adicionar/buscar item já com status "acabou"
-    // (igual "Quero comprar!"). O item entra direto na Lista de Compras — assim o
-    // usuário REGISTRA o que acabou, em vez de cair numa lista possivelmente vazia.
+    // "Acabou!" → abre o modal de adicionar/buscar item já com status "acabou".
+    // O item entra direto na Lista de Compras — assim o usuário REGISTRA o que
+    // acabou, em vez de cair numa lista possivelmente vazia.
     if (status === "acabou") {
       setInitialStatus(status);
       setAddItemModalOpen(true);
       return;
     }
 
-    // "Está acabando!" / "Comprei!" (tem) → despensa filtrada (esses status ficam lá).
+    // "Está acabando!" → despensa filtrada (esse status fica lá).
     router.replace(`/despensa?filtro=${status}`); // aba → replace (não empilha histórico)
   }
 

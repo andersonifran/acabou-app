@@ -33,6 +33,7 @@ export function getStatusColor(status: ItemStatus): string {
     acabando: "text-amber-600 bg-amber-50",
     acabou: "text-red-600 bg-red-50",
     comprar: "text-blue-600 bg-blue-50",
+    desejo: "text-purple-600 bg-purple-50",
   };
   return colors[status];
 }
@@ -43,6 +44,7 @@ export function getStatusBorderColor(status: ItemStatus): string {
     acabando: "border-amber-200",
     acabou: "border-red-200",
     comprar: "border-blue-200",
+    desejo: "border-purple-200",
   };
   return colors[status];
 }

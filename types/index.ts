@@ -2,7 +2,7 @@
 // ACABOU? — Tipos TypeScript
 // =============================================
 
-export type ItemStatus = "tem" | "acabando" | "acabou" | "comprar";
+export type ItemStatus = "tem" | "acabando" | "acabou" | "comprar" | "desejo";
 export type MemberRole = "owner" | "admin" | "member";
 export type PlanType = "free" | "monthly" | "yearly";
 export type PlanStatus = "active" | "inactive" | "cancelled" | "past_due" | "trialing";
@@ -173,6 +173,7 @@ export const STATUS_LABELS: Record<ItemStatus, string> = {
   acabando: "Está acabando",
   acabou: "Acabou",
   comprar: "Comprar",
+  desejo: "Desejo",
 };
 
 // --- Labels de recorrência ---

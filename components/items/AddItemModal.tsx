@@ -322,6 +322,7 @@ export function AddItemModal({
     acabando: "Está acabando",
     acabou: "Acabou",
     comprar: "Quero comprar",
+    desejo: "Desejo de compras",
   };
 
   return (
