@@ -80,6 +80,7 @@ export default function ConfiguracoesPage() {
   const [addingItem, setAddingItem] = useState(false);
   const [newItemCategoryId, setNewItemCategoryId] = useState("");
   const [deletingItemId, setDeletingItemId] = useState<string | null>(null);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   async function loadHistory() {
     if (historyLoaded || !currentHouse) return;
@@ -422,12 +423,35 @@ export default function ConfiguracoesPage() {
             {isMember && (
               <>
                 <button
-                  onClick={handleLogout}
+                  onClick={() => setShowLogoutConfirm(true)}
                   className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl bg-red-50 border border-red-200 text-red-600 hover:bg-red-100 transition-colors font-semibold text-sm"
                 >
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
                   Sair da conta
                 </button>
+                {/* Confirmação de logout (feedback dos testadores) — evita sair sem querer */}
+                {showLogoutConfirm && (
+                  <div className="fixed inset-0 z-[70] bg-black/40 flex items-center justify-center px-4">
+                    <div className="w-full max-w-sm bg-white rounded-2xl p-6 shadow-xl">
+                      <h3 className="font-bold text-gray-900 text-lg mb-1.5">Sair da conta?</h3>
+                      <p className="text-gray-600 text-sm mb-5">Você precisará entrar de novo na próxima vez.</p>
+                      <div className="flex gap-3">
+                        <button
+                          onClick={() => setShowLogoutConfirm(false)}
+                          className="flex-1 py-3 rounded-xl border border-gray-200 text-gray-700 font-semibold hover:bg-gray-50 transition-colors active:scale-[0.98]"
+                        >
+                          Cancelar
+                        </button>
+                        <button
+                          onClick={handleLogout}
+                          className="flex-1 py-3 rounded-xl bg-red-600 text-white font-semibold hover:bg-red-700 transition-colors active:scale-[0.98]"
+                        >
+                          Sair
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
                 <button
                   onClick={handleDeleteAccount}
                   disabled={deletingAccount}
