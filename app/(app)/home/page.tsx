@@ -17,6 +17,7 @@ import { useSubscription } from "@/hooks/useSubscription";
 import { useRole } from "@/hooks/useRole";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { NotificationOptInModal } from "@/components/shared/NotificationOptInModal";
+import { Walkthrough } from "@/components/shared/Walkthrough";
 import { cn } from "@/lib/utils";
 
 const SELECTED_HOUSE_KEY = "acabou_selected_house";
@@ -90,6 +91,13 @@ export default function HomePage() {
   const push = usePushNotifications();
   const [showOptIn, setShowOptIn] = useState(false);
   const [optInMode, setOptInMode] = useState<"ask" | "reenable">("ask");
+  // Walkthrough (tour premium) pra novos usuários — só na 1ª vez (depois marca visto).
+  const [showWalkthrough, setShowWalkthrough] = useState(false);
+  useEffect(() => {
+    try {
+      if (!localStorage.getItem("acabou_walkthrough_seen")) setShowWalkthrough(true);
+    } catch {}
+  }, []);
   useEffect(() => {
     if (typeof window === "undefined") return;
     const deepLink = new URLSearchParams(window.location.search).get("ativar") === "notificacoes";
@@ -295,6 +303,13 @@ export default function HomePage() {
 
   return (
     <div>
+      <Walkthrough
+        open={showWalkthrough}
+        onClose={() => {
+          setShowWalkthrough(false);
+          try { localStorage.setItem("acabou_walkthrough_seen", "1"); } catch {}
+        }}
+      />
       <NotificationOptInModal
         open={showOptIn}
         mode={optInMode}
