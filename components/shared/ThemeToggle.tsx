@@ -1,75 +1,69 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Moon, Sun } from "lucide-react";
+import { Moon, Sun, Smartphone } from "lucide-react";
 import { cn } from "@/lib/utils";
 
+// Seletor de tema: Claro · Escuro · Sistema (feedback dos testadores).
+// "Sistema" = REMOVE a preferência salva → o ThemeApplier (e o script inline do
+// layout) voltam a SEGUIR o aparelho, ao vivo (matchMedia). NÃO mexe na lógica
+// sensível do tema/barra de status — só na escolha do usuário.
+type ThemeMode = "light" | "dark" | "system";
+
+const OPTIONS: { mode: ThemeMode; label: string; Icon: typeof Sun }[] = [
+  { mode: "light", label: "Claro", Icon: Sun },
+  { mode: "dark", label: "Escuro", Icon: Moon },
+  { mode: "system", label: "Sistema", Icon: Smartphone },
+];
+
 export function ThemeToggle({ className }: { className?: string }) {
-  const [isDark, setIsDark] = useState(false);
+  const [mode, setMode] = useState<ThemeMode>("system");
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     setMounted(true);
-    setIsDark(document.documentElement.classList.contains("dark"));
+    try {
+      const stored = localStorage.getItem("acabou_theme");
+      setMode(stored === "dark" ? "dark" : stored === "light" ? "light" : "system");
+    } catch {}
   }, []);
 
-  function toggle() {
-    const next = !isDark;
-    setIsDark(next);
-
-    if (next) {
-      document.documentElement.classList.add("dark");
-      localStorage.setItem("acabou_theme", "dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-      localStorage.setItem("acabou_theme", "light");
-    }
-    // Avisa o ThemeApplier pra atualizar a barra de status NA HORA (o toggle manual
-    // tem que mandar na barra imediatamente, sem precisar navegar).
+  function choose(next: ThemeMode) {
+    setMode(next);
+    try {
+      if (next === "system") localStorage.removeItem("acabou_theme");
+      else localStorage.setItem("acabou_theme", next);
+    } catch {}
+    // O ThemeApplier ouve este evento e reaplica NA HORA (classe .dark + barra de
+    // status). No "system" ele volta a seguir o aparelho — e continua ao vivo.
     window.dispatchEvent(new Event("acabou-theme"));
   }
 
   if (!mounted) return null;
 
   return (
-    <button
-      onClick={toggle}
-      className={cn(
-        "flex items-center justify-between w-full px-5 py-4 hover:bg-gray-50 transition-colors",
-        className
-      )}
-    >
-      <div className="flex items-center gap-3">
-        <div className={cn(
-          "w-8 h-8 rounded-full flex items-center justify-center",
-          isDark ? "bg-indigo-100" : "bg-amber-100"
-        )}>
-          {isDark ? (
-            <Moon size={16} className="text-indigo-600" />
-          ) : (
-            <Sun size={16} className="text-amber-600" />
-          )}
-        </div>
-        <div>
-          <p className="font-medium text-gray-900 text-sm">Modo escuro</p>
-          <p className="text-xs text-gray-500">{isDark ? "Ativado" : "Desativado"}</p>
-        </div>
+    <div className={cn("px-5 py-4", className)}>
+      <p className="font-medium text-gray-900 text-sm mb-2.5">Tema</p>
+      <div className="flex gap-2">
+        {OPTIONS.map((o) => {
+          const active = mode === o.mode;
+          return (
+            <button
+              key={o.mode}
+              onClick={() => choose(o.mode)}
+              className={cn(
+                "flex-1 flex flex-col items-center gap-1 py-2.5 rounded-xl border text-xs font-semibold transition-transform duration-100 active:scale-[0.96]",
+                active
+                  ? "border-green-500 bg-green-50 text-green-700"
+                  : "border-gray-200 text-gray-500 hover:bg-gray-50"
+              )}
+            >
+              <o.Icon size={18} />
+              {o.label}
+            </button>
+          );
+        })}
       </div>
-
-      {/* Toggle switch */}
-      <div
-        className={cn(
-          "relative inline-flex h-6 w-11 items-center rounded-full transition-colors",
-          isDark ? "bg-green-600" : "bg-gray-200"
-        )}
-      >
-        <span
-          className={cn(
-            "inline-block h-4 w-4 transform rounded-full bg-white transition-transform",
-            isDark ? "translate-x-6" : "translate-x-1"
-          )}
-        />
-      </div>
-    </button>
+    </div>
   );
 }
