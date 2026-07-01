@@ -5,11 +5,12 @@ import { Mascote, type MascoteMood } from "@/components/shared/Mascote";
 import { cn } from "@/lib/utils";
 
 // Tour premium pra novos usuários (feedback dos testadores). 4 telas, com "Pular".
-// Aparece só na 1ª vez (flag acabou_walkthrough_seen, controlada na home).
+// Foco: dor real → como resolver → nossas exclusividades. Aparece só na 1ª vez
+// (flag acabou_walkthrough_seen, controlada na home). Premium em claro/escuro/sistema.
 type Slide = {
   mascot?: MascoteMood;
   img?: string;
-  emoji?: string;
+  imgCls?: string;
   accent: string;
   title: string;
   desc: string;
@@ -20,25 +21,26 @@ const SLIDES: Slide[] = [
     mascot: "acenando",
     accent: "bg-green-50",
     title: "Bem-vindo ao Acabou? 👋",
-    desc: "Sua casa sempre sabe o que precisa comprar. Vem ver — é simples e rápido.",
+    desc: 'O fim do "ah, esqueci de comprar!". Sua casa sempre vai saber o que precisa — vem ver, é rapidinho.',
   },
   {
     img: "/acoes/acao-acabou.png",
     accent: "bg-red-50",
     title: "Acabou? É só marcar!",
-    desc: 'Viu que o arroz ou o sabão acabou? Toca em "Acabou!" e ele já entra na sua lista de compras, sozinho.',
+    desc: "Viu que o arroz ou o sabão tá no fim? Um toque e ele já entra na sua lista de compras — sem papelzinho, sem anotar.",
   },
   {
-    emoji: "👨‍👩‍👧",
+    img: "/familia.png",
+    imgCls: "w-32 h-32",
     accent: "bg-amber-50",
-    title: "Toda a casa, junta",
-    desc: "Cada um marca o que viu faltando — e a lista se monta sozinha, em tempo real. Sem papelzinho, sem briga.",
+    title: "Toda a família, em tempo real",
+    desc: "Cada um marca o que falta de onde estiver, e a lista se monta sozinha pra todo mundo. Sem comprar em dobro, sem briga.",
   },
   {
     img: "/acoes/acao-desejo.png",
     accent: "bg-purple-50",
     title: "Até os sonhos de compra 💜",
-    desc: "Aquela panela nova ou o robô aspirador? Guarda na sua lista de Desejos, num cantinho especial.",
+    desc: "A air fryer, o robô aspirador, a panela nova... guarde os desejos num cantinho especial e realize um por um.",
   },
 ];
 
@@ -71,9 +73,13 @@ export function Walkthrough({ open, onClose }: { open: boolean; onClose: () => v
             {slide.mascot && <Mascote mood={slide.mascot} size={118} />}
             {slide.img && (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={slide.img} alt="" draggable={false} className="w-24 h-24 object-contain select-none pointer-events-none" />
+              <img
+                src={slide.img}
+                alt=""
+                draggable={false}
+                className={cn("object-contain select-none pointer-events-none", slide.imgCls ?? "w-24 h-24")}
+              />
             )}
-            {slide.emoji && <span className="text-7xl leading-none">{slide.emoji}</span>}
           </div>
           <h2 className="text-2xl font-black text-gray-900 mb-3">{slide.title}</h2>
           <p className="text-gray-500 leading-relaxed max-w-xs">{slide.desc}</p>
