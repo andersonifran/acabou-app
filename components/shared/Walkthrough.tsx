@@ -34,7 +34,7 @@ const SLIDES: Slide[] = [
     imgCls: "w-32 h-32",
     accent: "bg-amber-50",
     title: "Toda a família, em tempo real",
-    desc: "Cada um marca o que falta de onde estiver, e a lista se monta sozinha pra todo mundo. Sem comprar em dobro, sem briga.",
+    desc: "Cada um marca o que falta de onde estiver, e a lista se monta sozinha pra todo mundo. Sem comprar em dobro, com a casa toda em sintonia.",
   },
   {
     img: "/acoes/acao-desejo.png",
