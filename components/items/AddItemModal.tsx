@@ -5,6 +5,7 @@ import { X, Search, Plus } from "lucide-react";
 import { Item, ItemStatus, Category, STATUS_LABELS, SHOPPING_LIST_STATUSES } from "@/types";
 import { cn, customCategoryIcon } from "@/lib/utils";
 import { SUGGESTED_ITEMS } from "@/lib/item-catalog";
+import { WISH_SUGGESTIONS } from "@/lib/wish-catalog";
 import { CUSTOM_CATEGORY_CATALOG } from "@/lib/custom-category-catalog";
 import { recordItemUse, getLearnedItems, type LearnedItem } from "@/lib/learned-items";
 import { hapticSuccess } from "@/lib/haptics";
@@ -144,16 +145,23 @@ export function AddItemModal({
     .sort((a, b) => b.score - a.score || a.item.name.localeCompare(b.item.name, "pt-BR"))
     .map((x) => x.item);
 
+  // Modo DESEJO: a lista de sonhos de compra (air fryer, sofá, notebook…) usa um
+  // catálogo ASPIRACIONAL próprio — NÃO o de mercado (arroz, sabão). E nada de
+  // "despensa"/aprendidos aqui: desejo é sonho novo, não item da casa.
+  const isWish = initialStatus === "desejo";
+
   // Pool de sugestões = catálogo + itens que VOCÊ já usou e não estão no catálogo
   // (aprende entre todas as suas casas). E um mapa de uso pra ranquear.
   const learnedByName = new Map(learned.map((l) => [normalize(l.name), l]));
   const catalogNorm = new Set(SUGGESTED_ITEMS.map((s) => normalize(s.name)));
-  const suggestionPool: { name: string; category: string; aliases?: string[] }[] = [
-    ...SUGGESTED_ITEMS,
-    ...learned
-      .filter((l) => !catalogNorm.has(normalize(l.name)))
-      .map((l) => ({ name: l.name, category: l.category })),
-  ];
+  const suggestionPool: { name: string; category: string; aliases?: string[] }[] = isWish
+    ? WISH_SUGGESTIONS
+    : [
+        ...SUGGESTED_ITEMS,
+        ...learned
+          .filter((l) => !catalogNorm.has(normalize(l.name)))
+          .map((l) => ({ name: l.name, category: l.category })),
+      ];
 
   // Ranqueia o pool por uma busca: relevância + boost de quem você MAIS usa.
   function rankPool(query: string) {
@@ -167,7 +175,11 @@ export function AddItemModal({
       })
       .filter(
         (x) =>
-          x.score > 0 && !existingItems.some((e) => normalize(e.name) === normalize(x.s.name))
+          x.score > 0 &&
+          // No mercado, esconde o que já está na despensa (evita duplicar). No
+          // desejo isso não se aplica — sonho é outro universo (não some se você
+          // por acaso tem um item de mesmo nome na despensa).
+          (isWish || !existingItems.some((e) => normalize(e.name) === normalize(x.s.name)))
       )
       .sort((a, b) => b.score - a.score || a.s.name.localeCompare(b.s.name, "pt-BR"))
       .map((x) => x.s);
@@ -334,7 +346,15 @@ export function AddItemModal({
         <div className="flex items-center justify-between px-5 pt-5 pb-3 border-b border-gray-100">
           <div>
             <h2 className="font-bold text-lg text-gray-900">
-              {mode === "search" ? "Qual item?" : editingItem ? "Editar item" : "Novo item"}
+              {mode === "search"
+                ? isWish
+                  ? "Qual desejo?"
+                  : "Qual item?"
+                : editingItem
+                  ? "Editar item"
+                  : isWish
+                    ? "Novo desejo"
+                    : "Novo item"}
             </h2>
             <p className="text-sm text-gray-500">
               Marcando como:{" "}
@@ -354,7 +374,7 @@ export function AddItemModal({
                 <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                 <input
                   type="text"
-                  placeholder="Buscar item..."
+                  placeholder={isWish ? "Buscar desejo..." : "Buscar item..."}
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   className="w-full pl-10 pr-4 py-3 bg-gray-50 rounded-xl border border-gray-200 focus:outline-none focus:border-green-400 text-gray-900"
@@ -370,15 +390,19 @@ export function AddItemModal({
               >
                 <Plus size={20} className="shrink-0" />
                 <span className="font-bold">
-                  {search.trim() ? `Criar "${search.trim()}"` : "Criar novo item"}
+                  {search.trim()
+                    ? `Criar "${search.trim()}"`
+                    : isWish
+                      ? "Criar novo desejo"
+                      : "Criar novo item"}
                 </span>
               </button>
             </div>
 
             {/* Lista */}
             <div className="flex-1 overflow-y-auto px-5 pb-5 space-y-4">
-              {/* Existentes */}
-              {filteredExisting.length > 0 && (
+              {/* Existentes (só no mercado — desejo não puxa da despensa) */}
+              {!isWish && filteredExisting.length > 0 && (
                 <div>
                   <p className="text-xs text-gray-500 font-medium mb-2 uppercase tracking-wide">
                     Na sua despensa
@@ -407,7 +431,7 @@ export function AddItemModal({
               {filteredSuggested.length > 0 && (
                 <div>
                   <p className="text-xs text-gray-500 font-medium mb-2 uppercase tracking-wide">
-                    Sugestões
+                    {isWish ? "Ideias de desejo 💜" : "Sugestões"}
                   </p>
                   <div className="space-y-2">
                     {filteredSuggested.slice(0, 10).map((s) => (
@@ -426,7 +450,7 @@ export function AddItemModal({
               )}
 
               {/* Mensagem quando não há resultados na busca */}
-              {search.trim() && filteredExisting.length === 0 && filteredSuggested.length === 0 && (
+              {search.trim() && (isWish || filteredExisting.length === 0) && filteredSuggested.length === 0 && (
                 <p className="text-sm text-gray-400 text-center py-4">
                   Nenhum item encontrado. Use o botão <strong className="text-green-600">Criar "{search.trim()}"</strong> acima. 👆
                 </p>
@@ -497,7 +521,7 @@ export function AddItemModal({
               {/* Etiqueta do "Outros": aparece SÓ quando a categoria é "Outros".
                   Opcional, fica visível pra casa (como a observação) e NUNCA vira
                   categoria global. Chips reusam o que esta casa já etiquetou. */}
-              {isOutros && (
+              {isOutros && !isWish && (
                 <div className="mt-2.5 animate-reveal-field" ref={customFieldRef}>
                   <label className="block text-xs font-medium text-gray-600 mb-1">
                     O que é? <span className="text-gray-400 font-normal">(opcional)</span>
@@ -565,25 +589,36 @@ export function AddItemModal({
               )}
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">Status</label>
-              <div className="grid grid-cols-2 gap-2">
-                {(["tem", "acabando", "acabou", "comprar"] as ItemStatus[]).map((s) => (
-                  <button
-                    key={s}
-                    onClick={() => setNewStatus(s)}
-                    className={cn(
-                      "py-2.5 rounded-xl text-sm font-medium border transition-all duration-150 ease-out active:scale-[0.93]",
-                      newStatus === s
-                        ? "bg-green-600 text-white border-green-600"
-                        : "bg-gray-50 text-gray-700 border-gray-200 hover:border-green-300"
-                    )}
-                  >
-                    {STATUS_LABELS[s]}
-                  </button>
-                ))}
+            {isWish ? (
+              // Desejo é sempre desejo — nada de "tem/acabou". Selo fixo, premium.
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">Status</label>
+                <div className="flex items-center gap-2 py-2.5 px-4 rounded-xl bg-purple-50 border border-purple-200 text-purple-700 font-semibold">
+                  <span className="text-base leading-none">💜</span>
+                  Desejo de compras
+                </div>
               </div>
-            </div>
+            ) : (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">Status</label>
+                <div className="grid grid-cols-2 gap-2">
+                  {(["tem", "acabando", "acabou", "comprar"] as ItemStatus[]).map((s) => (
+                    <button
+                      key={s}
+                      onClick={() => setNewStatus(s)}
+                      className={cn(
+                        "py-2.5 rounded-xl text-sm font-medium border transition-all duration-150 ease-out active:scale-[0.93]",
+                        newStatus === s
+                          ? "bg-green-600 text-white border-green-600"
+                          : "bg-gray-50 text-gray-700 border-gray-200 hover:border-green-300"
+                      )}
+                    >
+                      {STATUS_LABELS[s]}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1.5">
