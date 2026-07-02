@@ -15,7 +15,7 @@ const PLAY_BILLING_METHOD = "https://play.google.com/billing";
 
 // IDs dos produtos de assinatura — batem com os criados no Play Console.
 // ✅ Produtos ATIVOS no Play Console (06/06/2026): plano_familia_mensal
-// (R$ 8,90/mês) e plano_familia_anual (R$ 59,90/ano). Compra de teste real
+// (R$ 6,90/mês) e plano_familia_anual (R$ 39,90/ano). Compra de teste real
 // validada ponta a ponta em 07/06/2026. NÃO mudar estes IDs sem renomear lá.
 export const PLAY_PRODUCT_IDS = {
   monthly: "plano_familia_mensal",

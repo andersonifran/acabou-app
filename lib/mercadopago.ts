@@ -15,7 +15,7 @@ export const PLANS = {
   monthly: {
     id: "familia-mensal",
     title: "Acabou? — Plano Família Mensal",
-    amount: 8.90,
+    amount: 6.90,
     // Cobrança recorrente: a cada 1 mês
     frequency: 1,
     frequency_type: "months",
@@ -23,7 +23,7 @@ export const PLANS = {
   yearly: {
     id: "familia-anual",
     title: "Acabou? — Plano Família Anual",
-    amount: 59.90,
+    amount: 39.90,
     // Cobrança recorrente: a cada 12 meses
     frequency: 12,
     frequency_type: "months",

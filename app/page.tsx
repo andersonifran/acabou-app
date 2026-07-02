@@ -425,16 +425,16 @@ export default function LandingPage() {
                 cta: "Começar grátis", color: "bg-gray-100 text-gray-800 hover:bg-gray-200",
               },
               {
-                name: "Família Mensal", price: "R$ 8,90", period: "/mês", highlight: false, badge: "🎁 14 DIAS GRÁTIS",
+                name: "Família Mensal", price: "R$ 6,90", period: "/mês", highlight: false, badge: "🎁 14 DIAS GRÁTIS",
                 features: ["Tudo do Grátis +", "Pessoas ilimitadas", "Itens ilimitados", "Locais ilimitados", "Compartilhar no WhatsApp", "Lembrete diário", "Lembretes recorrentes", "Histórico completo"],
                 notIncluded: [],
                 cta: "Testar 14 dias grátis", color: "bg-gray-900 text-white hover:bg-gray-800",
               },
               {
-                name: "Família Anual", price: "R$ 59,90", period: "/ano", highlight: true, badge: "🔥 MELHOR VALOR — R$ 4,99/mês",
-                features: ["Tudo do Mensal +", "Economize R$ 46,90/ano", "Prioridade em novidades", "Suporte prioritário"],
+                name: "Família Anual", price: "R$ 39,90", period: "/ano", highlight: true, badge: "🔥 MELHOR VALOR — R$ 3,32/mês",
+                features: ["Tudo do Mensal +", "Economize R$ 42,90/ano", "Prioridade em novidades", "Suporte prioritário"],
                 notIncluded: [],
-                cta: "Garantir por R$ 4,99/mês", color: "bg-green-600 text-white hover:bg-green-700",
+                cta: "Garantir por R$ 3,32/mês", color: "bg-green-600 text-white hover:bg-green-700",
               },
             ].map((plan) => (
               <RevealOnScroll key={plan.name}>

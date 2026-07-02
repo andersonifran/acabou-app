@@ -59,7 +59,7 @@ export function PremiumTeaser({ emoji, image, title, subtitle, benefits, cta = "
         <div className="text-center mb-3">
           <p className="text-xs text-gray-500">A partir de</p>
           <p className="text-2xl font-black text-green-700">
-            R$ 4,99<span className="text-sm font-bold text-gray-500">/mês</span>
+            R$ 3,32<span className="text-sm font-bold text-gray-500">/mês</span>
           </p>
         </div>
         <Link

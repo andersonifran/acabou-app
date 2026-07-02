@@ -156,7 +156,7 @@ export async function sendPaymentApprovedEmail(
   const resend = getResend();
 
   const planName = plan === "yearly" ? "Fam&iacute;lia Anual" : "Fam&iacute;lia Mensal";
-  const planPrice = plan === "yearly" ? "R$ 59,90/ano" : "R$ 8,90/m&ecirc;s";
+  const planPrice = plan === "yearly" ? "R$ 39,90/ano" : "R$ 6,90/m&ecirc;s";
 
   const expiresDate = new Date(expiresAt).toLocaleDateString("pt-BR", {
     day: "2-digit",
@@ -316,8 +316,8 @@ export async function sendPlanExpiringEmail(
 
         <div style="background: #fffbeb; border-radius: 8px; padding: 16px; margin: 0 0 24px;">
           <p style="margin: 0; font-size: 13px; color: #92400e; line-height: 1.6;">
-            💡 <strong>Dica:</strong> O plano anual sai por apenas R$ 4,99/m&ecirc;s
-            — voc&ecirc; economiza R$ 46,90 por ano comparado ao mensal!
+            💡 <strong>Dica:</strong> O plano anual sai por apenas R$ 3,32/m&ecirc;s
+            — voc&ecirc; economiza R$ 42,90 por ano comparado ao mensal!
           </p>
         </div>
 

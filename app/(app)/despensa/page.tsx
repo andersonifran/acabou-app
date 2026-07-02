@@ -346,7 +346,7 @@ function DespensaContent() {
           >
             <Zap size={14} className="text-green-600" />
             <p className="text-xs text-green-800 font-semibold">
-              Plano Família: itens ilimitados, convites, lembretes e mais — <span className="underline">a partir de R$ 4,99/mês</span>
+              Plano Família: itens ilimitados, convites, lembretes e mais — <span className="underline">a partir de R$ 3,32/mês</span>
             </p>
           </Link>
         )}

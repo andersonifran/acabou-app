@@ -42,7 +42,7 @@ const plans = [
   {
     id: "monthly",
     name: "Família Mensal",
-    price: "R$ 8,90",
+    price: "R$ 6,90",
     period: "por mês",
     highlight: false,
     badge: "🚀 Preço de lançamento",
@@ -57,20 +57,20 @@ const plans = [
       "Suporte prioritário",
     ],
     notIncluded: [],
-    cta: "Assinar por R$ 8,90/mês",
+    cta: "Assinar por R$ 6,90/mês",
     ctaDisabled: false,
     priceId: "price_monthly",
   },
   {
     id: "yearly",
     name: "Família Anual",
-    price: "R$ 59,90",
+    price: "R$ 39,90",
     period: "por ano",
     highlight: true,
-    badge: "🚀 Lançamento — R$ 4,99/mês",
+    badge: "🚀 Lançamento — R$ 3,32/mês",
     features: [
       "Tudo do Mensal",
-      "Economize R$ 46,90 por ano",
+      "Economize R$ 42,90 por ano",
       "Prioridade em novidades",
       "Suporte prioritário",
     ],
@@ -263,7 +263,7 @@ function PlanosContent() {
         (window as any).fbq("track", "InitiateCheckout", {
           content_name: plan.name,
           currency: "BRL",
-          value: plan.id === "yearly" ? 59.90 : 8.90,
+          value: plan.id === "yearly" ? 39.90 : 6.90,
         });
       }
 

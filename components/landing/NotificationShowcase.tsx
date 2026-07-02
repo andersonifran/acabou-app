@@ -241,7 +241,7 @@ export function NotificationShowcase() {
             <div className="mt-8 bg-green-50 border border-green-100 rounded-2xl p-5 text-center">
               <p className="text-sm text-gray-600 mb-1">Tudo isso por menos que um cafezinho por dia</p>
               <p className="text-3xl font-black text-green-700">
-                R$ 4,99<span className="text-base font-bold text-gray-500">/mês</span>
+                R$ 3,32<span className="text-base font-bold text-gray-500">/mês</span>
               </p>
               <p className="text-xs text-gray-500 mt-1">
                 No plano anual. Cancele quando quiser.

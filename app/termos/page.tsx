@@ -44,8 +44,8 @@ export default function TermosPage() {
           <h2 className="text-xl font-bold text-gray-900 mb-3">3. Planos e Pagamentos</h2>
           <ul className="text-gray-600 space-y-2 list-disc pl-5">
             <li><strong>Plano Grátis:</strong> Disponível sem prazo, com limitações de uso.</li>
-            <li><strong>Plano Família Mensal (a partir de R$ 8,90/mês):</strong> Renovado automaticamente todo mês. O valor pode variar conforme promoções vigentes.</li>
-            <li><strong>Plano Família Anual (a partir de R$ 59,90/ano):</strong> Renovado automaticamente todo ano. O valor pode variar conforme promoções vigentes.</li>
+            <li><strong>Plano Família Mensal (a partir de R$ 6,90/mês):</strong> Renovado automaticamente todo mês. O valor pode variar conforme promoções vigentes.</li>
+            <li><strong>Plano Família Anual (a partir de R$ 39,90/ano):</strong> Renovado automaticamente todo ano. O valor pode variar conforme promoções vigentes.</li>
             <li>Cancelamentos podem ser feitos a qualquer momento, sem multa.</li>
             <li>Reembolsos serão avaliados caso a caso.</li>
           </ul>

@@ -589,7 +589,7 @@ export default function HomePage() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="font-bold text-amber-900 text-sm">Upgrade para o Plano Família</p>
-                  <p className="text-xs text-amber-700 mt-0.5">Locais ilimitados · Pessoas ilimitadas · R$ 4,99/mês</p>
+                  <p className="text-xs text-amber-700 mt-0.5">Locais ilimitados · Pessoas ilimitadas · R$ 3,32/mês</p>
                 </div>
                 <ChevronDown size={16} className="text-amber-500 shrink-0 -rotate-90" />
               </Link>

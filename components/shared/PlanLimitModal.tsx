@@ -92,7 +92,7 @@ export function PlanLimitModal({ isOpen, onClose, reason }: PlanLimitModalProps)
         <div className="text-center mb-3">
           <p className="text-xs text-gray-500 mb-1">Tudo isso por menos que um cafezinho</p>
           <p className="text-2xl font-black text-green-700">
-            R$ 4,99<span className="text-sm font-bold text-gray-500">/mês</span>
+            R$ 3,32<span className="text-sm font-bold text-gray-500">/mês</span>
           </p>
         </div>
 
