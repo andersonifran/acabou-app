@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { useAppStore } from "@/store/appStore";
 import { Header } from "@/components/layout/Header";
-import { ItemEvent, ItemStatus, RECURRENCE_LABELS, RecurrenceType, Profile } from "@/types";
+import { ItemEvent, RECURRENCE_LABELS, RecurrenceType, Profile } from "@/types";
 import { useItems } from "@/hooks/useItems";
 import { useSubscription } from "@/hooks/useSubscription";
 import { formatRelativeTime, getNextReminderDate } from "@/lib/utils";
@@ -23,9 +23,9 @@ import { ReminderTimePicker } from "@/components/shared/ReminderTimePicker";
 export default function ConfiguracoesPage() {
   const router = useRouter();
   const supabase = createClient();
-  const { currentHouse, items, categories, reset, updateItem, setToast, profileName: storeProfileName, profileAvatar: storeProfileAvatar, profileEmail: storeProfileEmail, profilePhone: storeProfilePhone, setProfile: setStoreProfile, setProfileContact: setStoreProfileContact } = useAppStore();
-  const { isPaid, canAddItem, limits } = useSubscription();
-  const { renameItem, deleteItem, createItem } = useItems();
+  const { currentHouse, items, reset, updateItem, setToast, setAddItemModalOpen, setInitialStatus, profileName: storeProfileName, profileAvatar: storeProfileAvatar, profileEmail: storeProfileEmail, profilePhone: storeProfilePhone, setProfile: setStoreProfile, setProfileContact: setStoreProfileContact } = useAppStore();
+  const { isPaid } = useSubscription();
+  const { renameItem, deleteItem } = useItems();
   const { isOwner, isMember, canAccessPlans } = useRole();
   const [activeTab, setActiveTab] = useState<"geral" | "historico" | "lembretes" | "notificacoes">("geral");
   const [history, setHistory] = useState<(ItemEvent & { profile?: any; item?: any })[]>([]);
@@ -75,10 +75,6 @@ export default function ConfiguracoesPage() {
   // Lembretes: estados de edição
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState("");
-  const [showAddItem, setShowAddItem] = useState(false);
-  const [newItemName, setNewItemName] = useState("");
-  const [addingItem, setAddingItem] = useState(false);
-  const [newItemCategoryId, setNewItemCategoryId] = useState("");
   const [deletingItemId, setDeletingItemId] = useState<string | null>(null);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
@@ -181,30 +177,13 @@ export default function ConfiguracoesPage() {
     setDeletingItemId(null);
   }
 
-  async function handleAddReminderItem() {
-    const trimmed = newItemName.trim();
-    if (!trimmed || !currentHouse) return;
-    if (!canAddItem) {
-      alert(`Você atingiu o limite de ${limits.max_items} itens no plano grátis. Faça upgrade para o Plano Família.`);
-      return;
-    }
-    // Usa categoria selecionada ou Alimentos como fallback
-    const catId = newItemCategoryId || categories.find(c => c.name === "Alimentos")?.id || categories[0]?.id;
-    if (!catId) return;
-    setAddingItem(true);
-    try {
-      await createItem({
-        name: trimmed,
-        category_id: catId,
-        status: "tem" as ItemStatus,
-      });
-      setNewItemName("");
-      setNewItemCategoryId("");
-      setShowAddItem(false);
-    } catch (err) {
-      console.error("Erro ao adicionar item:", err);
-    }
-    setAddingItem(false);
+  // Adicionar item de lembrete = abre o MESMO AddItemModal do resto do app
+  // (teclado inteligente: autocomplete + categoria automática). Fonte única de
+  // verdade — nada de input cru duplicado aqui. Status "tem" (é um item da casa
+  // que o usuário quer poder marcar como recorrente depois).
+  function openAddReminderItem() {
+    setInitialStatus("tem");
+    setAddItemModalOpen(true);
   }
 
   const [deletingAccount, setDeletingAccount] = useState(false);
@@ -710,54 +689,14 @@ export default function ConfiguracoesPage() {
               </p>
               {isPaid && (
                 <button
-                  onClick={() => setShowAddItem(!showAddItem)}
-                  className="shrink-0 ml-2 w-8 h-8 bg-green-600 text-white rounded-full flex items-center justify-center hover:bg-green-700 transition-colors"
+                  onClick={openAddReminderItem}
+                  className="shrink-0 ml-2 w-8 h-8 bg-green-600 text-white rounded-full flex items-center justify-center hover:bg-green-700 transition-colors active:scale-90"
+                  aria-label="Adicionar item"
                 >
                   <Plus size={18} />
                 </button>
               )}
             </div>
-
-            {/* Formulário para adicionar novo item */}
-            {showAddItem && isPaid && (
-              <div className="bg-green-50 border border-green-200 rounded-xl p-4 mb-4">
-                <div className="flex items-center justify-between mb-3">
-                  <p className="text-sm font-semibold text-green-800">Adicionar novo item</p>
-                  <button
-                    onClick={() => { setShowAddItem(false); setNewItemName(""); setNewItemCategoryId(""); }}
-                    className="text-gray-400 hover:text-gray-600 p-1"
-                  >
-                    <X size={18} />
-                  </button>
-                </div>
-                <input
-                  type="text"
-                  value={newItemName}
-                  onChange={(e) => setNewItemName(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && handleAddReminderItem()}
-                  placeholder="Nome do item"
-                  className="w-full bg-white border border-green-200 rounded-lg px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 mb-2"
-                  autoFocus
-                />
-                <select
-                  value={newItemCategoryId}
-                  onChange={(e) => setNewItemCategoryId(e.target.value)}
-                  className="w-full bg-white border border-green-200 rounded-lg px-3 py-2.5 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500 mb-3"
-                >
-                  <option value="">Selecione a categoria</option>
-                  {categories.map((cat) => (
-                    <option key={cat.id} value={cat.id}>{cat.icon} {cat.name}</option>
-                  ))}
-                </select>
-                <button
-                  onClick={handleAddReminderItem}
-                  disabled={addingItem || !newItemName.trim()}
-                  className="w-full py-2.5 bg-green-600 text-white text-sm font-semibold rounded-lg hover:bg-green-700 disabled:opacity-50 transition-colors"
-                >
-                  {addingItem ? "Adicionando..." : "Adicionar item"}
-                </button>
-              </div>
-            )}
 
             {/* Agrupado por categoria */}
             {(() => {

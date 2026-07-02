@@ -11,7 +11,7 @@ import { EmptyState } from "@/components/shared/EmptyState";
 import { PlanLimitModal } from "@/components/shared/PlanLimitModal";
 import { Item, SHOPPING_LIST_STATUSES } from "@/types";
 import { buildShoppingListText, buildWhatsAppShareUrl } from "@/lib/utils";
-import { CheckSquare, Square, ClipboardList } from "lucide-react";
+import { CheckSquare, Square, ClipboardList, Plus } from "lucide-react";
 import { WhatsAppIcon } from "@/components/shared/WhatsAppIcon";
 import { Confetti } from "@/components/shared/Confetti";
 import { Mascote } from "@/components/shared/Mascote";
@@ -260,12 +260,20 @@ export default function ListaPage() {
             title="Tudo em dia! 🎉"
             description="Nenhum item para comprar agora. Quando algo acabar, é só marcar e aparece aqui automaticamente."
             action={
-              <button
-                onClick={() => { if (!canAddItem) { setShowPlanLimit(true); return; } setInitialStatus("comprar"); setAddItemModalOpen(true); }}
-                className="bg-green-600 text-white font-semibold px-6 py-3 rounded-xl hover:bg-green-700 transition-colors"
-              >
-                Adicionar item à lista
-              </button>
+              <div className="flex flex-col items-center gap-2.5">
+                <button
+                  onClick={() => { if (!canAddItem) { setShowPlanLimit(true); return; } setInitialStatus("comprar"); setAddItemModalOpen(true); }}
+                  className="bg-green-600 text-white font-semibold px-6 py-3 rounded-xl hover:bg-green-700 transition-colors active:scale-[0.98]"
+                >
+                  Adicionar item à lista
+                </button>
+                <button
+                  onClick={() => { if (!canAddItem) { setShowPlanLimit(true); return; } setInitialStatus("desejo"); setAddItemModalOpen(true); }}
+                  className="inline-flex items-center gap-1.5 text-purple-700 font-semibold px-4 py-2 rounded-xl hover:bg-purple-50 transition-colors active:scale-[0.98]"
+                >
+                  💜 Guardar um desejo
+                </button>
+              </div>
             }
           />
         ) : (
@@ -291,6 +299,26 @@ export default function ListaPage() {
                 💭 Desejos{wishItems.length > 0 ? ` (${wishItems.length})` : ""}
               </button>
             </div>
+
+            {/* Adicionar direto da Lista — respeita a aba ativa: no Comprar abre o
+                teclado inteligente de mercado; no Desejos, o catálogo de sonhos.
+                Assim o "teclado inteligente" existe também aqui, não só na Início. */}
+            <button
+              onClick={() => {
+                if (!canAddItem) { setShowPlanLimit(true); return; }
+                setInitialStatus(activeTab === "desejos" ? "desejo" : "comprar");
+                setAddItemModalOpen(true);
+              }}
+              className={cn(
+                "w-full flex items-center justify-center gap-2 font-bold py-3 rounded-2xl mb-5 border-2 border-dashed active:scale-[0.98] transition-all",
+                activeTab === "desejos"
+                  ? "border-purple-200 text-purple-700 hover:bg-purple-50"
+                  : "border-green-200 text-green-700 hover:bg-green-50"
+              )}
+            >
+              <Plus size={18} />
+              {activeTab === "desejos" ? "Adicionar desejo" : "Adicionar item"}
+            </button>
 
             {activeTab === "comprar" ? (
               shoppingListItems.length > 0 ? (
@@ -403,7 +431,7 @@ export default function ListaPage() {
               <div className="text-center py-12">
                 <span className="text-4xl">💭</span>
                 <p className="text-gray-600 text-sm font-medium mt-3">Nenhum desejo ainda</p>
-                <p className="text-gray-400 text-xs mt-1">Adicione um sonho de compras pelo botão "Desejos!" na aba Início 💜</p>
+                <p className="text-gray-400 text-xs mt-1">Toque em <strong className="text-purple-600">＋ Adicionar desejo</strong> acima e guarde seu próximo sonho de compra 💜</p>
               </div>
             )}
 
