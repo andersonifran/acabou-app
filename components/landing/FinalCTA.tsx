@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { LogoIcon } from "@/components/shared/Logo";
 import { InstallButton } from "@/components/shared/InstallPWA";
+import { GooglePlayBadge } from "@/components/landing/GooglePlayBadge";
 
 export function FinalCTA() {
   return (
@@ -41,6 +42,11 @@ export function FinalCTA() {
         </Link>
         <div className="flex justify-center mt-5">
           <InstallButton />
+        </div>
+        {/* Badge oficial da Play — aparece quando PLAY_STORE_LIVE=true
+            (produção publicada). Adição; o Mercado Pago continua na landing. */}
+        <div className="flex justify-center mt-4">
+          <GooglePlayBadge />
         </div>
 
         {/* PS — balão frosted (destaca sobre o verde) */}

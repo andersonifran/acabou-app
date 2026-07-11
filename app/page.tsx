@@ -10,6 +10,7 @@ import { TrustBar } from "@/components/landing/TrustBar";
 import { BentoGrid } from "@/components/landing/BentoGrid";
 import { FaqSection } from "@/components/landing/FaqSection";
 import { FinalCTA } from "@/components/landing/FinalCTA";
+import { GooglePlayBadge } from "@/components/landing/GooglePlayBadge";
 import { MobileStickyBar } from "@/components/landing/MobileStickyBar";
 import { RevealOnScroll } from "@/components/landing/RevealOnScroll";
 import { PaymentTrustWeb } from "@/components/shared/PaymentTrustWeb";
@@ -140,6 +141,12 @@ export default function LandingPage() {
                 <span>✓ Sem cartão</span>
                 <span>✓ Sem compromisso</span>
                 <span>✓ 30 segundos</span>
+              </div>
+
+              {/* Badge oficial da Play — só aparece quando PLAY_STORE_LIVE=true
+                  (produção publicada). Adição à landing; Mercado Pago continua. */}
+              <div className="flex justify-center md:justify-start mt-5">
+                <GooglePlayBadge />
               </div>
             </div>
 

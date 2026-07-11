@@ -99,6 +99,11 @@ function OnboardingContent() {
   // Step de setup da casa (para usuários Google que não têm casa)
   const [needsSetup, setNeedsSetup] = useState(false);
   const [setupHouseName, setSetupHouseName] = useState("");
+  // WhatsApp no setup (Anderson 02/07): quem entra pelo GOOGLE não passa pelo
+  // /cadastro (que já pede telefone) — sem isso, o fingerprint anti-farm de
+  // telefone não cobria o caminho Google. Obrigatório, igual ao /cadastro.
+  const [setupPhone, setSetupPhone] = useState("");
+  const setupPhoneOk = setupPhone.replace(/\D/g, "").length >= 10;
   const [setupPropertyType, setSetupPropertyType] = useState("casa");
   const [setupLoading, setSetupLoading] = useState(false);
   const [pageReady, setPageReady] = useState(false);
@@ -287,13 +292,14 @@ function OnboardingContent() {
   }, []);
 
   async function handleCreateHouse() {
-    if (!setupHouseName.trim()) return;
+    if (!setupHouseName.trim() || !setupPhoneOk) return;
     setSetupLoading(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { router.push("/login"); return; }
 
-      // Cria perfil + casa via API
+      // Cria perfil + casa via API. O phone alimenta o fingerprint anti-farm
+      // de trial no servidor (cobre o caminho Google, que não passa no /cadastro).
       const res = await fetch("/api/criar-casa", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -301,7 +307,7 @@ function OnboardingContent() {
           userId: user.id,
           houseName: setupHouseName.trim(),
           fullName: user.user_metadata?.full_name ?? user.email?.split("@")[0] ?? "",
-          phone: null,
+          phone: setupPhone.trim(),
           propertyType: setupPropertyType,
         }),
       });
@@ -534,6 +540,23 @@ function OnboardingContent() {
             />
           </div>
 
+          {/* WhatsApp — mesmo campo do /cadastro (quem entra pelo Google não
+              passou por lá). Também alimenta o anti-farm de trial no servidor. */}
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Seu WhatsApp *
+            </label>
+            <input
+              type="tel"
+              value={setupPhone}
+              onChange={(e) => setSetupPhone(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleCreateHouse()}
+              placeholder="(11) 99999-9999"
+              maxLength={20}
+              className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 focus:outline-none focus:border-green-400 focus:bg-white transition-colors text-gray-900"
+            />
+          </div>
+
           <div className="bg-green-50 rounded-xl p-3">
             <p className="text-sm text-green-800">
               💡 Depois você pode convidar sua família e adicionar mais locais.
@@ -548,7 +571,7 @@ function OnboardingContent() {
           <div className="max-w-md mx-auto">
             <button
               onClick={handleCreateHouse}
-              disabled={setupLoading || !setupHouseName.trim()}
+              disabled={setupLoading || !setupHouseName.trim() || !setupPhoneOk}
               className="w-full bg-green-600 text-white font-black py-4 rounded-2xl hover:bg-green-700 transition-colors disabled:opacity-60 text-base shadow-md shadow-green-200 flex items-center justify-center gap-2"
             >
               {setupLoading ? (
