@@ -114,6 +114,48 @@ function OnboardingContent() {
   // Quando o convite aparece a partir do "Começar sem itens", ao fechá-lo a
   // gente segue pra home (redirect adiado até o usuário responder o convite).
   const [pendingRedirect, setPendingRedirect] = useState(false);
+  // "Quero mostrar o convite assim que o push RESOLVER". Corrige uma CORRIDA
+  // real: logo após o cadastro o Service Worker ainda está instalando →
+  // push.state fica "loading" no instante do 1º item; a checagem instantânea
+  // falhava e o convite se PERDIA pra sempre (bug pego pelo Anderson 02/07).
+  const [wantOptIn, setWantOptIn] = useState(false);
+
+  useEffect(() => {
+    if (!wantOptIn || optInAsked) return;
+    if (push.state === "prompt") {
+      // permissão indecisa → mostra o convite premium (com o delayzinho do check)
+      setWantOptIn(false);
+      setOptInAsked(true);
+      const t = setTimeout(() => {
+        setShowOptIn(true);
+        // cooldown compartilhado → a home não repete o convite logo após.
+        try { localStorage.setItem("acabou_optin_last", String(Date.now())); } catch {}
+      }, 350);
+      return () => clearTimeout(t);
+    }
+    if (push.state === "subscribed" || push.state === "denied" || push.state === "unsupported") {
+      // permissão já decidida neste aparelho → convite não se aplica; se o
+      // usuário estava esperando pra ir pra home ("sem itens"), segue agora.
+      setWantOptIn(false);
+      if (pendingRedirect) {
+        setPendingRedirect(false);
+        router.push("/home");
+        router.refresh();
+      }
+      return;
+    }
+    // push.state === "loading": espera resolver. Segurança: se o SW travar,
+    // não prende o usuário no onboarding — segue pra home (a home re-convida).
+    if (pendingRedirect) {
+      const t = setTimeout(() => {
+        setWantOptIn(false);
+        setPendingRedirect(false);
+        router.push("/home");
+        router.refresh();
+      }, 6000);
+      return () => clearTimeout(t);
+    }
+  }, [wantOptIn, optInAsked, push.state, pendingRedirect]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     async function init() {
@@ -305,14 +347,11 @@ function OnboardingContent() {
       }
       return next;
     });
-    if (willBeFirst && !optInAsked && push.state === "prompt") {
-      setOptInAsked(true);
-      // pequeno atraso pra o "check" do item aparecer antes do convite subir.
-      setTimeout(() => {
-        setShowOptIn(true);
-        // marca o cooldown compartilhado → a home não repete o convite logo após.
-        try { localStorage.setItem("acabou_optin_last", String(Date.now())); } catch {}
-      }, 350);
+    if (willBeFirst && !optInAsked) {
+      // Não checa push.state AQUI (podia estar "loading" e o convite se perdia).
+      // Sinaliza a intenção; o efeito lá em cima mostra o convite assim que o
+      // push resolver pra "prompt" (ou descarta se já decidido no aparelho).
+      setWantOptIn(true);
     }
   }
 
@@ -389,14 +428,13 @@ function OnboardingContent() {
 
       // "Começar sem itens" (ou terminar sem marcar nenhum) e ainda não viu o
       // convite: oferece a tela caprichada de notificação AQUI, antes de ir pra
-      // home — mesma experiência de quem marcou um item. Só se a permissão está
-      // indecisa. Ao fechar o convite, segue pra home (pendingRedirect).
-      if (selected.size === 0 && !optInAsked && push.state === "prompt") {
-        setOptInAsked(true);
-        try { localStorage.setItem("acabou_optin_last", String(Date.now())); } catch {}
+      // home — mesma experiência de quem marcou um item. Inclui o estado
+      // "loading" (SW ainda instalando): o efeito espera resolver e mostra o
+      // convite (ou segue pra home se a permissão já foi decidida/travar).
+      if (selected.size === 0 && !optInAsked && (push.state === "prompt" || push.state === "loading")) {
         setPendingRedirect(true);
-        setShowOptIn(true);
-        return; // espera o convite fechar (o finally já zera o loading)
+        setWantOptIn(true);
+        return; // o efeito mostra o convite ou redireciona (finally zera o loading)
       }
 
       router.push("/home");

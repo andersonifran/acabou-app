@@ -1,11 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { Sun, Moon, Smartphone } from "lucide-react";
 import { Mascote, type MascoteMood } from "@/components/shared/Mascote";
 import { cn } from "@/lib/utils";
 
-// Tour premium pra novos usuários (feedback dos testadores). 4 telas, com "Pular".
-// Foco: dor real → como resolver → nossas exclusividades. Aparece só na 1ª vez
+// Tour premium pra novos usuários (feedback dos testadores). 5 telas, com "Pular".
+// Foco: dor real → como resolver → nossas exclusividades → escolher o TEMA
+// (slide interativa, preview ao vivo). Aparece só na 1ª vez
 // (flag acabou_walkthrough_seen, controlada na home). Premium em claro/escuro/sistema.
 type Slide = {
   mascot?: MascoteMood;
@@ -14,7 +16,16 @@ type Slide = {
   accent: string;
   title: string;
   desc: string;
+  theme?: boolean; // slide interativa de escolha de tema
 };
+
+type ThemeMode = "light" | "dark" | "system";
+
+const THEME_OPTIONS: { mode: ThemeMode; label: string; Icon: typeof Sun }[] = [
+  { mode: "light", label: "Claro", Icon: Sun },
+  { mode: "dark", label: "Escuro", Icon: Moon },
+  { mode: "system", label: "Sistema", Icon: Smartphone },
+];
 
 const SLIDES: Slide[] = [
   {
@@ -42,14 +53,43 @@ const SLIDES: Slide[] = [
     title: "Até os sonhos de compra 💜",
     desc: "A air fryer, o robô aspirador, a panela nova... guarde os desejos num cantinho especial e realize um por um.",
   },
+  {
+    theme: true,
+    accent: "bg-sky-50",
+    title: "Do seu jeito ✨",
+    desc: "Escolha o tema do app — a tela já muda na hora. Dá pra trocar quando quiser em Configurações.",
+  },
 ];
 
 export function Walkthrough({ open, onClose }: { open: boolean; onClose: () => void }) {
   const [i, setI] = useState(0);
+  // Tema atual (pra slide interativa). Mesma lógica do ThemeToggle: "system" =
+  // sem preferência salva → segue o aparelho. NÃO mexe na lógica sensível do
+  // tema/barra de status — só grava a escolha e avisa o ThemeApplier.
+  const [themeMode, setThemeMode] = useState<ThemeMode>("system");
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem("acabou_theme");
+      setThemeMode(stored === "dark" ? "dark" : stored === "light" ? "light" : "system");
+    } catch {}
+  }, []);
+
+  function chooseTheme(next: ThemeMode) {
+    setThemeMode(next);
+    try {
+      if (next === "system") localStorage.removeItem("acabou_theme");
+      else localStorage.setItem("acabou_theme", next);
+    } catch {}
+    // ThemeApplier ouve e reaplica NA HORA (classe .dark + barra de status) →
+    // o walkthrough inteiro vira o preview ao vivo da escolha.
+    window.dispatchEvent(new Event("acabou-theme"));
+  }
 
   if (!open) return null;
   const slide = SLIDES[i];
   const isLast = i === SLIDES.length - 1;
+  const ThemeIcon = THEME_OPTIONS.find((o) => o.mode === themeMode)?.Icon ?? Smartphone;
 
   return (
     <div
@@ -80,9 +120,39 @@ export function Walkthrough({ open, onClose }: { open: boolean; onClose: () => v
                 className={cn("object-contain select-none pointer-events-none", slide.imgCls ?? "w-24 h-24")}
               />
             )}
+            {slide.theme && (
+              // Ícone reflete a escolha atual (Sol/Lua/Celular) — troca ao vivo.
+              <ThemeIcon size={72} className="text-sky-500" strokeWidth={1.6} />
+            )}
           </div>
           <h2 className="text-2xl font-black text-gray-900 mb-3">{slide.title}</h2>
           <p className="text-gray-500 leading-relaxed max-w-xs">{slide.desc}</p>
+
+          {/* Slide do TEMA: 3 cartões selecionáveis, preview ao vivo (a própria
+              tela do tour muda de cor na hora — sensação premium). */}
+          {slide.theme && (
+            <div className="flex gap-2.5 mt-6 w-full max-w-xs">
+              {THEME_OPTIONS.map((o) => {
+                const active = themeMode === o.mode;
+                return (
+                  <button
+                    key={o.mode}
+                    onClick={() => chooseTheme(o.mode)}
+                    className={cn(
+                      "flex-1 flex flex-col items-center gap-1.5 py-3.5 rounded-2xl border-2 text-xs font-bold transition-all duration-150 active:scale-[0.94]",
+                      active
+                        ? "border-green-500 bg-green-50 text-green-700 shadow-md shadow-green-100"
+                        : "border-gray-200 text-gray-500 hover:border-gray-300"
+                    )}
+                  >
+                    <o.Icon size={22} />
+                    {o.label}
+                    {active && <span className="text-[10px] font-black text-green-600">✓</span>}
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
 
