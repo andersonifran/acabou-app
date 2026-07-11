@@ -52,7 +52,9 @@ export function TrustBar() {
           <p className="text-green-200 text-xs md:text-sm mt-1">pra marcar</p>
         </div>
         <div>
-          <p className="text-lg sm:text-xl md:text-3xl font-black leading-tight">R$&nbsp;<AnimatedCounter to={4} />,99<span className="text-sm sm:text-base font-bold">/mês</span></p>
+          {/* Preço = ANUAL efetivo por mês (39,90/12 = 3,32). O contador anima só a
+              parte inteira; os centavos são fixos — manter em sincronia ao mudar preço. */}
+          <p className="text-lg sm:text-xl md:text-3xl font-black leading-tight">R$&nbsp;<AnimatedCounter to={3} />,32<span className="text-sm sm:text-base font-bold">/mês</span></p>
           <p className="text-green-200 text-xs md:text-sm mt-1">no plano anual</p>
         </div>
       </div>
