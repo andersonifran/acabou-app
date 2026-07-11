@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { sendAdminLeakAlert, sendPushReengageEmail, sendWinbackEmail } from "@/lib/emails";
-import { emailTrialHash } from "@/lib/trial-email";
+import { emailTrialHash, phoneTrialHash } from "@/lib/trial-email";
 import { sendPushNotification } from "@/lib/push";
 
 // =============================================================
@@ -138,16 +138,21 @@ export async function GET(request: NextRequest) {
   // EXISTENTE poderia farmar trial excluindo + recriando com o mesmo email.
   // Idempotente (upsert ignora duplicados); pode rodar de novo sem problema.
   if (acao === "backfill_trial_grants") {
+    // E-mail E TELEFONE (2ª camada anti-farm, 02/07): quem já está na base fica
+    // marcado pelos dois fingerprints — recriar conta com "outro e-mail" mas o
+    // mesmo WhatsApp também NÃO ganha trial de novo.
     const { data: profs } = await admin
       .from("profiles")
-      .select("email")
-      .not("email", "is", null);
-    const hashes = new Set<string>();
+      .select("email, phone");
+    const emailHashes = new Set<string>();
+    const phoneHashes = new Set<string>();
     for (const p of profs ?? []) {
       const em = ((p as any).email || "").trim();
-      if (em) hashes.add(emailTrialHash(em));
+      if (em) emailHashes.add(emailTrialHash(em));
+      const ph = phoneTrialHash((p as any).phone);
+      if (ph) phoneHashes.add(ph);
     }
-    const rows = [...hashes].map((email_hash) => ({ email_hash }));
+    const rows = [...emailHashes, ...phoneHashes].map((email_hash) => ({ email_hash }));
     let gravados = 0;
     for (let i = 0; i < rows.length; i += 500) {
       const batch = rows.slice(i, i + 500);
@@ -159,10 +164,11 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       ok: true,
       acao: "backfill_trial_grants",
-      perfis_com_email: (profs ?? []).length,
-      emails_unicos_marcados: hashes.size,
+      perfis: (profs ?? []).length,
+      emails_unicos_marcados: emailHashes.size,
+      telefones_unicos_marcados: phoneHashes.size,
       gravados,
-      message: `Backfill: ${hashes.size} email(s) marcados como já-usaram-trial (não ganham 14 dias ao excluir+recriar).`,
+      message: `Backfill: ${emailHashes.size} e-mail(s) + ${phoneHashes.size} telefone(s) marcados como já-usaram-trial.`,
     });
   }
 

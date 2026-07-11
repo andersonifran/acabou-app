@@ -36,3 +36,18 @@ export function normalizeEmail(email: string): string {
 export function emailTrialHash(email: string): string {
   return createHash("sha256").update(normalizeEmail(email)).digest("hex");
 }
+
+/**
+ * Hash SHA-256 do TELEFONE normalizado (2ª camada anti-farm — Anderson 02/07).
+ * Racional: criar um e-mail novo é grátis; trocar de WhatsApp, não. Quem tenta
+ * farmar trial com "outro e-mail" quase sempre repete o telefone do cadastro.
+ * Normalização: só dígitos; remove o DDI 55 do Brasil quando presente.
+ * Prefixo "tel:" no hash → nunca colide com hash de e-mail na mesma tabela.
+ * Retorna null se curto demais pra ser um telefone real (não rastreável).
+ */
+export function phoneTrialHash(phone: string | null | undefined): string | null {
+  const digits = (phone || "").replace(/\D/g, "");
+  if (digits.length < 10) return null;
+  const d = digits.startsWith("55") && digits.length >= 12 ? digits.slice(2) : digits;
+  return createHash("sha256").update("tel:" + d).digest("hex");
+}

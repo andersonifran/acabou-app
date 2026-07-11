@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient, getAuthUser } from "@/lib/supabase/server";
 import { sendWelcomeEmail } from "@/lib/emails";
-import { emailTrialHash } from "@/lib/trial-email";
+import { emailTrialHash, phoneTrialHash } from "@/lib/trial-email";
 
 export async function POST(request: NextRequest) {
   try {
@@ -66,19 +66,35 @@ export async function POST(request: NextRequest) {
       .maybeSingle();
     if (!profErr && profileRow) trialUsed = !!(profileRow as any).trial_used;
 
-    // Marcador DURÁVEL por EMAIL — sobrevive à EXCLUSÃO da conta + recriar com o
-    // MESMO email (Google OU normal). O trial_used acima é por user_id e some
-    // quando a conta é apagada; este aqui é o hash do email numa tabela que o
-    // excluir-conta NÃO apaga (trial_grants). Se o hash já existe → já usou o trial.
+    // Marcadores DURÁVEIS por EMAIL e por TELEFONE — sobrevivem à EXCLUSÃO da
+    // conta + recriar (o excluir-conta NÃO apaga a trial_grants). O trial_used
+    // acima é por user_id e some quando a conta é apagada; estes aqui ficam.
+    // 2 camadas: e-mail novo é grátis, mas o WhatsApp do cadastro quase sempre
+    // se repete — juntas, encarecem muito o farm de trial.
+    // ⚠️ FAIL-CLOSED (Anderson 02/07, inegociável): se a CHECAGEM falhar por
+    // qualquer erro (tabela/banco), NEGA o trial. Melhor um usuário legítimo
+    // acionar o suporte do que um furo de receita aberto em silêncio.
     const emailHash = userEmail ? emailTrialHash(userEmail) : null;
-    let emailTrialUsed = false;
-    if (emailHash) {
-      const { data: grant } = await supabase
+    const phoneHash = phoneTrialHash(phone);
+    const grantHashes = [emailHash, phoneHash].filter(Boolean) as string[];
+    let grantUsed = false;
+    if (grantHashes.length === 0) {
+      // sem e-mail nem telefone rastreáveis → sem como impedir repetição → nega
+      grantUsed = true;
+    } else {
+      const { data: grants, error: grantsErr } = await supabase
         .from("trial_grants")
         .select("email_hash")
-        .eq("email_hash", emailHash)
-        .maybeSingle();
-      emailTrialUsed = !!grant;
+        .in("email_hash", grantHashes);
+      if (grantsErr) {
+        console.error(
+          "[criar-casa] ANTI-FARM: checagem trial_grants FALHOU — trial NEGADO (fail-closed):",
+          grantsErr.message
+        );
+        grantUsed = true;
+      } else {
+        grantUsed = (grants ?? []).length > 0;
+      }
     }
 
     // Verifica se o dono tem alguma casa com plano pago → herda o plano
@@ -111,38 +127,45 @@ export async function POST(request: NextRequest) {
         .eq("user_id", userId);
 
       // Trial só se: NUNCA usou trial (marcador permanente) E nunca teve casa E
-      // nunca foi membro/convidado de nenhuma casa.
+      // nunca foi membro/convidado de nenhuma casa E nenhum marcador durável
+      // (e-mail/telefone) consta como já-usado.
       const isBrandNew =
         !trialUsed &&
-        !emailTrialUsed &&
+        !grantUsed &&
         (ownedCount === 0 || ownedCount === null) &&
         (memberCount === 0 || memberCount === null);
 
       if (isBrandNew) {
-        // Conta nova de verdade — trial de 14 dias (mais tempo de teste = mais
-        // chance de ver o valor e converter; cobre quem faz mercado semanal,
-        // quinzenal, etc.). Anti-burla: o corte é por DATA (plan_expires_at),
-        // então o fim do trial é sempre respeitado, em qualquer duração.
-        const trialEnd = new Date();
-        trialEnd.setDate(trialEnd.getDate() + 14);
-        inheritedPlan = { plan: "monthly", plan_status: "trialing", plan_expires_at: trialEnd.toISOString() };
-        // Marca o trial como usado PRA SEMPRE (sobrevive a apagar a casa) — sem
-        // isso dá pra farmar trial apagando e recriando. Falha silenciosa se a
-        // coluna ainda não existir (será ativada quando a migration rodar).
-        await supabase.from("profiles").update({ trial_used: true } as any).eq("user_id", userId);
-        // Marcador DURÁVEL por email (sobrevive à exclusão da conta): grava o hash
-        // em trial_grants. Bloqueia farm de trial via excluir + recriar com o
-        // mesmo email. Falha silenciosa se a tabela ainda não existir (migration).
-        if (emailHash) {
-          const { error: grantErr } = await supabase
-            .from("trial_grants")
-            .upsert({ email_hash: emailHash }, { onConflict: "email_hash" });
-          // Caminho anti-farm CRÍTICO: se a gravação falhar, registra (não bloqueia
-          // o cadastro). Com a tabela criada + service_role não deve falhar.
-          if (grantErr) console.error("[criar-casa] falha ao gravar trial_grants:", grantErr.message);
+        // ⚠️ ORDEM É SEGURANÇA (fail-closed): grava os marcadores duráveis ANTES
+        // de conceder o trial. Se a gravação falhar, o trial NÃO é concedido —
+        // um trial sem registro reabriria o furo de farm (excluir + recriar).
+        const rows = grantHashes.map((email_hash) => ({ email_hash }));
+        const { error: grantErr } = await supabase
+          .from("trial_grants")
+          .upsert(rows, { onConflict: "email_hash", ignoreDuplicates: true });
+        if (grantErr) {
+          console.error(
+            "[criar-casa] ANTI-FARM: gravação trial_grants FALHOU — trial NEGADO (fail-closed):",
+            grantErr.message
+          );
+          inheritedPlan = { plan: "free", plan_status: "active" };
+        } else {
+          // Conta nova de verdade — trial de 14 dias (mais tempo de teste = mais
+          // chance de ver o valor e converter). Anti-burla: o corte é por DATA
+          // (plan_expires_at), então o fim do trial é sempre respeitado.
+          const trialEnd = new Date();
+          trialEnd.setDate(trialEnd.getDate() + 14);
+          inheritedPlan = { plan: "monthly", plan_status: "trialing", plan_expires_at: trialEnd.toISOString() };
+          // Marcador por user_id (redundância barata; some se a conta for apagada,
+          // mas os hashes acima ficam pra sempre).
+          await supabase.from("profiles").update({ trial_used: true } as any).eq("user_id", userId);
         }
       } else {
-        // Já usou trial / já foi membro/convidado / já teve casa → grátis
+        // Já usou trial (por conta, e-mail OU telefone) / já foi membro / já teve
+        // casa → grátis. Log ajuda a MEDIR tentativas de farm nos logs da Vercel.
+        if (grantUsed && !trialUsed) {
+          console.log("[criar-casa] trial negado: marcador durável já usado (anti-farm).");
+        }
         inheritedPlan = { plan: "free", plan_status: "active" };
       }
     }
