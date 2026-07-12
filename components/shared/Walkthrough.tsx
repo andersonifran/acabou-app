@@ -1,12 +1,14 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Sun, Moon, Smartphone } from "lucide-react";
+import { Sun, Moon, Smartphone, Bell, Check } from "lucide-react";
 import { Mascote, type MascoteMood } from "@/components/shared/Mascote";
+import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { cn } from "@/lib/utils";
 
-// Tour premium pra novos usuários (feedback dos testadores). 5 telas, com "Pular".
-// Foco: dor real → como resolver → nossas exclusividades → escolher o TEMA
+// Tour premium pra novos usuários (feedback dos testadores). 6 telas, com "Pular".
+// Foco: dor real → como resolver → nossas exclusividades → NOTIFICAÇÕES
+// (slide esperta: ativa dali mesmo, ou mostra "✓ ativadas") → escolher o TEMA
 // (slide interativa, preview ao vivo). Aparece só na 1ª vez
 // (flag acabou_walkthrough_seen, controlada na home). Premium em claro/escuro/sistema.
 type Slide = {
@@ -17,6 +19,7 @@ type Slide = {
   title: string;
   desc: string;
   theme?: boolean; // slide interativa de escolha de tema
+  push?: boolean; // slide esperta de notificações
 };
 
 type ThemeMode = "light" | "dark" | "system";
@@ -54,6 +57,12 @@ const SLIDES: Slide[] = [
     desc: "A air fryer, o robô aspirador, a panela nova... guarde os desejos num cantinho especial e realize um por um.",
   },
   {
+    push: true,
+    accent: "bg-green-50",
+    title: "Eu te aviso na hora certa 🔔",
+    desc: "Quando algo acabar ou alguém atualizar a lista, você fica sabendo — sem precisar abrir o app toda hora.",
+  },
+  {
     theme: true,
     accent: "bg-sky-50",
     title: "Do seu jeito ✨",
@@ -63,6 +72,19 @@ const SLIDES: Slide[] = [
 
 export function Walkthrough({ open, onClose }: { open: boolean; onClose: () => void }) {
   const [i, setI] = useState(0);
+  // Slide de notificações (esperta): quem ativou no onboarding vê "✓ ativadas"
+  // (reforço, sem pedir de novo); quem pulou pode ativar DALI mesmo — mesmo
+  // fluxo premium do convite (pré-prompt nosso → popup nativo só no toque).
+  const push = usePushNotifications();
+  const [pushLoading, setPushLoading] = useState(false);
+  const [pushDone, setPushDone] = useState(false);
+
+  async function activatePush() {
+    setPushLoading(true);
+    const ok = await push.subscribe();
+    setPushLoading(false);
+    if (ok) setPushDone(true);
+  }
   // Tema atual (pra slide interativa). Mesma lógica do ThemeToggle: "system" =
   // sem preferência salva → segue o aparelho. NÃO mexe na lógica sensível do
   // tema/barra de status — só grava a escolha e avisa o ThemeApplier.
@@ -124,9 +146,41 @@ export function Walkthrough({ open, onClose }: { open: boolean; onClose: () => v
               // Ícone reflete a escolha atual (Sol/Lua/Celular) — troca ao vivo.
               <ThemeIcon size={72} className="text-sky-500" strokeWidth={1.6} />
             )}
+            {slide.push && (
+              <Bell size={72} className="text-green-500" strokeWidth={1.6} fill="currentColor" fillOpacity={0.15} />
+            )}
           </div>
           <h2 className="text-2xl font-black text-gray-900 mb-3">{slide.title}</h2>
           <p className="text-gray-500 leading-relaxed max-w-xs">{slide.desc}</p>
+
+          {/* Slide das NOTIFICAÇÕES: estado esperto — já ativou (no onboarding
+              ou agora) = "✓ ativadas"; indeciso = botão que dispara o fluxo
+              premium; bloqueado no sistema = dica de onde religar. */}
+          {slide.push && (
+            <div className="mt-6 w-full max-w-xs">
+              {push.isSubscribed || pushDone ? (
+                <div className="flex items-center justify-center gap-2 py-3.5 rounded-2xl bg-green-50 border-2 border-green-500 text-green-700 font-bold text-sm">
+                  <Check size={18} strokeWidth={3} /> Notificações ativadas
+                </div>
+              ) : push.isDenied || !push.isSupported ? (
+                <p className="text-xs text-gray-400 leading-relaxed">
+                  As notificações estão desligadas no aparelho. Quando quiser, é
+                  só ativar em <strong className="text-gray-500">Configurações → Notificações</strong>.
+                </p>
+              ) : (
+                <button
+                  onClick={activatePush}
+                  disabled={pushLoading}
+                  className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl border-2 border-green-500 bg-green-50 text-green-700 font-bold text-sm hover:bg-green-100 transition-all duration-150 active:scale-[0.94] disabled:opacity-60"
+                >
+                  <Bell size={18} /> {pushLoading ? "Ativando..." : "Ativar agora"}
+                </button>
+              )}
+              <p className="text-[11px] text-gray-400 mt-2">
+                🔒 Você controla — dá pra desligar quando quiser.
+              </p>
+            </div>
+          )}
 
           {/* Slide do TEMA: 3 cartões selecionáveis, preview ao vivo (a própria
               tela do tour muda de cor na hora — sensação premium). */}
