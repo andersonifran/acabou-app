@@ -100,6 +100,13 @@ export default function HomePage() {
   }, []);
   useEffect(() => {
     if (typeof window === "undefined") return;
+    // ⚠️ TUTORIAL PRIMEIRO (bug pego no E2E de 02/07): na 1ª visita o walkthrough
+    // está aberto (z-120) e este convite (z-200) subia POR CIMA dele — duas
+    // sobreposições brigando na primeira impressão. Enquanto o tour está aberto,
+    // nada de convite; ao fechar, o efeito re-roda (dep showWalkthrough) e o
+    // cooldown carimbado no onClose decide (o tour já tem a slide de notificações
+    // — ELA é o convite do dia; o modal não deve re-pedir na sequência).
+    if (showWalkthrough) return;
     const deepLink = new URLSearchParams(window.location.search).get("ativar") === "notificacoes";
 
     if (push.state === "prompt") {
@@ -143,7 +150,7 @@ export default function HomePage() {
       } catch {}
     }
     // subscribed/loading/unsupported → não mostra nada (quem já ativou fica em paz).
-  }, [push.state]);
+  }, [push.state, showWalkthrough]);
 
   const shoppingItems = items.filter((i) => SHOPPING_LIST_STATUSES.includes(i.status as any));
   const shoppingCount = shoppingItems.length;
@@ -307,7 +314,14 @@ export default function HomePage() {
         open={showWalkthrough}
         onClose={() => {
           setShowWalkthrough(false);
-          try { localStorage.setItem("acabou_walkthrough_seen", "1"); } catch {}
+          try {
+            localStorage.setItem("acabou_walkthrough_seen", "1");
+            // O tour tem a slide de notificações — conta como o convite de hoje.
+            // Carimba os cooldowns pra o modal NÃO re-pedir logo na sequência
+            // (re-oferece no ritmo normal: 4d/12d/30d, ou 14d no "bloqueado").
+            localStorage.setItem("acabou_optin_last", String(Date.now()));
+            localStorage.setItem("acabou_reenable_last", String(Date.now()));
+          } catch {}
         }}
       />
       <NotificationOptInModal
