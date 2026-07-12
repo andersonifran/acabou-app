@@ -9,7 +9,9 @@
 // ⚠️ O badge é ADIÇÃO à landing, NUNCA troca: o Mercado Pago CONTINUA na
 // landing web (memória pagamento-twa-vs-web-compliance — só se esconde
 // DENTRO do TWA, nunca no site).
-export const PLAY_STORE_LIVE = false;
+// ✅ LIGADO em 12/07/2026 — produção publicada na Play ("A atualização do
+// app foi publicada"). A ficha agora é pública pra qualquer visitante.
+export const PLAY_STORE_LIVE = true;
 
 const PLAY_URL =
   "https://play.google.com/store/apps/details?id=br.com.acabouapp.www.twa";
