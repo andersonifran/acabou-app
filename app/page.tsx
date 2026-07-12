@@ -507,6 +507,14 @@ export default function LandingPage() {
             <span className="text-xl font-black text-white">Acabou?</span>
           </div>
 
+          {/* As duas oficialidades LADO A LADO, cada uma no seu papel:
+              badge da Play = onde BAIXAR o app (distribuição);
+              selo Mercado Pago = quem processa o PAGAMENTO na web (checkout).
+              Não misturar os dois num selo só — confundiria o visitante. */}
+          <div className="flex justify-center mb-5">
+            <GooglePlayBadge height={44} />
+          </div>
+
           {/* Selo de pagamento seguro (logo branca para fundo escuro; só web) */}
           <PaymentTrustWeb variant="dark" className="mb-6" />
 
