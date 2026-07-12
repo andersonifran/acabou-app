@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useAppStore } from "@/store/appStore";
 import { Header } from "@/components/layout/Header";
 import { ItemEvent, RECURRENCE_LABELS, RecurrenceType, Profile } from "@/types";
+import { statusLabelFor } from "@/lib/local-terms";
 import { useItems } from "@/hooks/useItems";
 import { useSubscription } from "@/hooks/useSubscription";
 import { formatRelativeTime, getNextReminderDate } from "@/lib/utils";
@@ -228,7 +229,7 @@ export default function ConfiguracoesPage() {
       case "status_changed":
         if (event.new_status === "acabou") return `${name} marcou ${item} como "Acabou"`;
         if (event.new_status === "acabando") return `${name} marcou ${item} como "Está acabando"`;
-        if (event.new_status === "tem") return `${name} marcou ${item} como "Tem em casa"`;
+        if (event.new_status === "tem") return `${name} marcou ${item} como "${statusLabelFor("tem", (currentHouse as any)?.property_type)}"`;
         if (event.new_status === "comprar") return `${name} adicionou ${item} à lista`;
         return `${name} atualizou ${item}`;
       case "purchased":

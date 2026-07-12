@@ -10,7 +10,8 @@ import { ItemCard } from "@/components/items/ItemCard";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { PlanLimitModal } from "@/components/shared/PlanLimitModal";
 import { Header } from "@/components/layout/Header";
-import { Item, ItemStatus, STATUS_LABELS } from "@/types";
+import { Item, ItemStatus } from "@/types";
+import { localTerms } from "@/lib/local-terms";
 import { Plus, Search, X, Share2, Zap, Pencil, Check, Package } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
@@ -37,7 +38,9 @@ export default function DespensaPage() {
 
 function DespensaContent() {
   const searchParams = useSearchParams();
-  const { setAddItemModalOpen, setInitialStatus } = useAppStore();
+  const { setAddItemModalOpen, setInitialStatus, currentHouse } = useAppStore();
+  // Vocabulário por tipo de local ("Tem em casa" / "Tem na empresa"...).
+  const terms = localTerms((currentHouse as any)?.property_type);
   const { items, itemsByCategory, changeStatus, deleteItem, renameItem, editItem } = useItems();
   const { canAddItem, isPaid, itemCount, itemsRemaining, limits } = useSubscription();
   const { canManageItems, canEditCategories } = useRole();
@@ -257,8 +260,8 @@ function DespensaContent() {
                 : items.length > 0 && filter === "comprar"
                 ? "Não há nada na fila de compras agora. Quando faltar algo, vai aparecer aqui."
                 : items.length > 0 && filter === "tem"
-                ? "Marque um item como 'Tem em casa' para ele aparecer aqui."
-                : "Comece adicionando o que você já tem em casa. Depois é só marcar quando acabar!"
+                ? `Marque um item como '${terms.temLabel}' para ele aparecer aqui.`
+                : `Comece adicionando o que você já tem ${terms.noLocal}. Depois é só marcar quando acabar!`
             }
             action={
               !search && items.length === 0 ? (

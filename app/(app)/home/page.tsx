@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useAppStore } from "@/store/appStore";
 import { ItemEvent, SHOPPING_LIST_STATUSES, House } from "@/types";
 import { formatRelativeTime } from "@/lib/utils";
+import { localTerms } from "@/lib/local-terms";
 import { ShoppingCart, Bell, ChevronDown, Plus, Check, Zap, Trash2 } from "lucide-react";
 import { Header } from "@/components/layout/Header";
 import { NotificationBell } from "@/components/shared/NotificationBell";
@@ -489,7 +490,7 @@ export default function HomePage() {
               </p>
               <p className="text-xs text-gray-600 mt-0.5 leading-snug">
                 {push.state === "denied"
-                  ? "Reative pra voltar a saber na hora que algo acaba na sua casa."
+                  ? `Reative pra voltar a saber na hora que algo acaba ${localTerms((currentHouse as any)?.property_type).noLocal}.`
                   : "Ative pra saber na hora que alguém marcar um item como acabou."}
               </p>
             </div>

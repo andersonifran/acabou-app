@@ -16,23 +16,26 @@ import { WhatsAppIcon } from "@/components/shared/WhatsAppIcon";
 import { Confetti } from "@/components/shared/Confetti";
 import { Mascote } from "@/components/shared/Mascote";
 import { hapticSuccess } from "@/lib/haptics";
+import { localTerms } from "@/lib/local-terms";
 import { cn } from "@/lib/utils";
 
-// Textos dinâmicos por tipo de local
-const LOCATION_COPY: Record<string, { question: string; confirm: string; done: string }> = {
-  casa:        { question: 'Colocar este item como "Tem em casa"?',     confirm: "Sim, tem em casa",     done: "Sua casa está em dia." },
-  apartamento: { question: 'Colocar este item como "Tem no apê"?',      confirm: "Sim, tem no apê",      done: "Seu apê está em dia." },
-  praia:       { question: 'Colocar este item como "Tem na praia"?',    confirm: "Sim, tem na praia",    done: "Sua praia está em dia." },
-  veraneio:    { question: 'Colocar este item como "Tem no veraneio"?', confirm: "Sim, tem no veraneio", done: "Seu veraneio está em dia." },
-  empresa:     { question: 'Colocar este item como "Tem na empresa"?',  confirm: "Sim, tem na empresa",  done: "Sua empresa está em dia." },
-  outro:       { question: 'Colocar este item como "Tem no local"?',    confirm: "Sim, tem no local",    done: "Seu local está em dia." },
-};
+// Textos dinâmicos por tipo de local — derivados da fonte única
+// (lib/local-terms.ts), a MESMA usada em badges/modal/despensa/histórico.
+function locationCopy(propertyType?: string | null) {
+  const t = localTerms(propertyType);
+  const seuLocalCap = t.seuLocal.charAt(0).toUpperCase() + t.seuLocal.slice(1);
+  return {
+    question: `Colocar este item como "${t.temLabel}"?`,
+    confirm: `Sim, ${t.temLabel.toLowerCase()}`,
+    done: `${seuLocalCap} está em dia.`,
+  };
+}
 
 export default function ListaPage() {
   const router = useRouter();
   const { currentHouse, setAddItemModalOpen, setInitialStatus } = useAppStore();
   const propertyType = (currentHouse as any)?.property_type ?? "casa";
-  const copy = LOCATION_COPY[propertyType] ?? LOCATION_COPY.casa;
+  const copy = locationCopy(propertyType);
   const { shoppingListItems, changeStatus, markPurchased, deleteItem, items } = useItems();
   const supabase = createClient();
   const { setItems } = useAppStore();

@@ -524,7 +524,7 @@ export default function CasaPage() {
 
   return (
     <div>
-      <Header title={currentHouse?.name ?? "Minha Casa"} subtitle="Configurações da casa" />
+      <Header title={currentHouse?.name ?? "Meu Local"} subtitle="Configurações do local" />
 
       <div className="max-w-lg mx-auto px-4 py-4 space-y-4">
 
@@ -824,7 +824,7 @@ export default function CasaPage() {
         ) : !isOwner ? (
           <div className="bg-gray-50 rounded-2xl border border-gray-100 p-4">
             <p className="text-sm text-gray-500 text-center">
-              🔒 Apenas o dono da casa pode convidar membros e gerenciar este local.
+              🔒 Apenas o dono do local pode convidar membros e gerenciá-lo.
             </p>
           </div>
         ) : null}

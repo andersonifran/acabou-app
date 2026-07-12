@@ -1,4 +1,8 @@
-import { ItemStatus, STATUS_LABELS } from "@/types";
+"use client";
+
+import { ItemStatus } from "@/types";
+import { statusLabelFor } from "@/lib/local-terms";
+import { useAppStore } from "@/store/appStore";
 import { getStatusColor } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 
@@ -8,6 +12,9 @@ interface StatusBadgeProps {
 }
 
 export function StatusBadge({ status, className }: StatusBadgeProps) {
+  // Vocabulário por tipo de local: "Tem em casa" / "Tem na empresa" / etc.
+  const currentHouse = useAppStore((s) => s.currentHouse);
+  const propertyType = (currentHouse as any)?.property_type;
   return (
     <span
       className={cn(
@@ -16,7 +23,7 @@ export function StatusBadge({ status, className }: StatusBadgeProps) {
         className
       )}
     >
-      {STATUS_LABELS[status]}
+      {statusLabelFor(status, propertyType)}
     </span>
   );
 }

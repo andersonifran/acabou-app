@@ -117,7 +117,7 @@ export async function sendWelcomeEmail(email: string, name: string, houseName: s
           <div style="margin-bottom: 16px;">
             <span style="background: #16a34a; color: white; border-radius: 50%; width: 28px; height: 28px; display: inline-block; text-align: center; line-height: 28px; font-size: 14px; font-weight: 700;">1</span>
             <strong style="margin-left: 8px; color: #111827;">Adicione seus itens</strong>
-            <span style="color: #6b7280; font-size: 13px;"> — cadastre o que costuma ter em casa</span>
+            <span style="color: #6b7280; font-size: 13px;"> — cadastre o que voc&ecirc; costuma ter no seu local</span>
           </div>
           <div style="margin-bottom: 16px;">
             <span style="background: #16a34a; color: white; border-radius: 50%; width: 28px; height: 28px; display: inline-block; text-align: center; line-height: 28px; font-size: 14px; font-weight: 700;">2</span>

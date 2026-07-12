@@ -132,7 +132,9 @@ const navItems = [
   { href: "/home",     label: "Início",   Icon: NavIconHome },
   { href: "/despensa", label: "Despensa", Icon: NavIconDespensa },
   { href: "/lista",    label: "Lista",    Icon: NavIconLista },
-  { href: "/casa",     label: "Casa",     Icon: NavIconCasa },
+  // "Local" (não "Casa"): a aba gerencia QUALQUER tipo de local — casa, apê,
+  // praia, empresa... Pra quem criou uma Empresa, "Casa" soava errado (02/07).
+  { href: "/casa",     label: "Local",    Icon: NavIconCasa },
 ];
 
 // Cores da label por aba (ativa)

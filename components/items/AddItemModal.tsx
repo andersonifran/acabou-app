@@ -2,7 +2,9 @@
 
 import { useState, useEffect, useRef } from "react";
 import { X, Search, Plus } from "lucide-react";
-import { Item, ItemStatus, Category, STATUS_LABELS, SHOPPING_LIST_STATUSES } from "@/types";
+import { Item, ItemStatus, Category, SHOPPING_LIST_STATUSES } from "@/types";
+import { statusLabelFor } from "@/lib/local-terms";
+import { useAppStore } from "@/store/appStore";
 import { cn, customCategoryIcon } from "@/lib/utils";
 import { SUGGESTED_ITEMS } from "@/lib/item-catalog";
 import { WISH_SUGGESTIONS } from "@/lib/wish-catalog";
@@ -72,6 +74,9 @@ export function AddItemModal({
 }: AddItemModalProps) {
   const [search, setSearch] = useState("");
   const [mode, setMode] = useState<"search" | "create">("search");
+  // Vocabulário por tipo de local ("Tem em casa" / "Tem na empresa"...).
+  const modalHouse = useAppStore((s) => s.currentHouse);
+  const modalPropertyType = (modalHouse as any)?.property_type;
   const [newName, setNewName] = useState("");
   const [newCategoryId, setNewCategoryId] = useState("");
   const [newStatus, setNewStatus] = useState<ItemStatus>(initialStatus);
@@ -330,7 +335,7 @@ export function AddItemModal({
   if (!isOpen) return null;
 
   const statusLabel: Record<ItemStatus, string> = {
-    tem: "Tem em casa",
+    tem: statusLabelFor("tem", modalPropertyType), // "Tem em casa" / "Tem na empresa"...
     acabando: "Está acabando",
     acabou: "Acabou",
     comprar: "Quero comprar",
@@ -613,7 +618,7 @@ export function AddItemModal({
                           : "bg-gray-50 text-gray-700 border-gray-200 hover:border-green-300"
                       )}
                     >
-                      {STATUS_LABELS[s]}
+                      {statusLabelFor(s, modalPropertyType)}
                     </button>
                   ))}
                 </div>
