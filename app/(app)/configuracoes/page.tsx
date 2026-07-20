@@ -345,14 +345,32 @@ export default function ConfiguracoesPage() {
                 <ChevronRight size={18} className="text-gray-400" />
               </Link>
               <button
-                onClick={() => {
-                  const text = encodeURIComponent(
+                onClick={async () => {
+                  const url = "https://www.acabouapp.com.br";
+                  const text =
                     "Opa! Queria te indicar o *Acabou?* 🛒\n\n" +
                     "É um app gratuito pra lista de compras da família. " +
                     "Todo mundo da casa pode marcar o que acabou e a lista fica pronta automaticamente.\n\n" +
-                    "Testa aí: https://www.acabouapp.com.br"
-                  );
-                  window.open(`https://wa.me/?text=${text}`, "_blank");
+                    "Baixe na Play Store ou use direto no navegador:";
+                  // Folha de compartilhamento NATIVA (WhatsApp, Instagram, Telegram,
+                  // SMS…) quando o aparelho suporta — dentro do app Android abre a
+                  // bandeja do sistema. O link é da landing (universal + com a nossa
+                  // prévia premium/logo via opengraph-image; a landing já mostra o
+                  // badge da Play). Fallback: WhatsApp Web (desktop sem Web Share).
+                  const waFallback = () => {
+                    const t = encodeURIComponent(`${text}\n${url}`);
+                    window.open(`https://wa.me/?text=${t}`, "_blank");
+                  };
+                  if (typeof navigator !== "undefined" && navigator.share) {
+                    try {
+                      await navigator.share({ title: "Acabou?", text, url });
+                    } catch (err: any) {
+                      // AbortError = usuário cancelou de propósito → não faz nada.
+                      if (err?.name !== "AbortError") waFallback();
+                    }
+                    return;
+                  }
+                  waFallback();
                 }}
                 className="w-full flex items-center justify-between px-5 py-4 border-b border-gray-50 hover:bg-gray-50 text-left"
               >
