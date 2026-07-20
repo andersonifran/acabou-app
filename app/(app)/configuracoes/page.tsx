@@ -10,7 +10,7 @@ import { statusLabelFor } from "@/lib/local-terms";
 import { useItems } from "@/hooks/useItems";
 import { useSubscription } from "@/hooks/useSubscription";
 import { formatRelativeTime, getNextReminderDate } from "@/lib/utils";
-import { Bell, BellRing, Trash2, Shield, FileText, ChevronRight, MessageSquareHeart, Clock, Smartphone, Download, Plus, Pencil, X, Check as CheckIcon, Share2, Lock, Sparkles } from "lucide-react";
+import { Bell, BellRing, Trash2, Shield, FileText, ChevronRight, MessageSquareHeart, Clock, Smartphone, Download, Plus, Pencil, X, Check as CheckIcon, Share2, Lock, Sparkles, Star } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
@@ -380,6 +380,18 @@ export default function ConfiguracoesPage() {
                 </div>
                 <ChevronRight size={18} className="text-gray-400" />
               </button>
+              <a
+                href="https://play.google.com/store/apps/details?id=br.com.acabouapp.www.twa"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full flex items-center justify-between px-5 py-4 border-b border-gray-50 hover:bg-gray-50 text-left"
+              >
+                <div className="flex items-center gap-2">
+                  <Star size={16} className="text-amber-400 fill-amber-400" />
+                  <p className="font-medium text-gray-900 text-sm">Avaliar na Play Store</p>
+                </div>
+                <ChevronRight size={18} className="text-gray-400" />
+              </a>
               <button
                 onClick={() => {
                   try { localStorage.removeItem("acabou_walkthrough_seen"); } catch {}
